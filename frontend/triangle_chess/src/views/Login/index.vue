@@ -23,7 +23,7 @@ watch(errorMessage, (oldValue ,newValue) => {
 });
 
 
-const login = async() => {
+const login = () => {
   if (uname.value === '' || password.value === '') {
     errorMessage.value = '用户名或密码不能为空';
     
