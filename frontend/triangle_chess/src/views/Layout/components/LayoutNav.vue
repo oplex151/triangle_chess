@@ -35,6 +35,7 @@ const categoryList = ref([
 ])
 </script>
 <template>
+  <div class="background-image"></div>
   <div class="centered-buttons">
     <RouterLink v-for="item in categoryList" :key="item.id" :to="item.url" class="centered-button">{{ item.name }}</RouterLink>
   </div>
@@ -62,5 +63,16 @@ const categoryList = ref([
 
 .centered-button:hover {
   background-color: #0056b3;
+}
+
+.background-image {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url('@/assets/images/login/图1.jpg');
+  background-size: cover;
+  z-index: -1;
 }
 </style>

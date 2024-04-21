@@ -1,25 +1,70 @@
 <script setup>
 import { ref } from 'vue';
-import { useRouter } from 'vue-router';
 
 const uname = ref('');
 const password = ref('');
 const errorMessage = ref('');
-const router = useRouter();
 
-const login = () => {
-  if (uname.value === 'Cee' && password.value === '123456') {
-    router.push('/');
-  } else {
+const login = async () => {
+  try {
+    const params = new URLSearchParams();
+    params.append('uname', uname.value);
+    params.append('password', password.value);
+    const paramsString = 'http://localhost:9002/user/login?' + params.toString();
+    const response = await fetch(paramsString, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        uname: uname.value,
+        password: password.value
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error('登录失败');
+    }
+
+    window.location.href = '/';
+  } catch (error) {
     errorMessage.value = '用户名或密码错误';
   }
 };
+
+const register = async() =>{
+  try{
+
+      const params = new URLSearchParams();
+      params.append('uname', uname.value);
+      params.append('password', password.value);
+      const paramsString = 'http://localhost:9002/user/register?' + params.toString();
+      const response = await fetch(paramsString, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          uname: uname.value,
+          password: password.value
+        })
+      });
+    if (!response.ok) {
+      throw new Error('注册失败');
+    }
+  }
+  catch (error) {
+    errorMessage.value = '网络异常，请稍后再试';
+  }
+}
 </script>
+
 <template>
   <div class="outer-container">
     <div class="background-image"></div>
     <div class="login-container">
       <h1 class="login-title">用户登录</h1>
+
       <div class="form-container">
         <form @submit.prevent="login" class="login-form">
           <div class="form-group">
@@ -31,13 +76,14 @@ const login = () => {
             <input type="password" id="password" v-model="password" class="form-input">
           </div>
           <div class="form-button">
-            <button type="submit" class="login-button">登录</button>
+          <button type="submit" class="login-button">登录</button>
           </div>
         </form>
-      </div>
+      </div> <!-- end of form-container -->
       <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
-    </div>
-  </div>
+
+    </div>  <!-- end of login-container -->
+  </div>   <!-- end of outer-container -->
 </template>
 
 <style scoped>
