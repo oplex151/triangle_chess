@@ -1,37 +1,37 @@
 <script setup>
 import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+import axios from 'axios';
+import main from '@/main';
 
 const uname = ref('');
 const password = ref('');
 const errorMessage = ref('');
+const router = useRouter();
 
-const login = async () => {
-  try {
-    const params = new URLSearchParams();
-    params.append('uname', uname.value);
-    params.append('password', password.value);
-    const paramsString = 'http://localhost:9002/user/login?' + params.toString();
-    const response = await fetch(paramsString, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        uname: uname.value,
-        password: password.value
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error('登录失败');
-    }
-
-    window.location.href = '/';
-  } catch (error) {
-    errorMessage.value = '用户名或密码错误';
+const login = () => {
+  if (uname.value === '' || password.value === '') {
+    errorMessage.value = '用户名或密码不能为空';
+    return;
   }
-};
 
+  axios.post(main.url+ '/login', {
+    'uname': uname.value,
+    'password': password.value
+    },
+    {
+        headers: {'Content-Type':'application/x-www-form-urlencoded'},
+    }
+  ).then(res => {
+    if (res.data.code === 0) {
+      router.push('/');
+    } else {
+      errorMessage.value = '用户名或密码错误';
+    }
+  }).catch(err => {
+    console.log(err);
+  });
+};
 
 </script>
 
