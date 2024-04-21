@@ -3,6 +3,7 @@ import Login from '@/views/Login/index.vue'
 import Layout from '@/views/Layout/index.vue'
 import Home from '@/views/Home/index.vue'
 import Category from '@/views/Category/index.vue'
+import Game from '@/views/Game/index.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -21,7 +22,8 @@ const router = createRouter({
         {
           path: '/category',
           component: Category
-        }
+        },
+
       ]
     },
     //   登录页
@@ -29,6 +31,11 @@ const router = createRouter({
       path: '/login',
       component: Login,
     },
+    //   主页-游戏页
+    {
+      path:'/game',
+      component:Game
+    }
   ]
 })
 
