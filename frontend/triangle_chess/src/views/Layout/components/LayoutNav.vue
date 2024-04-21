@@ -1,6 +1,7 @@
 <script setup>
 import {ref} from "vue";
 
+// 定义一个响应式变量 categoryList，存储页面导航栏的数据
 const categoryList = ref([
   {
     id:1,
@@ -35,12 +36,16 @@ const categoryList = ref([
 ])
 </script>
 <template>
+  <!-- 页面模板 -->
+  <div class="background-image"></div>
   <div class="centered-buttons">
+    <!-- 使用v-for指令循环渲染页面导航按钮 -->
     <RouterLink v-for="item in categoryList" :key="item.id" :to="item.url" class="centered-button">{{ item.name }}</RouterLink>
   </div>
 </template>
 
 <style lang="scss" scoped>
+/* 样式定义部分 */
 .centered-buttons {
   display: flex;
   flex-direction: column;
@@ -62,5 +67,17 @@ const categoryList = ref([
 
 .centered-button:hover {
   background-color: #0056b3;
+}
+
+.background-image {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  /* 使用背景图片填充页面背景 */
+  background-image: url('@/assets/images/login/图1.jpg');
+  background-size: cover;
+  z-index: -1;
 }
 </style>

@@ -1,6 +1,8 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
+import axios from 'axios';
+import main from '@/main';
 
 const uname = ref('');
 const password = ref('');
@@ -8,12 +10,29 @@ const errorMessage = ref('');
 const router = useRouter();
 
 const login = () => {
-  if (uname.value === 'Cee' && password.value === '123456') {
-    router.push('/');
-  } else {
-    errorMessage.value = '用户名或密码错误';
+  if (uname.value === '' || password.value === '') {
+    errorMessage.value = '用户名或密码不能为空';
+    return;
   }
+
+  axios.post(main.url+ '/login', {
+    'uname': uname.value,
+    'password': password.value
+    },
+    {
+        headers: {'Content-Type':'application/x-www-form-urlencoded'},
+    }
+  ).then(res => {
+    if (res.data.code === 0) {
+      router.push('/');
+    } else {
+      errorMessage.value = '用户名或密码错误';
+    }
+  }).catch(err => {
+    console.log(err);
+  });
 };
+
 </script>
 <template>
   <div class="outer-container">
