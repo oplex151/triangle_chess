@@ -16,6 +16,30 @@ See [Vite Configuration Reference](https://vitejs.dev/config/).
 npm install
 ```
 
+### Project Setup
+
+```sh
+npm install element-plus --save
+```
+
+### Project Setup
+
+```sh
+npm install -D unplugin-vue-components unplugin-auto-import
+```
+
+### Project Setup
+
+```sh
+npm i sass -D
+```
+
+### Project Setup
+
+```sh
+npm i axios
+```
+
 ### Compile and Hot-Reload for Development
 
 ```sh
