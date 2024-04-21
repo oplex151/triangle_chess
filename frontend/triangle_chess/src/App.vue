@@ -11,11 +11,8 @@
 </template>
 
 <style scoped lang="scss">
-// 直接使用颜色变量的名称
-//.test{
-//  color: $priceColor;
-//}
-header {
+
+.header {
   line-height: 1.5;
   max-height: 100vh;
 }

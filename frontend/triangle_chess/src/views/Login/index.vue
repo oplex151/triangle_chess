@@ -1,7 +1,8 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
+import { ElMessage } from 'element-plus';
 import main from '@/main';
 
 const uname = ref('');
@@ -9,12 +10,25 @@ const password = ref('');
 const errorMessage = ref('');
 const router = useRouter();
 
-const login = () => {
+watch(errorMessage, (oldValue ,newValue) => {
+  if (newValue !== oldValue && errorMessage.value !== '') {
+      ElMessage({
+      message: errorMessage.value,
+      grouping: true,
+      type: 'error',
+      showClose: true
+  })
+    errorMessage.value = '';
+  }
+});
+
+
+const login = async() => {
   if (uname.value === '' || password.value === '') {
     errorMessage.value = '用户名或密码不能为空';
+    
     return;
   }
-
   axios.post(main.url+ '/login', {
     'uname': uname.value,
     'password': password.value
@@ -56,8 +70,7 @@ const login = () => {
           </div>
         </form>
       </div> <!-- end of form-container -->
-      <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
-
+      <router-link to="/register">立即注册！</router-link>
     </div>  <!-- end of login-container -->
   </div>   <!-- end of outer-container -->
 </template>
