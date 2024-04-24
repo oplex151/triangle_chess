@@ -64,7 +64,9 @@ const categoryList = ref([
   border-radius: 5px;
   transition: background-color 0.3s ease;
   //位置居中
-  position: relative;;
+  position: relative;
+  left: 50%;
+  transform: translateX(-0%, -0%);
   //字体宋体
   font-family: "SimSun", "宋体";
   font-size: 14px;
