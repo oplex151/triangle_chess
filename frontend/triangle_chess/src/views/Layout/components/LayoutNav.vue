@@ -57,15 +57,31 @@ const categoryList = ref([
   display: block;
   padding: 10px 20px;
   margin-bottom: 10px;
-  background-color: #007bff;
+  background-color: #f6bb4e;
   color: #fff;
   text-decoration: none;
   border-radius: 5px;
   transition: background-color 0.3s ease;
+  //位置居中
+  position: relative;
+  left: 50%;
+  transform: translateX(-0%, -0%);
+  //字体宋体
+  font-family: "SimSun", "宋体";
+  font-size: 14px;
+  font-weight: bold;
+  //鼠标悬停时背景颜色变化
+  cursor: pointer;
+  //美化边界
+  box-shadow: 0 5cqh 5px rgba(0, 0, 0, 0.3);
+  //宽度一致
+  width: 200px;
+  //字体居中
+  text-align: center;
 }
 
 .centered-button:hover {
-  background-color: #0056b3;
+  background-color: #b38c00e9;
 }
 
 .background-image {

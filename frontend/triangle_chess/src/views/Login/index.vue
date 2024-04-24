@@ -62,7 +62,7 @@ const login = () => {
             <input type="text" id="uname" v-model="uname" class="form-input">
           </div>
           <div class="form-group">
-            <label for="password" class="form-label">密&nbsp;&nbsp;&nbsp;码：</label>
+            <label for="password" class="form-label">密&nbsp;码：</label>
             <input type="password" id="password" v-model="password" class="form-input">
           </div>
           <div class="form-button">
@@ -104,15 +104,19 @@ const login = () => {
   padding: 20px;
   border: 1px solid #ccc;
   border-radius: 20px;
-
+  position: relative;
+  left: 50%;
+  transform: translate(-0%, -0%);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  background-color: rgba(255, 255, 255, 0.8); /* 设置一个半透明的背景色 */
+  background-color: rgba(248, 234, 171, 0.8); /* 设置一个半透明的背景色 */
 }
 
 .login-title {
   text-align: center;
   font-size: 30px;
-  margin-bottom: 80px;
+  margin-top: 10px;
+  margin-bottom: 60px;
+  font-family: "SimSun";
 }
 
 .form-container {
@@ -132,7 +136,8 @@ const login = () => {
 
 .form-label {
   font-weight: bold;
-  font-size: 25px; /* 增加字体大小 */
+  font-size: 15px; /* 增加字体大小 */
+  font-family: "SimSun";
 }
 
 .form-input {
@@ -149,15 +154,15 @@ const login = () => {
 
 .login-button {
   justify-content: center;
-  background-color: #007bff;
+  background-color: #f6bb4e;
   color: #fff;
   border: none;
   border-radius: 15px;
   padding: 15px 0; /* 增加垂直内边距 */
   cursor: pointer;
-  font-size: 25px;
-  height: 70px;
-  width: 250px;
+  font-size: 15px;
+  height: 50px;
+  width: 200px;
 }
 
 .error-message {
