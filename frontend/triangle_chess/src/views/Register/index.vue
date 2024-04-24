@@ -77,8 +77,8 @@ const submitForm = (formEl: FormInstance | undefined) => {
     if (valid) {
         console.log('submit!')
         disableForm.value = true
-        axios.post(main.url+ '/login', {
-        'uname':    RegisterForm.username,
+        axios.post(main.url+ '/register', {
+        'username':    RegisterForm.username,
         'password': RegisterForm.password
         /* Hash! */
     },
@@ -86,17 +86,18 @@ const submitForm = (formEl: FormInstance | undefined) => {
             headers: {'Content-Type':'application/x-www-form-urlencoded'},
         }
         ).then(res => {
-            if (res.data.code === 200) {
+            if (res.status === 200) {
                 ElMessage.success("注册成功！")
                 disableForm.value = true
                 router.push('/login');
             } 
-            else if (res.data.code === 503) {
+            else if (res.status === 503) {
                 errorMessage.value = '用户名已存在！'
                 disableForm.value = false                
             }
             else {
                 disableForm.value = false
+                errorMessage.value = '未知错误'
             }
         }).catch(err => {
             console.log(err);

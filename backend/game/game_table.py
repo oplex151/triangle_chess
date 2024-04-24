@@ -83,24 +83,24 @@ class GameTable:
             bool: 是否移动成功
         '''
         if  user not in [self.user1['user_id'], self.user2['user_id'], self.user3['user_id']]:
-            return NOT_IN_GAME # 用户不在游戏中
+            return '{}',NOT_IN_GAME # 用户不在游戏中
         try:
             user_z = self._getUserIndex(user) # 获取用户的索引
             for piece in self.Pieces[user_z]: # 遍历用户的所有棋子
                 if piece.findPiece(px, py, pz): 
                     if piece.move(nx, ny, nz): # 移动棋子
-                        return SUCCESS
+                        return '{}',SUCCESS
             else:
-                return MOVE_NO_PIECE # 棋子不存在
+                return '{}',MOVE_NO_PIECE # 棋子不存在
         except InvalidMoveError:
             logger.error(f"棋子{piece.name}非法移动") #在这里统一打印日志
-            return MOVE_INVALID # 非法移动
+            return '{}',MOVE_INVALID # 非法移动
         except OutOfBoardError:
             logger.error(f"棋子{piece.name}越界")
-            return MOVE_OUT_OF_BOARD # 越界
+            return '{}',MOVE_OUT_OF_BOARD # 越界
         except Exception as e:
             logger.error(e)
-            return OTHER_ERROR # 其他错误
+            return '{}',OTHER_ERROR # 其他错误
         
 
 

@@ -71,10 +71,11 @@ def moveApi():
     y2 = request.form.get('y2')
     z2 = request.form.get('z2')
     pass
+    
 
 
 if __name__ == "__main__":
 
-    app.run(host='0.0.0.0',port=8888)
+    app.run(host='0.0.0.0',port=8888,debug=True )
 
     print("Good bye!")
