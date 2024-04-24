@@ -1,7 +1,8 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
+import { ElMessage } from 'element-plus';
 import main from '@/main';
 
 const uname = ref('');
@@ -9,12 +10,25 @@ const password = ref('');
 const errorMessage = ref('');
 const router = useRouter();
 
+watch(errorMessage, (oldValue ,newValue) => {
+  if (newValue !== oldValue && errorMessage.value !== '') {
+      ElMessage({
+      message: errorMessage.value,
+      grouping: true,
+      type: 'error',
+      showClose: true
+  })
+    errorMessage.value = '';
+  }
+});
+
+
 const login = () => {
   if (uname.value === '' || password.value === '') {
     errorMessage.value = '用户名或密码不能为空';
+    
     return;
   }
-
   axios.post(main.url+ '/login', {
     'uname': uname.value,
     'password': password.value
@@ -34,11 +48,13 @@ const login = () => {
 };
 
 </script>
+
 <template>
   <div class="outer-container">
     <div class="background-image"></div>
     <div class="login-container">
       <h1 class="login-title">用户登录</h1>
+
       <div class="form-container">
         <form @submit.prevent="login" class="login-form">
           <div class="form-group">
@@ -50,13 +66,13 @@ const login = () => {
             <input type="password" id="password" v-model="password" class="form-input">
           </div>
           <div class="form-button">
-            <button type="submit" class="login-button">登录</button>
+          <button type="submit" class="login-button">登录</button>
           </div>
         </form>
-      </div>
-      <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
-    </div>
-  </div>
+      </div> <!-- end of form-container -->
+      <router-link to="/register">立即注册！</router-link>
+    </div>  <!-- end of login-container -->
+  </div>   <!-- end of outer-container -->
 </template>
 
 <style scoped>

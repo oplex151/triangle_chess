@@ -4,7 +4,7 @@ import Layout from '@/views/Layout/index.vue'
 import Home from '@/views/Home/index.vue'
 import Category from '@/views/Category/index.vue'
 import Game from '@/views/Game/index.vue'
-
+import Register from '@/views/Register/index.vue'
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -35,6 +35,10 @@ const router = createRouter({
     {
       path:'/game',
       component:Game
+    },
+    {
+      path:'/register',
+      component: Register
     }
   ]
 })

@@ -36,7 +36,6 @@ const categoryList = ref([
 ])
 </script>
 <template>
-  <!-- 页面模板 -->
   <div class="background-image"></div>
   <div class="centered-buttons">
     <!-- 使用v-for指令循环渲染页面导航按钮 -->
@@ -83,6 +82,17 @@ const categoryList = ref([
 
 .centered-button:hover {
   background-color: #b38c00e9;
+}
+
+.background-image {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url('@/assets/images/login/图1.jpg');
+  background-size: cover;
+  z-index: -1;
 }
 
 .background-image {
