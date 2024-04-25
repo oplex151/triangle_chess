@@ -70,14 +70,18 @@ const login = () => {
           </div>
         </form>
       </div> <!-- end of form-container -->
-      <router-link to="/register">立即注册！</router-link>
+      <router-link to="/register" class="gobutton">立即注册！</router-link>
     </div>  <!-- end of login-container -->
   </div>   <!-- end of outer-container -->
 </template>
 
 <style scoped>
+.gobutton{
+  display: text-indent;
+  color: #00b88d;
+}
 .outer-container {
-  display: flex;
+  display: center;
   justify-content: center;
   align-items: center;
   height: 100vh;

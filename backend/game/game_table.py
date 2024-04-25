@@ -93,16 +93,16 @@ class GameTable:
                         logger.info(f"用户{user}移动棋子{piece.name}从({px},{py},{pz})到({nx},{ny},{nz})")
                         return SUCCESS
             else:
-                return MOVE_NO_PIECE # 棋子不存在
+                return '{}',MOVE_NO_PIECE # 棋子不存在
         except InvalidMoveError:
             logger.error(f"棋子{piece.name}非法移动") #在这里统一打印日志
-            return MOVE_INVALID # 非法移动
+            return '{}',MOVE_INVALID # 非法移动
         except OutOfBoardError:
             logger.error(f"棋子{piece.name}越界")
-            return MOVE_OUT_OF_BOARD # 越界
+            return '{}',MOVE_OUT_OF_BOARD # 越界
         except Exception as e:
             logger.error(e)
-            return OTHER_ERROR # 其他错误
+            return '{}',OTHER_ERROR # 其他错误
         
 
 def fetchGameByUserID(user_id:str, game_tables:list[GameTable]) -> GameTable:
