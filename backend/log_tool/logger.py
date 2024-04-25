@@ -8,7 +8,7 @@ def setupLogger():
     if not logger.handlers:
         project_root = os.getenv('PROJECT_ROOT')
         current_datetime = datetime.utcnow()
-        formatted_datetime = current_datetime.strftime("%Y-%m-%d %H_%M_%S")
+        formatted_datetime = current_datetime.strftime("%Y_%m_%d-%H_%M_%S")
 
         log_file_name = f"{formatted_datetime}.log"
         log_file_path = os.path.join(project_root, 'logs', log_file_name)

@@ -77,7 +77,7 @@ const submitForm = (formEl: FormInstance | undefined) => {
     if (valid) {
         console.log('submit!')
         disableForm.value = true
-        axios.post(main.url+ '/register', {
+        axios.post(main.url+ '/api/register', {
         'username':    RegisterForm.username,
         'password': RegisterForm.password
         /* Hash! */
