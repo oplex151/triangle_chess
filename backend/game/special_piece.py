@@ -18,8 +18,8 @@ class Pawn(Piece):
         if abs(nx-self.px)+abs(ny-self.py)!= 1:
             raise InvalidMoveError("非法移动")
         # 3. 不可以后退
-        if nz==self.user_z and ny < self.py:
-            raise InvalidMoveError("后退")
+        if (nz==self.user_z and ny < self.py) or ny > self.py:
+            raise InvalidMoveError("不可以后退")
         return True
 
 class Horse(Piece):

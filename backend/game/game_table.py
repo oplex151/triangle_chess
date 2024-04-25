@@ -3,7 +3,7 @@ import os
 from dotenv import load_dotenv
 
 load_dotenv()
-
+import hashlib
 from .piece import Piece
 from .special_piece import *
 from backend.message import *
@@ -13,6 +13,7 @@ logger = setupLogger()
 
 class GameTable:
     def __init__(self, user1: str, user2: str, user3: str):
+        self.game_id = hashlib.md5(str(user1+user2+user3).encode('utf-8')).hexdigest()
         self.user1 = {'user_id':user1,'index':0} # 0
         self.user2 = {'user_id':user2,'index':1} # 1
         self.user3 = {'user_id':user3,'index':2} # 2
@@ -83,12 +84,13 @@ class GameTable:
             bool: 是否移动成功
         '''
         if  user not in [self.user1['user_id'], self.user2['user_id'], self.user3['user_id']]:
-            return NOT_IN_GAME # 用户不在游戏中
+            return NOT_JOIN_GAME # 用户不在游戏中
         try:
             user_z = self._getUserIndex(user) # 获取用户的索引
             for piece in self.Pieces[user_z]: # 遍历用户的所有棋子
                 if piece.findPiece(px, py, pz): 
                     if piece.move(nx, ny, nz): # 移动棋子
+                        logger.info(f"用户{user}移动棋子{piece.name}从({px},{py},{pz})到({nx},{ny},{nz})")
                         return SUCCESS
             else:
                 return MOVE_NO_PIECE # 棋子不存在
@@ -103,5 +105,17 @@ class GameTable:
             return OTHER_ERROR # 其他错误
         
 
-
+def fetchGameByUserID(user_id:str, game_tables:list[GameTable]) -> GameTable:
+    '''
+    Description: 根据用户ID获取游戏
+    Args:
+        user_id: 用户ID
+    Returns:
+        GameTable: 游戏
+    '''
+    for game_table in game_tables:
+        if user_id in [game_table.user1['user_id'], game_table.user2['user_id'], game_table.user3['user_id']]:
+            return game_table
+    else:
+        return None
 
