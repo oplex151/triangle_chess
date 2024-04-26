@@ -10,9 +10,9 @@ print("Project root set to:", os.environ['PROJECT_ROOT']) # 设置项目根目�
 import flask
 from flask_cors import CORS
 from flask import request
-from log_tool import setupLogger 
+from backend.log_tool import setupLogger 
 from backend.user_manage import login, register
-from game.exception import *
+from backend.game.exception import *
 from message import *
 from backend.game import GameTable, fetchGameByUserID
 
