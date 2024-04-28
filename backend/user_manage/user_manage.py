@@ -18,7 +18,7 @@ logger = setupLogger()
 
 def login(username, password):
     try:
-        select_query = "SELECT Password, UserID FROM {0} WHERE UserName = {1};".format(USER_TABLE,"'"+username+"'")
+        select_query = "SELECT userPassword, userId FROM {0} WHERE UserName = {1};".format(USER_TABLE,"'"+username+"'")
         cursor.execute(select_query)
         result = cursor.fetchone()
         if result is not None and result[0] == password:
@@ -38,7 +38,7 @@ def login(username, password):
 def register(username, password):
     try:
         # 首先就检查用户名是否已经存在
-        select_query = "SELECT * FROM {0} WHERE UserName = {1};".format(USER_TABLE,"'"+username+"'")
+        select_query = "SELECT * FROM {0} WHERE userName = {1};".format(USER_TABLE,"'"+username+"'")
         cursor.execute(select_query)
         result = cursor.fetchone()
         if result is not None:
@@ -46,7 +46,7 @@ def register(username, password):
             return "{}",REGISTER_EXIST_USER
         else:
             # TODO:为用户生成ID
-            insert_query = "INSERT INTO {0} (UserName, Password) VALUES ({1}, {2});".format(USER_TABLE,"'"+username+"'", "'"+password+"'")
+            insert_query = "INSERT INTO {0} (userName, userPassword) VALUES ({1}, {2});".format(USER_TABLE,"'"+username+"'", "'"+password+"'")
             try:
                 cursor.execute(insert_query)
                 db.commit()
