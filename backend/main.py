@@ -10,11 +10,12 @@ print("Project root set to:", os.environ['PROJECT_ROOT']) # 设置项目根目�
 import flask
 from flask_cors import CORS
 from flask import request
-from log_tool import setupLogger 
-from user_manage import login, register
-from game.exception import *
+from backend.global_var import games,sessions
+from backend.log_tool import setupLogger 
+from backend.user_manage import *
+from backend.game.exception import *
 from message import *
-from game import GameTable, fetchGameByUserID
+from backend.game import GameTable, fetchGameByUserID
 
 app = flask.Flask(__name__)
 CORS(app, resources=r'/*')
@@ -22,7 +23,6 @@ CORS(app, resources=r'/*')
 # 日志工具
 logger = setupLogger()
 
-games:list[GameTable] = []
 
 @app.route('/api/login', methods=['POST'])
 def loginApi():
@@ -55,6 +55,21 @@ def registerApi():
     except:
         return "{message: 'parameter error'}",PARAM_ERROR
     return register(username, password)
+
+@app.route('/api/logout', methods=['POST'])
+def logoutApi():
+    '''
+    Args:
+        userid: 用户id
+    Returns:
+        登出成功200
+    '''
+    try:
+        userid = request.form.get('userid')
+    except:
+        return "{message: 'parameter error'}",PARAM_ERROR
+    return logout(userid)
+
 
 @app.route('/api/game/create', methods=['POST'])
 def createGameApi():
@@ -118,6 +133,6 @@ def moveApi():
 
 if __name__ == "__main__":
 
-    app.run(host='0.0.0.0',port=8888)
+    app.run(host='0.0.0.0',port=8888,debug=True)
 
     print("Good bye!")

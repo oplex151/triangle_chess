@@ -1,6 +1,6 @@
--- MySQL dump 10.13  Distrib 8.0.19, for Win64 (x86_64)
+-- MySQL dump 10.13  Distrib 8.3.0, for Win64 (x86_64)
 --
--- Host: localhost    Database: triangle_chess
+-- Host: localhost    Database: trianglechess
 -- ------------------------------------------------------
 -- Server version	8.3.0
 
@@ -15,6 +15,15 @@
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
+--
+-- Current Database: `trianglechess`
+--
+
+/*!40000 DROP DATABASE IF EXISTS `trianglechess`*/;
+
+CREATE DATABASE /*!32312 IF NOT EXISTS*/ `trianglechess` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
+
+USE `trianglechess`;
 --
 -- Table structure for table `comment`
 --

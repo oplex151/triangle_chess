@@ -1,2 +1,1 @@
-from .user_manage import login
-from .user_manage import register
+from .user_manage import *

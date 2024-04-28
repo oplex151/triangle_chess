@@ -4,8 +4,10 @@ LOGIN_UNEXIST_USER = 501 #"Login failed: User does not exist"
 LOGIN_WRONG_PASSWORD = 502 #"Login failed: Wrong password"
 REGISTER_EXIST_USER = 503 #"Register failed: User already exists"
 REGISTER_FAILED = 504 #"Register failed: Internal server error"
-
 PARAM_ERROR = 505 #"Parameter error"
+ALREADY_LOGIN = 506 #"Already login"
+USER_NOT_LOGIN = 507 #"User not login"
+
 
 NOT_JOIN_GAME = 510 #"Not join game"
 GAME_CREATE_FAILED = 511 #"Create game failed"
