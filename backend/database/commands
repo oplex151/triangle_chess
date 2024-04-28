@@ -1,0 +1,8 @@
+--- 如果数据库不存在
+mysqldump -uroot -proot --databases -p trianglechess >trianglechess.sql
+--- 如果数据库存在
+mysqldump -uroot -proot --databases -p --add-drop-database trianglechess >trianglechess.sql
+
+---导入
+登录mysql后：
+source trianglechess.sql
