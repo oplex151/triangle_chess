@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from flask import jsonify
 from backend.log_tool import setupLogger
 from backend.message import *
-from backend.main import sessions
+from backend.global_var import games,sessions
 
 DATA_BASE = "triangleChess"
 USER_TABLE = "user"

@@ -10,6 +10,7 @@ print("Project root set to:", os.environ['PROJECT_ROOT']) # 设置项目根目�
 import flask
 from flask_cors import CORS
 from flask import request
+from backend.global_var import games,sessions
 from backend.log_tool import setupLogger 
 from backend.user_manage import *
 from backend.game.exception import *
@@ -22,12 +23,6 @@ CORS(app, resources=r'/*')
 # 日志工具
 logger = setupLogger()
 
-# 全局变量
-global games
-global sessions
-
-games:list[GameTable] = []
-sessions:list[int] = []
 
 @app.route('/api/login', methods=['POST'])
 def loginApi():
