@@ -2,19 +2,19 @@ import os
 import pymysql
 from dotenv import load_dotenv
 from flask import jsonify
-from backend.log_tool import setupLogger
-from backend.message import *
+from log_tool import setupLogger
+from message import *
 
-DATA_BASE = "TriangleChess"
+DATA_BASE = "trianglechess"
 USER_TABLE = "user"
 
 load_dotenv()
 password = os.getenv("MYSQL_PASSWORD")
-
-db = pymysql.connect(host="127.0.0.1",user="root",password=password,database=DATA_BASE)
+db = pymysql.connect(host="127.0.0.1", user="root", password=password, database=DATA_BASE)
 cursor = db.cursor()
 
 logger = setupLogger()
+
 
 def login(username, password):
     try:

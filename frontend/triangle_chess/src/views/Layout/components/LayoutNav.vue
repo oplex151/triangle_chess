@@ -36,10 +36,12 @@ const categoryList = ref([
 ])
 </script>
 <template>
-  <div class="background-image"></div>
-  <div class="centered-buttons">
-    <!-- 使用v-for指令循环渲染页面导航按钮 -->
-    <RouterLink v-for="item in categoryList" :key="item.id" :to="item.url" class="centered-button">{{ item.name }}</RouterLink>
+  <div>
+    <div class="background-image"></div>
+    <div class="centered-buttons">
+      <!-- 使用v-for指令循环渲染页面导航按钮 -->
+      <RouterLink  v-for="item in categoryList" :key="item.id" :to="item.url" class="centered-button">{{ item.name }}</RouterLink>
+    </div>
   </div>
 </template>
 
@@ -62,22 +64,18 @@ const categoryList = ref([
   text-decoration: none;
   border-radius: 5px;
   transition: background-color 0.3s ease;
-  //位置居中
-  position: relative;
-  left: 50%;
-  transform: translateX(-0%, -0%);
+  //美化边界
+  box-shadow: 0 5px 5px rgba(0, 0, 0, 0.3);
+  //宽度一致
+  width: 200px;
+  //字体居中
+  text-align: center;
   //字体宋体
   font-family: "SimSun", "宋体";
   font-size: 14px;
   font-weight: bold;
   //鼠标悬停时背景颜色变化
   cursor: pointer;
-  //美化边界
-  box-shadow: 0 5cqh 5px rgba(0, 0, 0, 0.3);
-  //宽度一致
-  width: 200px;
-  //字体居中
-  text-align: center;
 }
 
 .centered-button:hover {
@@ -90,18 +88,6 @@ const categoryList = ref([
   left: 0;
   width: 100%;
   height: 100%;
-  background-image: url('@/assets/images/login/图1.jpg');
-  background-size: cover;
-  z-index: -1;
-}
-
-.background-image {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  /* 使用背景图片填充页面背景 */
   background-image: url('@/assets/images/login/图1.jpg');
   background-size: cover;
   z-index: -1;
