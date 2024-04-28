@@ -5,7 +5,7 @@ from flask import jsonify
 from backend.log_tool import setupLogger
 from backend.message import *
 
-DATA_BASE = "TriangleChess"
+DATA_BASE = "triangleChess"
 USER_TABLE = "user"
 
 load_dotenv()
@@ -25,11 +25,11 @@ def login(username, password):
             logger.info("User {0} logged in successfully".format(username))
             res = {"userid":result[1]}
             return jsonify(res),SUCCESS
-        elif result[0] != password:
-            logger.error("User {0} does not exist".format(username))
+        elif result is not None and result[0] != password:
+            logger.error("User {0} failed to login due to wrong password".format(username))
             return "{}",LOGIN_WRONG_PASSWORD
         else:
-            logger.error("User {0} failed to login".format(username))
+            logger.error("User {0} does not exist".format(username))
             return "{}",LOGIN_UNEXIST_USER
     except Exception as e:
         logger.error("User {0} failed to login due to\n{1}".format(username,str(e)))

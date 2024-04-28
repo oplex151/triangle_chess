@@ -1,5 +1,6 @@
 import os
 import sys
+import logging
 from pathlib import Path
 
 project_root = Path(__file__).parent.parent.absolute()
@@ -118,6 +119,6 @@ def moveApi():
 
 if __name__ == "__main__":
 
-    app.run(host='0.0.0.0',port=8888)
+    app.run(host='0.0.0.0',port=8888,debug=True)
 
     print("Good bye!")

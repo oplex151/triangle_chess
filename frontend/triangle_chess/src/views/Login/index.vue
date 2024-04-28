@@ -37,7 +37,7 @@ const login = () => {
         headers: {'Content-Type':'application/x-www-form-urlencoded'},
     }
   ).then(res => {
-    if (res.data.code === 0) {
+    if (res.status == 200) {
       router.push('/');
     } else {
       errorMessage.value = '用户名或密码错误';
