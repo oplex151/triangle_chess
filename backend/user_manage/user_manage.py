@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from flask import jsonify
 from backend.log_tool import setupLogger
 from backend.message import *
+from backend.main import sessions
 
 DATA_BASE = "triangleChess"
 USER_TABLE = "user"
@@ -17,13 +18,18 @@ cursor = db.cursor()
 logger = setupLogger()
 
 def login(username, password):
+    global sessions
     try:
         select_query = "SELECT userPassword, userId FROM {0} WHERE UserName = {1};".format(USER_TABLE,"'"+username+"'")
         cursor.execute(select_query)
         result = cursor.fetchone()
         if result is not None and result[0] == password:
+            if result[1] in sessions:
+                logger.error("User {0} already logged in".format(username))
+                return "{}",ALREADY_LOGIN
             logger.info("User {0} logged in successfully".format(username))
             res = {"userid":result[1]}
+            sessions.append(result[1])
             return jsonify(res),SUCCESS
         elif result is not None and result[0] != password:
             logger.error("User {0} failed to login due to wrong password".format(username))
@@ -59,3 +65,13 @@ def register(username, password):
     except Exception as e:
         logger.error("User {0} failed to register due to\n{1}".format(username,str(e)))
         return "{}",OTHER_ERROR
+    
+def logout(userid):
+    global sessions
+    if userid in sessions: 
+        sessions.remove(userid)
+        logger.info("User {0} logged out successfully".format(userid))
+        return "{}",SUCCESS
+    else:
+        logger.error("User {0} not logged in".format(userid))
+        return "{}",USER_NOT_LOGIN

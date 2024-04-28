@@ -1,6 +1,5 @@
 import os
 import sys
-import logging
 from pathlib import Path
 
 project_root = Path(__file__).parent.parent.absolute()
@@ -12,7 +11,7 @@ import flask
 from flask_cors import CORS
 from flask import request
 from backend.log_tool import setupLogger 
-from backend.user_manage import login, register
+from backend.user_manage import *
 from backend.game.exception import *
 from message import *
 from backend.game import GameTable, fetchGameByUserID
@@ -23,7 +22,12 @@ CORS(app, resources=r'/*')
 # 日志工具
 logger = setupLogger()
 
+# 全局变量
+global games
+global sessions
+
 games:list[GameTable] = []
+sessions:list[int] = []
 
 @app.route('/api/login', methods=['POST'])
 def loginApi():
@@ -56,6 +60,21 @@ def registerApi():
     except:
         return "{message: 'parameter error'}",PARAM_ERROR
     return register(username, password)
+
+@app.route('/api/logout', methods=['POST'])
+def logoutApi():
+    '''
+    Args:
+        userid: 用户id
+    Returns:
+        登出成功200
+    '''
+    try:
+        userid = request.form.get('userid')
+    except:
+        return "{message: 'parameter error'}",PARAM_ERROR
+    return logout(userid)
+
 
 @app.route('/api/game/create', methods=['POST'])
 def createGameApi():
