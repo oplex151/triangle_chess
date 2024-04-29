@@ -1,69 +1,227 @@
+<script setup >
+import { onMounted, ref } from 'vue';
+import { Chess } from '@/chesses/Chess';
+import { COL, ROW } from '@/config/config';
+import { camps } from '@/lib/game';
+import { GEBI } from '@/utils/utils';
+
+const map = new Map();
+const getid = (row, col) => (ROW - row - 1) * COL + col + 1;
+const camp = ref(0);
+let hoverChess;
+const isPocus = ref(false);
+const focusChess = ref();
+
+const action = (position) => {
+  if (!isPocus.value) {
+    if (!hoverChess) return;
+    if (hoverChess.camp !== camp.value) return;
+    isPocus.value = true;
+    focusChess.value = hoverChess;
+  } else {
+    isPocus.value = false;
+    if (
+        focusChess.value.canMove().includes(position) &&
+        moveChess(focusChess.value, position)
+    ) {
+      camp.value = camp.value ? 0 : 1;
+    }
+  }
+};
+
+const moveChess = (chess, to) => {
+  if (map.get(to)?.camp === camp.value) return false;
+  map.delete(chess.position);
+  chess.move(to);
+  map.set(to, chess);
+  return true;
+};
+
+const initMap = () => {
+  for (const [k, camp] of Object.entries(camps)) {
+    camp.get().forEach((chess) => {
+      GEBI(`${chess.position}`).innerText = chess.name;
+      GEBI(`${chess.position}`).classList.add(chess.camp ? 'camp1' : 'camp0');
+      map.set(chess.position, chess);
+    });
+  }
+};
+
+const hover = (position) => {
+  if (!map.has(position)) return;
+  hoverChess = map.get(position);
+  hoverChess.canMove().forEach((posi) => {
+    GEBI(`${posi}`).classList.add('moviable');
+  });
+};
+
+const out = (position) => {
+  if (!map.has(position)) return;
+  hoverChess.canMove().forEach((posi) => {
+    GEBI(`${posi}`).classList.remove('moviable');
+  });
+};
+
+onMounted(initMap);
+
+const rowDataA = 5
+
+</script>
+
 <template>
-  <div class="game-area">
-    <div class="info-panel">
-      <!-- Display game info here -->
-      <div class="scoreboard">
-        <div class="player-score">
-          <span>Player 1:</span>
-          <span>{{ player1Score }}</span>
-        </div>
-        <div class="player-score">
-          <span>Player 2:</span>
-          <span>{{ player2Score }}</span>
-        </div>
-        <div class="player-score">
-          <span>Player 3:</span>
-          <span>{{ player3Score }}</span>
+  <div class="Game">
+    <div class="camp">目前行动:{{camp?'黑方':'红方'}}</div>
+
+    <div class="board-tilt-left">
+      <!-- 遍历成棋盘 -->
+      <!-- 渲染所要的行数 -->
+      <div v-for="(row, index) in ROW"
+           :key="row"
+           class="row"
+           >
+        <!-- 渲染所要的列数 -->
+        <div class="block chess"
+             :id="getid(index, i) + ''"
+             v-for="(col, i) in COL"
+             :key="col"
+             @mouseover="hover(getid(index, i))"
+             @mouseout="out(getid(index, i))"
+             @click="action(getid(index, i))"
+             v-if="index <= 4"
+             >
         </div>
       </div>
-      <div class="current-turn">
-        <span>Current Turn:</span>
-        <span>{{ currentTurn }}</span>
-      </div>
-      <div class="game-status">
-        <span>Game Status:</span>
-        <span>{{ gameStatus }}</span>
+
+    </div>
+    <div class="board">
+      <div v-for="(row, index) in ROW"
+           :key="row"
+           class="row"
+      >
+        <!-- 渲染所要的列数 -->
+        <div class="block chess"
+             :id="getid(index, i) + ''"
+             v-for="(col, i) in COL"
+             :key="col"
+             @mouseover="hover(getid(index, i))"
+             @mouseout="out(getid(index, i))"
+             @click="action(getid(index, i))"
+             v-if="index > 4"
+        >
+        </div>
       </div>
     </div>
-    <div class="chess-board">
-    </div>
+
   </div>
 </template>
 
-<style scoped>
-.game-area{
-  position: relative;
-}
-.chess-board {
-  height: 1000px; /* Adjust this value as needed */
-  width: 1000px; /* Adjust this value as needed */
-  background-image: url("@/assets/images/game/chessboard.jpg");
-  background-size: cover;
-  background-position: center;
-}
 
-.info-panel {
+<style scoped lang="scss">
+
+.camp {
   position: absolute;
-  top: 10px;
-  left: 10px;
-  background-color: rgba(255, 255, 255, 0.8);
-  padding: 10px;
-  border-radius: 5px;
+  top: 0;
+  left: 0;
+}
+// 红方阵营
+.camp0 {
+  background-color: #ec7357 !important;
+}
+// 黑方阵营
+.camp1 {
+  background-color: #383a3f !important;
+}
+// 金方阵营
+.camp2 {
+  background-color: #FFD700 !important;
 }
 
-.scoreboard {
-  margin-bottom: 10px;
-}
 
-.player-score {
+//定义一个动画时间戳
+@keyframes fade {
+  0% {
+    background-color: rgba(pink, 0.4);
+  }
+  50% {
+    background-color: rgba(pink, 1);
+  }
+  100% {
+    background-color: rgba(pink, 0.4);
+  }
+}
+// 定义一个动画
+.moviable {
+  background-color: pink;
+  animation: fade 2s;
+  animation-iteration-count: infinite;
+}
+.chess {
+  color: wheat;
+  // 文本不可选中
+  user-select: none;
   display: flex;
-  justify-content: space-between;
-  margin-bottom: 5px;
+  justify-content: center;
+  align-items: center;
+}
+.block {
+  width: 50px;
+  height: 50px;
+  border: 1px solid skyblue;
+  &:hover {
+    background-color: skyblue;
+  }
+}
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: translate(-50%, -50%) rotate(0deg);
 }
 
-.current-turn,
-.game-status {
+.row-tilt-left {
   display: flex;
-  justify-content: space-between;
+  align-items: center;
+  justify-content: center;
+  transform: translate(-50%, -50%) rotate(0deg);
 }
+
+.board {
+  position: absolute;
+  top: 700px;
+  left: 800px;
+  transform: translate(-50%, -50%) rotate(0deg);
+  transform-origin: top left;
+  //width: 100vh; /* 设置宽度为视口高度，确保棋盘在旋转时不会溢出 */
+  //height: 100vh; /* 设置高度为视口高度，确保棋盘在旋转时不会溢出 */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.board-tilt-left {
+  position: absolute;
+  top: 368px;
+  left: 492px;
+  transform: translate(-50%, -50%) rotate(-60deg);
+  transform-origin: top left;
+  //width: 100vh; /* 设置宽度为视口高度，确保棋盘在旋转时不会溢出 */
+  //height: 100vh; /* 设置高度为视口高度，确保棋盘在旋转时不会溢出 */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.board-tilt-right {
+  position: absolute;
+  top: 40%;
+  left: 31.5%;
+  transform: translate(-50%, -50%) rotate(60deg);
+  transform-origin: top left;
+  //width: 100vh; /* 设置宽度为视口高度，确保棋盘在旋转时不会溢出 */
+  //height: 100vh; /* 设置高度为视口高度，确保棋盘在旋转时不会溢出 */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
 </style>

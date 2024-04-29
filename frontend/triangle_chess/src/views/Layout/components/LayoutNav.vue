@@ -82,6 +82,12 @@ const logged = ref(Cookies.get("userid"))
   text-decoration: none;
   border-radius: 5px;
   transition: background-color 0.3s ease;
+  //美化边界
+  box-shadow: 0 5px 5px rgba(0, 0, 0, 0.3);
+  //宽度一致
+  width: 200px;
+  //字体居中
+  text-align: center;
   //位置居中
   position: relative;
   left: 0%;
@@ -110,18 +116,6 @@ const logged = ref(Cookies.get("userid"))
   left: 0;
   width: 100%;
   height: 100%;
-  background-image: url('@/assets/images/login/图1.jpg');
-  background-size: cover;
-  z-index: -1;
-}
-
-.background-image {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  /* 使用背景图片填充页面背景 */
   background-image: url('@/assets/images/login/图1.jpg');
   background-size: cover;
   z-index: -1;
