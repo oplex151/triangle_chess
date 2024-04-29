@@ -5,6 +5,7 @@ import Home from '@/views/Home/index.vue'
 import Category from '@/views/Category/index.vue'
 import Game from '@/views/Game/index.vue'
 import Register from '@/views/Register/index.vue'
+import Logout from '@/views/Logout/index.vue'
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -35,6 +36,11 @@ const router = createRouter({
     {
       path: '/login',
       component: Login,
+    },
+    //   登录页
+    {
+      path: '/logout',
+      component: Logout,
     },
     //   主页-游戏页
     {
