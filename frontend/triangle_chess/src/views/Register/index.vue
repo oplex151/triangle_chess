@@ -137,35 +137,36 @@ watch(errorMessage, (oldValue ,newValue) => {
         <div class="background-image"></div>
         <div class="login-container">
         <h1 class="login-title">注册</h1>
-
-        <div class="form-container">                
             <el-form
                 ref="formRef"
-                style="max-width: 300px ;width: 300px;"
+                style="max-width: 315px ;width: 350px; position: relative;"
                 :model="RegisterForm"
                 label-width="auto"
                 :rules="Validator"
-                class="demo-ruleForm"
+                class="form-container"
                 status-icon
                 :disabled=disableForm
                 hide-required-asterisk	
                 >
                 <el-form-item
-                    label="用户名: "
                     prop="username"
+                    class="form-group"
                 >
+                <div class="form-label">用户名:&nbsp </div>
                     <el-input
+                    class="form-input"
                     v-model="RegisterForm.username"
                     type="text"
                     autocomplete="on"
                     />
                 </el-form-item>
                 <el-form-item
-                    label="密&nbsp&nbsp&nbsp码: "
                     prop="password"
-                    
+                    class="form-group"
                 >
+                <div class="form-label">密&nbsp码:&nbsp</div>
                     <el-input
+                    class="form-input"
                     v-model="RegisterForm.password"
                     type="password"
                     autocomplete="off"
@@ -173,10 +174,12 @@ watch(errorMessage, (oldValue ,newValue) => {
                     />
                 </el-form-item>
                 <el-form-item
-                    label="重复密码: "
                     prop="repassword"    
+                    class="form-group"
                 >
+                <div class="form-label">重复密码: </div>
                     <el-input
+                    class="form-input"
                     v-model="RegisterForm.repassword"
                     type="password"
                     autocomplete="off"
@@ -184,28 +187,29 @@ watch(errorMessage, (oldValue ,newValue) => {
                     />
                 </el-form-item>   
                 <el-form-item>
-                    <el-button type="primary" @click="submitForm(formRef)">注册</el-button>
-                    <el-button @click="resetForm(formRef)">清空</el-button>
+                    <el-button type="primary" class="login-button"@click="submitForm(formRef)">注册</el-button>
                 </el-form-item>
-                </el-form>
-        </div> <!-- end of form-container -->
-        <router-link to="/login" class="returnbutton">返回</router-link>
+                <el-form-item>
+                <el-button class="login-button" @click="resetForm(formRef)">清空</el-button>
+                </el-form-item>
+            </el-form>
+        <router-link to="/login" class="gobutton">返回</router-link>
         </div>  <!-- end of login-container -->
+
     </div>   <!-- end of outer-container -->
 </template>
 
 <style scoped>
-.returnbutton{
-    color:rgb(8, 165, 110);
-    font-size:larger;
-    font-weight: bold;
+.gobutton{
+    display: text-indent;
+    color: #00b88d;
 }
 .outer-container {
     display: center;
     justify-content: center;
     align-items: center;
     height: 100vh;
-    }
+}
 
 .background-image {
     position: fixed;
@@ -219,27 +223,43 @@ watch(errorMessage, (oldValue ,newValue) => {
 }
 
 .login-container {
-    margin-top: 100px;
-
-    height: flex;
+    width: 600px;
+    height: 700px;
     padding: 20px;
     border: 1px solid #ccc;
     border-radius: 20px;
-
+    position: relative;
+    transform: translate(-0%, -0%);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    background-color: rgba(255, 255, 255, 0.8); /* 设置一个半透明的背景色 */
+    background-color: rgba(248, 234, 171, 0.8); /* 设置一个半透明的背景色 */
 }
-
+.login-button {
+    justify-content: center;
+    background-color: #f6bb4e;
+    color: #fff;
+    border: none;
+    border-radius: 15px;
+    padding: 15px 0; /* 增加垂直内边距 */
+    margin: auto;
+    cursor: pointer;
+    font-size: 15px;
+    height: 50px;
+    width: 200px;
+}
 .login-title {
     text-align: center;
     font-size: 30px;
-    margin-bottom: 80px;
+    margin-top: 10px;
+    margin-bottom: 60px;
+    font-family: "SimSun";
 }
 
-.form-container {
-    display: flex;
-    justify-content: center;
-    min-width: 500px;
+
+.form-container{
+    margin: auto;
+    border: initial;
+    transform: translate(-0%, -0%);
+    background-color: rgba(255, 255, 255, 0); /* 设置一个半透明的背景色 */
 }
 
 .login-form {
@@ -250,16 +270,21 @@ watch(errorMessage, (oldValue ,newValue) => {
 .form-group {
     margin-bottom: 70px;
     align-items: flex-start; /* 让 form-label 和 form-input 上下对齐 */
+    display: flex;
+    flex-direction: row;
 }
-
 .form-label {
     font-weight: bold;
-    font-size: 25px; /* 增加字体大小 */
+    font-size: 15px; /* 增加字体大小 */
+    font-family: "SimSun";
+}
+.el-input{
+    width: 240px;
+    height: 55px;
 }
 
-.form-input {
-    padding: 15px;
-    border: 2px solid #ccc; /* 增加边框宽度 */
+.form-input  {
+    border: 1px solid #ccc; /* 增加边框宽度 */
     border-radius: 5px;
     font-size: 18px; /* 增加输入框字体大小 */
 }
@@ -269,18 +294,6 @@ watch(errorMessage, (oldValue ,newValue) => {
     justify-content: center;
 }
 
-.login-button {
-    justify-content: center;
-    background-color: #007bff;
-    color: #fff;
-    border: none;
-    border-radius: 15px;
-    padding: 15px 0; /* 增加垂直内边距 */
-    cursor: pointer;
-    font-size: 25px;
-    height: 70px;
-    width: 250px;
-}
 </style>
 
 

@@ -1,14 +1,21 @@
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, watch ,onMounted} from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
 import { ElMessage } from 'element-plus';
 import main from '@/main';
+import Cookies from 'js-cookie';
 
 const uname = ref('');
 const password = ref('');
 const errorMessage = ref('');
 const router = useRouter();
+
+onMounted(() => {
+  if (Cookies.get('userid') !== undefined) {
+    router.push('/');
+  }
+});
 
 watch(errorMessage, (oldValue ,newValue) => {
   if (newValue !== oldValue && errorMessage.value !== '') {
@@ -38,12 +45,29 @@ const login = () => {
     }
   ).then(res => {
     if (res.status == 200) {
+      Cookies.set('userid',res.data.userid);
+      errorMessage.value=Cookies.get('userid');
       router.push('/');
     } else {
       errorMessage.value = '用户名或密码错误';
     }
-  }).catch(err => {
-    console.log(err);
+  })  
+  .catch(error => {
+    // 捕获错误
+    if (error.response.status == 506) {
+      // 请求已发出，但服务器响应状态码不在 2xx 范围内
+      errorMessage.value = '请勿重复登录';
+      if (Cookies.get('userid') !== undefined) {
+        router.push('/');
+      }
+    } 
+    else if(error.response.status == 501){
+      errorMessage.value = '用户不存在';
+    }
+    else {
+      errorMessage.value = '请求错误';
+    }
+    
   });
 };
 
@@ -66,17 +90,17 @@ const login = () => {
             <input type="password" id="password" v-model="password" class="form-input">
           </div>
           <div class="form-button">
-          <button type="submit" class="login-button">登录</button>
+          <el-button native-type="submit" class="login-button">登录</el-button>
           </div>
         </form>
       </div> <!-- end of form-container -->
-      <router-link to="/register" class="gobutton">立即注册！</router-link>
+      <router-link to="/register" class="go_button">立即注册！</router-link>
     </div>  <!-- end of login-container -->
   </div>   <!-- end of outer-container -->
 </template>
 
 <style scoped>
-.gobutton{
+.go_button{
   display: text-indent;
   color: #00b88d;
 }
@@ -105,7 +129,6 @@ const login = () => {
   border: 1px solid #ccc;
   border-radius: 20px;
   position: relative;
-  left: 50%;
   transform: translate(-0%, -0%);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   background-color: rgba(248, 234, 171, 0.8); /* 设置一个半透明的背景色 */
@@ -129,9 +152,10 @@ const login = () => {
   flex-direction: column;
 }
 
+/* 让 form-label 和 form-input 上下对齐 */
 .form-group {
   margin-bottom: 70px;
-  align-items: flex-start; /* 让 form-label 和 form-input 上下对齐 */
+  align-items: flex-start; 
 }
 
 .form-label {

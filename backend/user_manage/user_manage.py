@@ -67,7 +67,9 @@ def register(username, password):
         return "{}",OTHER_ERROR
     
 def logout(userid):
+
     global sessions
+    
     if userid in sessions: 
         sessions.remove(userid)
         logger.info("User {0} logged out successfully".format(userid))

@@ -66,6 +66,7 @@ def logoutApi():
     '''
     try:
         userid = request.form.get('userid')
+        print(userid)
     except:
         return "{message: 'parameter error'}",PARAM_ERROR
     return logout(userid)

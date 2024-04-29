@@ -4,13 +4,14 @@ import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router'
 import ElementPlus from 'element-plus';
+import jsCookie from 'js-cookie'
 import 'element-plus/dist/index.css'
 
 const app = createApp(App)
 
 app.use(router)
 app.use(ElementPlus)
-
+app.use(jsCookie)
 app.mount('#app')
 
 export default{ //后端地址
