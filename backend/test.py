@@ -10,8 +10,8 @@ from game import GameTable
 
 def test1():
     game = GameTable('user1', 'user2', 'user3')
-    game.movePiece('user1',0,0,0,1,0,0)
-
+    game.movePiece('user1',0,0,0,0,0,1)
+    game.showBoard()
 
 if __name__ == '__main__':
     test1()

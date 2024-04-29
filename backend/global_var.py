@@ -1,8 +1,10 @@
-from backend.game import GameTable
+from backend.game import RoomManager
 
 # 全局变量
-global games
+global rooms
 global sessions
+global sid2uid
 
-games:list[GameTable] = []
+rooms:list[RoomManager] = []
 sessions:list[int] = []
+sid2uid:dict[str, int] = {}

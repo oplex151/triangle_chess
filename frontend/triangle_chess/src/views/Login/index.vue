@@ -38,6 +38,8 @@ const login = () => {
     }
   ).then(res => {
     if (res.status == 200) {
+      console.log(res.session)
+      console.log(res);
       router.push('/');
     } else {
       errorMessage.value = '用户名或密码错误';

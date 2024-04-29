@@ -8,7 +8,7 @@ class Pawn(Piece):
     '''
     def __init__(self, user_z: Literal[0,1,2], px: int, py: int):
         super().__init__(user_z, px, py)
-        self.name = "Pawn-"+('left' if px < self.max_row//2 else 'right')
+        self.name = "Pawn-"+str(px//2)
 
     def _rule(self, nx: int, ny: int, nz: Literal[0,1,2])->bool:
         # 1. 不可以越过棋盘边界

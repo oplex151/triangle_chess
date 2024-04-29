@@ -1,6 +1,6 @@
 flask
 pymysql
-python-dotenv
 Path
-hashlib
 logging
+python-dotenv
+flask_socketio
