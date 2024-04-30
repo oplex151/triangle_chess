@@ -11,7 +11,7 @@ const router = useRouter();
 onBeforeMount(() =>{
     console.log(Cookies.get('userid'));
     axios.post(main.url+ '/api/logout', {
-    'userid': Cookies.remove('userid'),
+    'userid': Cookies.get('userid'),
     },
     {
         headers: {'Content-Type':'application/x-www-form-urlencoded'},

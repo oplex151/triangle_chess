@@ -18,6 +18,7 @@ const router = createRouter({
     {
       path: '/',
       component: Layout,
+      meta: {isAuth: true},
       children:[
         //   主页-默认页
         {

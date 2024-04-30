@@ -27,7 +27,7 @@ def login(username, password):
             if result[1] in sessions:
                 logger.error("User {0} already logged in".format(username))
                 return "{}",ALREADY_LOGIN
-            logger.info("User {0} logged in successfully".format(username))
+            logger.info("User {0} logged in successfully usring id {1}".format(username,result[1]))
             res = {"userid":result[1]}
             sessions.append(result[1])
             return jsonify(res),SUCCESS
@@ -69,7 +69,7 @@ def register(username, password):
 def logout(userid:int):
 
     global sessions
-    
+    print(sessions)
     if userid in sessions: 
         sessions.remove(userid)
         logger.info("User {0} logged out successfully".format(userid))

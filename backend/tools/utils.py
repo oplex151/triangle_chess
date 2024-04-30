@@ -12,7 +12,7 @@ def get_params(required_args:dict, data:dict)->tuple:
     if not all (params.values()):
         raise ValueError("Missing required parameters")
     if len(params) ==1:
-        return list(params.values())
+        return list(params.values())[0]
     else:
         return tuple(params.values())
 
