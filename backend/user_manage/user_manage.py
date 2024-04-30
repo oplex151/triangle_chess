@@ -2,7 +2,7 @@ import os
 import pymysql
 from dotenv import load_dotenv
 from flask import jsonify
-from backend.log_tool import setupLogger
+from backend.tools import setupLogger
 from backend.message import *
 from backend.global_var import rooms,sessions
 
@@ -66,7 +66,7 @@ def register(username, password):
         logger.error("User {0} failed to register due to\n{1}".format(username,str(e)))
         return "{}",OTHER_ERROR
     
-def logout(userid):
+def logout(userid:int):
 
     global sessions
     

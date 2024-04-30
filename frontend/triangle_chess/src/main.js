@@ -7,8 +7,6 @@ import ElementPlus from 'element-plus';
 import jsCookie from 'js-cookie'
 import 'element-plus/dist/index.css'
 
-
-
 const app = createApp(App)
 
 app.use(router)

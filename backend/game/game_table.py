@@ -9,7 +9,7 @@ import random
 from .piece import Piece
 from .special_piece import *
 from backend.message import *
-from backend.log_tool import setupLogger
+from backend.tools import setupLogger
 
 logger = setupLogger()
 

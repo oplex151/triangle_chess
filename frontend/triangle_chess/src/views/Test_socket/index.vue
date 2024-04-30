@@ -75,7 +75,6 @@ function createGame(){
   }
   ).then(res=>{
     console.log(res)
-    alert('创建成功')
   })
 }
 </script>

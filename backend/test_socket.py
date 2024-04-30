@@ -13,7 +13,7 @@ from flask_socketio import SocketIO,join_room,leave_room,emit
 from flask_cors import CORS
 from flask import request, session, jsonify
 from backend.global_var import games
-from backend.log_tool import setupLogger 
+from backend.tools import setupLogger 
 from backend.user_manage import *
 from backend.game.exception import *
 from message import *
