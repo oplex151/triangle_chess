@@ -18,7 +18,7 @@ def setupLogger():
         console_handler = logging.StreamHandler()
         console_handler.setLevel(logging.DEBUG)
         
-        file_handler = RotatingFileHandler(log_file_path, maxBytes=1048576, backupCount=5)
+        file_handler = RotatingFileHandler(log_file_path, maxBytes=1048576, backupCount=5, encoding="utf-8",mode="a" )
         file_handler.setLevel(logging.DEBUG)
         
         formatter = logging.Formatter('%(asctime)s - %(levelname)s \n%(message)s\n')

@@ -14,7 +14,8 @@ logger = setupLogger()
 def test1():
     game = GameTable([11, 12, 13])
     print(game.movePiece(11,0,0,0,0,0,1))
-    print(game.movePiece(12,0,1,0,0,0,1))
+    print(game.movePiece(12,0,0,1,0,0,1))
+    print(game.movePiece(11,2,0,2,0,0,1))
     
     game.showBoard()
 

@@ -34,6 +34,7 @@ class GameTable:
     def _initChess(self, user_z: int):
         # 初始化棋子
         # 1 King 2 Mardrain 2 Minister 2 Knight 2 Chariot 2 Cannon 5 Pawn
+        # 说明：x是棋盘的横轴，y是棋盘的纵轴，z是用户索引
         self.Pieces[user_z].append(King(user_z, 4, 0))
         self.Pieces[user_z].append(Mardarin(user_z, 3, 0))
         self.Pieces[user_z].append(Mardarin(user_z, 5, 0))
@@ -90,11 +91,11 @@ class GameTable:
         '''
         if  user not in [self.user1['user_id'], self.user2['user_id'], self.user3['user_id']]:
             logger.error(f"用户{user}不在游戏中")
-            return jsonify({'message': '用户不在游戏中'}),NOT_JOIN_GAME # 用户不在游戏中
+            return NOT_JOIN_GAME # 用户不在游戏中
 
         if self._getUserIndex(user) != self.turn:
             logger.error(f"用户{user}不是轮到移动棋子")
-            return jsonify({'message': '不是轮到该用户移动棋子'}),NOT_YOUR_TURN # 不是轮到该用户移动棋子
+            return NOT_YOUR_TURN # 不是轮到该用户移动棋子
         try:
             user_z = self._getUserIndex(user) # 获取用户的索引
             for piece in self.Pieces[user_z]: # 遍历用户的所有棋子
@@ -102,25 +103,29 @@ class GameTable:
                     kill_piece = self.isWithPiece(nx, ny, nz) # 获取被杀死的棋子
                     if piece.move(nx, ny, nz): # 移动棋子
                         logger.info(f"用户{user}移动棋子{piece.name}从({px},{py},{pz})到({nx},{ny},{nz})")
+                        # 判断是否杀死棋子
                         if kill_piece:
                             logger.info(f"用户{user}击杀棋子{kill_piece.name}({nx},{ny},{nz}) by {piece.name}({px},{py},{pz})")
                             kill_piece.setDead() # 被杀死的棋子死亡
+                            # 如果死的是某个人的
                         # print(piece.name, piece.live)
                         # print(kill_piece.name, kill_piece.live)
 
                         self.turn = (self.turn+1)%3 # 切换到下一个用户
-                        return jsonify({'message': "移动成功"}),SUCCESS
+
+                        return SUCCESS
             else:
-                return '{}',MOVE_NO_PIECE # 棋子不存在
+                logger.error(f"用户{user}没有棋子在({px},{py},{pz})")
+                return MOVE_NO_PIECE # 棋子不存在
         except InvalidMoveError:
             logger.error(f"棋子{piece.name}非法移动") #在这里统一打印日志
-            return '{}',MOVE_INVALID # 非法移动
+            return MOVE_INVALID # 非法移动
         except OutOfBoardError:
             logger.error(f"棋子{piece.name}越界")
-            return '{}',MOVE_OUT_OF_BOARD # 越界
+            return MOVE_OUT_OF_BOARD # 越界
         except Exception as e:
             logger.error(e)
-            return '{}',OTHER_ERROR # 其他错误
+            return OTHER_ERROR # 其他错误
         
     def isWithPiece(self, px: int, py: int, pz: int) -> Piece:
         '''
@@ -169,6 +174,8 @@ class RoomManager:
             self.users = users
         else:
             self.users = [users]
+
+        self.holder = self.users[0] # 房主
     
     def getRoomId(self) -> str:
         return self.room_id
@@ -201,19 +208,19 @@ class RoomManager:
         
 
 
-def fetchGameByUserID(user_id:str, game_tables:list[GameTable]) -> GameTable:
-    '''
-    Description: 根据用户ID获取游戏
-    Args:
-        user_id: 用户ID
-    Returns:
-        GameTable: 游戏
-    '''
-    for game_table in game_tables:
-        if user_id in [game_table.user1['user_id'], game_table.user2['user_id'], game_table.user3['user_id']]:
-            return game_table
-    else:
-        return None
+# def fetchGameByUserID(user_id:str, game_tables:list[GameTable]) -> GameTable:
+#     '''
+#     Description: 根据用户ID获取游戏
+#     Args:
+#         user_id: 用户ID
+#     Returns:
+#         GameTable: 游戏
+#     '''
+#     for game_table in game_tables:
+#         if user_id in [game_table.user1['user_id'], game_table.user2['user_id'], game_table.user3['user_id']]:
+#             return game_table
+#     else:
+#         return None
 
 
 def fetchRoomByRoomID(room_id:str, room_managers:list[RoomManager]) -> RoomManager:

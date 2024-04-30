@@ -119,21 +119,46 @@ def movePiece(data):
         y2: 目标纵坐标           int
         z2: 目标棋盘             int
     Returns:
-        移动成功200
+        移动成功200(房间广播)
+        userid: 用户id           int
+        x1: 起始横坐标           int
+        y1: 起始纵坐标           int
+        z1: 起始棋盘             int
+        x2: 目标横坐标           int
+        y2: 目标纵坐标           int
+        z2: 目标棋盘             int
     ''' 
+    global rooms
     params = {'userid':int, 'chess_type':str, 'x1':int, 'y1':int, 'z1':int, 'x2':int, 'y2':int, 'z2':int}
     try:
         userid,chess_type,x1,y1,z1,x2,y2,z2 = get_params(params,data)
     except:
-        return "{message: 'parameter error'}",PARAM_ERROR
-    game:GameTable = fetchGameByUserID(userid)
+        emit('processWrong',{'status':PARAM_ERROR},to=request.sid)
+        return
+    # 先判断用户是否在房间中
+    room_id = inWhitchRoom(userid,rooms)
+    if room_id is None:
+        emit('processWrong',{'status':NOT_IN_ROOM},to=request.sid)
+        return
+    game:GameTable = fetchRoomByRoomID(room_id,rooms).game_table
     if game is None:
-        return "{}",NOT_JOIN_GAME
+        emit('processWrong',{'status':NOT_JOIN_GAME},to=request.sid)
+        return
     try:
         status = game.movePiece(userid, chess_type, x1, y1, z1, x2, y2, z2)
-        return "{}",status
+        if status != SUCCESS:
+            emit('processSuccess',{'status':status},to=request.sid)
+            return
+        else:
+            # 建议前端根据userid来判断到底是自己走成功了，还是其他人走的，自己这边要更新状态
+            emit('movePieceSuccess',{'userid':userid,'status':status, 
+                                     'x1':x1, 'y1':y1, 'z1':z1, 
+                                     'x2':x2, 'y2':y2, 'z2':z2},
+                                     to=room_id)
+            return
     except Exception as e:
-        return "{message: {0}}".format(str(e)),OTHER_ERROR
+        emit('processWrong',{'status':OTHER_ERROR},to=request.sid)
+        return 
 
 @socketio.on('connect')
 def establishConnection():
