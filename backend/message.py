@@ -14,6 +14,7 @@ PARAM_ERROR = 505 #"Parameter error"
 
 NOT_JOIN_GAME = 510 #"Not join game"
 GAME_CREATE_FAILED = 511 #"Create game failed"
+NOT_YOUR_TURN = 512 #"Not your turn"
 
 ROOM_NOT_EXIST = 520 #"Room not exist"
 ALREADY_IN_ROOM = 521 #"Already in room"

@@ -1,5 +1,6 @@
 import sys
 import os
+from flask import Flask, request, jsonify
 from typing import Tuple
 from dotenv import load_dotenv
 
@@ -13,8 +14,6 @@ from backend.tools import setupLogger
 
 logger = setupLogger()
 
-
-
 class GameTable:
     def __init__(self,users:list[int]):
         self.game_id = hashlib.md5(str(sum(users)).encode('utf-8')).hexdigest()
@@ -23,6 +22,8 @@ class GameTable:
         self.user3 = {'user_id':users[2],'index':2} # 2
 
         self.Pieces:list[list[Piece]] = [[],[],[]]
+        
+        self.turn = 0 # 目前轮到谁
 
         self.max_row = 9
         self.max_col = 5
@@ -88,7 +89,12 @@ class GameTable:
             bool: 是否移动成功
         '''
         if  user not in [self.user1['user_id'], self.user2['user_id'], self.user3['user_id']]:
-            return NOT_JOIN_GAME # 用户不在游戏中
+            logger.error(f"用户{user}不在游戏中")
+            return jsonify({'message': '用户不在游戏中'}),NOT_JOIN_GAME # 用户不在游戏中
+
+        if self._getUserIndex(user) != self.turn:
+            logger.error(f"用户{user}不是轮到移动棋子")
+            return jsonify({'message': '不是轮到该用户移动棋子'}),NOT_YOUR_TURN # 不是轮到该用户移动棋子
         try:
             user_z = self._getUserIndex(user) # 获取用户的索引
             for piece in self.Pieces[user_z]: # 遍历用户的所有棋子
@@ -101,7 +107,9 @@ class GameTable:
                             kill_piece.setDead() # 被杀死的棋子死亡
                         # print(piece.name, piece.live)
                         # print(kill_piece.name, kill_piece.live)
-                        return SUCCESS
+
+                        self.turn = (self.turn+1)%3 # 切换到下一个用户
+                        return jsonify({'message': "移动成功"}),SUCCESS
             else:
                 return '{}',MOVE_NO_PIECE # 棋子不存在
         except InvalidMoveError:
