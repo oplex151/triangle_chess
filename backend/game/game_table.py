@@ -24,6 +24,8 @@ class GameTable:
         self.Pieces:list[list[Piece]] = [[],[],[]]
         
         self.turn = 0 # 目前轮到谁
+        self.game_state = "ongoing"  # 游戏状态：ongoing（进行中）、win（胜利）、draw（平局）
+        self.winner = -1 # 无胜者为-1
 
         self.max_row = 9
         self.max_col = 5
@@ -110,7 +112,10 @@ class GameTable:
                             # 如果死的是某个人的
                         # print(piece.name, piece.live)
                         # print(kill_piece.name, kill_piece.live)
-
+                        # 判断游戏是否结束
+                        if self.checkGameEnd():
+                            return GAME_END
+                        
                         self.turn = (self.turn+1)%3 # 切换到下一个用户
 
                         return SUCCESS
@@ -144,6 +149,33 @@ class GameTable:
         else:
             return None
     
+    def checkGameEnd(self):
+        # 检查胜利条件和平局条件
+        if self.checkVictory():
+            self.game_state = "win"
+            return True
+        
+        if self.checkDraw():
+            self.game_state = "draw"
+            return True
+        
+        return False
+
+    def checkVictory(self):
+        # 实现判断胜利条件的逻辑
+        # 计算存活的 King 的数量
+        living_kings = [user_z for user_z in range(3) if self.Pieces[user_z][0].live]
+        if len(living_kings) == 1:
+            # 只有一个 King 存活，游戏结束
+            self.winner = living_kings[0]
+            return True
+        
+        return False
+    
+    def checkDraw(self):
+        # 实现判断平局条件的逻辑
+        pass
+
     def showBoard(self):
         '''
         Description: 展示棋盘

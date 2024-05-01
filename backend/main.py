@@ -146,7 +146,16 @@ def movePiece(data):
         return
     try:
         status = game.movePiece(userid, chess_type, x1, y1, z1, x2, y2, z2)
-        if status != SUCCESS:
+        if status == GAME_END:
+            # 游戏结束，判断胜利者或平局
+            if game.game_state == "win":
+                # 通知所有玩家游戏结束并告知胜利者
+                emit('gameEnd', {'status': 'win', 'winner': userid}, to=room_id)
+            elif game.game_state == "draw":
+                # 通知所有玩家游戏结束为平局
+                emit('gameEnd', {'status': 'draw'}, to=room_id)
+            return
+        elif status != SUCCESS:
             emit('processSuccess',{'status':status},to=request.sid)
             return
         else:
