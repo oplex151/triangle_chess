@@ -14,12 +14,18 @@ const focusChess = ref();
 
 const action = (position) => {
   if (!isPocus.value) {
+    // 未选中棋子
     if (!hoverChess) return;
     if (hoverChess.camp !== camp.value) return;
     isPocus.value = true;
     focusChess.value = hoverChess;
+    GEBI(`${position}`).classList.add('chess-highlight')
+    console.log(focusChess.value);
   } else {
+    // 选中棋子
     isPocus.value = false;
+    GEBI(focusChess.value.position).classList.remove('chess-highlight')
+
     if (
         focusChess.value.canMove().includes(position) &&
         moveChess(focusChess.value, position)
@@ -28,7 +34,6 @@ const action = (position) => {
     }
   }
 };
-
 const moveChess = (chess, to) => {
   if (map.get(to)?.camp === camp.value) return false;
   map.delete(chess.position);
@@ -52,6 +57,7 @@ const hover = (position) => {
   hoverChess = map.get(position);
   hoverChess.canMove().forEach((posi) => {
     GEBI(`${posi}`).classList.add('moviable');
+
   });
 };
 
@@ -155,6 +161,10 @@ const rowDataA = 5
   animation: fade 2s;
   animation-iteration-count: infinite;
 }
+.can-eat{
+  background-color: red;
+
+}
 .chess {
   color: wheat;
   // 文本不可选中
@@ -162,6 +172,9 @@ const rowDataA = 5
   display: flex;
   justify-content: center;
   align-items: center;
+}
+.chess-highlight {
+  color: rgb(241, 59, 27) !important;
 }
 .block {
   width: 50px;
