@@ -1,4 +1,4 @@
-import { AREA, COL, ROW } from "@/config/config";
+import {  COL, ROWMID, ROWTOP, ROWBOT } from "@/config/config";
 import { GEBI, getCol } from "@/utils/utils";
 import { Chess } from "./Chess";
 
@@ -31,8 +31,9 @@ export class Bishop extends Chess {
             // 过滤0
             if (!position) return false;
             // 实现无法过河
-            if (this.camp) return position > COL * ROW / 2;
-            else return position < COL * ROW / 2;
+            if (this.camp === 0) return position >= 1 && position <= COL * ROWBOT;
+            else if (this.camp === 1) return position > COL * ROWBOT && position <= COL * ROWMID;
+            else return position > COL * ROWMID && position < COL * ROWTOP;
         });
 
         return p;

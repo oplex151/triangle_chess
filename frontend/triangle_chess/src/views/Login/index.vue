@@ -24,27 +24,28 @@ watch(errorMessage, (oldValue ,newValue) => {
 
 
 const login = () => {
-  if (uname.value === '' || password.value === '') {
-    errorMessage.value = '用户名或密码不能为空';
-    
-    return;
-  }
-  axios.post(main.url+ '/api/login', {
-    'username': uname.value,
-    'password': password.value
-    },
-    {
-        headers: {'Content-Type':'application/x-www-form-urlencoded'},
-    }
-  ).then(res => {
-    if (res.status == 200) {
-      router.push('/');
-    } else {
-      errorMessage.value = '用户名或密码错误';
-    }
-  }).catch(err => {
-    console.log(err);
-  });
+  // if (uname.value === '' || password.value === '') {
+  //   errorMessage.value = '用户名或密码不能为空';
+  //
+  //   return;
+  // }
+  // axios.post(main.url+ '/api/login', {
+  //   'username': uname.value,
+  //   'password': password.value
+  //   },
+  //   {
+  //       headers: {'Content-Type':'application/x-www-form-urlencoded'},
+  //   }
+  // ).then(res => {
+  //   if (res.status == 200) {
+  //     router.push('/');
+  //   } else {
+  //     errorMessage.value = '用户名或密码错误';
+  //   }
+  // }).catch(err => {
+  //   console.log(err);
+  // });
+  router.push('/');
 };
 
 </script>
@@ -81,7 +82,7 @@ const login = () => {
   color: #00b88d;
 }
 .outer-container {
-  display: center;
+  display: flex;
   justify-content: center;
   align-items: center;
   height: 100vh;
@@ -104,11 +105,9 @@ const login = () => {
   padding: 20px;
   border: 1px solid #ccc;
   border-radius: 20px;
-  position: relative;
-  left: 50%;
-  transform: translate(-0%, -0%);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  background-color: rgba(248, 234, 171, 0.8); /* 设置一个半透明的背景色 */
+  background-color: rgba(248, 234, 171, 0.8);
+  margin: auto; /* 新增的居中样式 */
 }
 
 .login-title {

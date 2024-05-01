@@ -1,4 +1,4 @@
-import { COL, ROW } from "@/config/config";
+import { COL, ROWMID, ROWTOP, ROWBOT } from "@/config/config";
 import { GEBI, getCol, getRow } from "@/utils/utils";
 
 export class Chess {
@@ -21,23 +21,52 @@ export class Chess {
         point = GEBI(this.position + '');
 
         if (point.innerText !== '') {
-            point.classList.remove(`camp${this.camp ? 0 : 1}`);
+            let originalCamp = null;
+            for(let i = 0 ; i < 3 ; i++){
+                if(point.classList.contains(`camp${i}`)){
+                    originalCamp = i ;
+                    break;
+                }
+            }
+            point.classList.remove(`camp${originalCamp}`);
             if (point?.innerText === '将') {
-                alert(`恭喜${this.camp ? '黑方' : '红方'}获胜`);
+                switch (this.camp){
+                    case 0:
+                        alert('红方淘汰');
+                        break;
+                    case 1:
+                        alert('黑方淘汰');
+                        break;
+                    case 2:
+                        alert('金方淘汰');
+                        break;
+                    default:
+                        break;
+                }
                 hoveFinish = true;
             }
         }
 
         point.innerText = this.name;
-        point.classList.add(`camp${this.camp}`);
-        this.inWhichArea = this.position <= COL * ROW / 2 ? 0 : 1;
 
+        point.classList.add(`camp${this.camp}`);
+
+        if(this.position <= (COL * ROWBOT)) {
+            this.inWhichArea = 0;
+        }
+        else if((this.position > (COL * ROWBOT)) && (this.position <= (COL * ROWMID))){
+            this.inWhichArea = 1;
+        }
+        else{
+            this.inWhichArea = 2;
+        }
+        // this.inWhichArea = this.position <= COL * ROW / 2 ? 0 : 1;
         return hoveFinish;
     }
 
-    getTopMoviableArea() {
+    get_A_MoviableArea() {
         let p = [];
-        for (let i = this.position; i <= 90; i += COL) {
+        for (let i = this.position; i <= ROWBOT * COL; i += COL) {
             if (i === this.position) continue;
             if (GEBI(i + '')?.innerText) {
                 p.push(i);
@@ -48,9 +77,9 @@ export class Chess {
         return p;
     }
 
-    getDownMoviableArea() {
+    get_B_MoviableArea() {
         let p = [];
-        for (let i = this.position; i >= 0; i -= COL) {
+        for (let i = this.position; i <= ROWMID * COL; i += COL) {
             if (i === this.position) continue;
             if (GEBI(i + '')?.innerText) {
                 p.push(i);
@@ -60,6 +89,20 @@ export class Chess {
         }
         return p;
     }
+
+    get_C_MoviableArea(){
+        let p = [];
+        for (let i = this.position; i <= ROWTOP * COL; i += COL) {
+            if (i === this.position) continue;
+            if (GEBI(i + '')?.innerText) {
+                p.push(i);
+                break;
+            }
+            p.push(i);
+        }
+        return p;
+    }
+
 
     getLeftMoviableArea() {
         let p = [];
@@ -74,7 +117,7 @@ export class Chess {
         return p;
     }
 
-    getRigthMoviableArea() {
+    getRightMoviableArea() {
         let p = [];
         for (let i = this.position; i <= getRow(this.position) * COL; i++) {
             if (i === this.position) continue;
