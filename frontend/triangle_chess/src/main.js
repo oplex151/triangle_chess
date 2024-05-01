@@ -17,3 +17,5 @@ app.mount('#app')
 export default{ //后端地址
 url: "http://127.0.0.1:8888"
 }
+// 测试一下
+// good good study, day day up

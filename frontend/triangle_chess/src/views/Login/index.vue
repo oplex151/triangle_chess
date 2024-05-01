@@ -46,7 +46,12 @@ const login = () => {
   ).then(res => {
     if (res.status == 200) {
       Cookies.set('userid',res.data.userid);
-      errorMessage.value=Cookies.get('userid');
+      // ElMessage({
+      //   message:Cookies.get('userid'),
+      //   type:'success',
+      //   showClose:true
+      // }
+      // )
       router.push('/');
     } else {
       errorMessage.value = '用户名或密码错误';
