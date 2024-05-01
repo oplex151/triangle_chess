@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch ,onMounted} from 'vue';
+import { ref, watch ,onMounted, watchEffect} from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
 import { ElMessage } from 'element-plus';
@@ -9,6 +9,7 @@ import Cookies from 'js-cookie';
 const uname = ref('');
 const password = ref('');
 const errorMessage = ref('');
+const infoMessage = ref('');
 const router = useRouter();
 
 onMounted(() => {
@@ -17,8 +18,8 @@ onMounted(() => {
   }
 });
 
-watch(errorMessage, (oldValue ,newValue) => {
-  if (newValue !== oldValue && errorMessage.value !== '') {
+watchEffect(() => {
+  if (errorMessage.value !== '') {
       ElMessage({
       message: errorMessage.value,
       grouping: true,
@@ -26,6 +27,15 @@ watch(errorMessage, (oldValue ,newValue) => {
       showClose: true
   })
     errorMessage.value = '';
+  }
+  if (infoMessage.value !== '') {
+      ElMessage({
+      message: infoMessage.value,
+      grouping: true,
+      type: 'success',
+      showClose: true
+  })
+    infoMessage.value = '';
   }
 });
 
@@ -46,12 +56,7 @@ const login = () => {
   ).then(res => {
     if (res.status == 200) {
       Cookies.set('userid',res.data.userid);
-      // ElMessage({
-      //   message:Cookies.get('userid'),
-      //   type:'success',
-      //   showClose:true
-      // }
-      // )
+      infoMessage.value = '登录成功';
       router.push('/');
     } else {
       errorMessage.value = '用户名或密码错误';
@@ -68,6 +73,9 @@ const login = () => {
     } 
     else if(error.response.status == 501){
       errorMessage.value = '用户不存在';
+    }
+    else if(error.response.status == 502){
+      errorMessage.value = '密码错误';
     }
     else {
       errorMessage.value = '请求错误';
@@ -131,10 +139,12 @@ const login = () => {
   width: 600px;
   height: 500px;
   padding: 20px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   border: 1px solid #ccc;
   border-radius: 20px;
-  position: relative;
-  transform: translate(-0%, -0%);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   background-color: rgba(248, 234, 171, 0.8); /* 设置一个半透明的背景色 */
 }

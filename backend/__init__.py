@@ -1,1 +1,2 @@
-from .game import GameTable
+from .game import *
+from .tools import *

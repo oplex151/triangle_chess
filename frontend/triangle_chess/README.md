@@ -40,6 +40,18 @@ npm i sass -D
 npm i axios
 ```
 
+### Project Setup
+
+```sh
+npm i js-cookie
+```
+
+### Project Setup
+
+```sh
+npm i vue-socket.io
+```
+
 ### Compile and Hot-Reload for Development
 
 ```sh

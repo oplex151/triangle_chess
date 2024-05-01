@@ -2,9 +2,9 @@ import os
 import pymysql
 from dotenv import load_dotenv
 from flask import jsonify
-from backend.log_tool import setupLogger
+from backend.tools import setupLogger
 from backend.message import *
-from backend.global_var import games,sessions
+from backend.global_var import rooms,sessions
 
 DATA_BASE = "triangleChess"
 USER_TABLE = "user"
@@ -27,7 +27,7 @@ def login(username, password):
             if result[1] in sessions:
                 logger.error("User {0} already logged in".format(username))
                 return "{}",ALREADY_LOGIN
-            logger.info("User {0} logged in successfully".format(username))
+            logger.info("User {0} logged in successfully usring id {1}".format(username,result[1]))
             res = {"userid":result[1]}
             sessions.append(result[1])
             return jsonify(res),SUCCESS
@@ -66,10 +66,10 @@ def register(username, password):
         logger.error("User {0} failed to register due to\n{1}".format(username,str(e)))
         return "{}",OTHER_ERROR
     
-def logout(userid):
+def logout(userid:int):
 
     global sessions
-    
+    print(sessions)
     if userid in sessions: 
         sessions.remove(userid)
         logger.info("User {0} logged out successfully".format(userid))
