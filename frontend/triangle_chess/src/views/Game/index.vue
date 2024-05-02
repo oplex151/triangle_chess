@@ -1,39 +1,51 @@
 <script setup >
 import { onMounted, ref } from 'vue';
 import { Chess } from '@/chesses/Chess';
-import { COL, ROW } from '@/config/config';
+import {COL, ROWTOP, ROWMID, AREABOT, ROWBOT} from '@/config/config';
 import { camps } from '@/lib/game';
 import { GEBI } from '@/utils/utils';
 
 const map = new Map();
-const getid = (row, col) => (ROW - row - 1) * COL + col + 1;
+const getid = (row, col) => (ROWTOP - row - 1) * COL + col + 1;
 const camp = ref(0);
 let hoverChess;
 const isPocus = ref(false);
 const focusChess = ref();
 
 const action = (position) => {
+  // 未选中
   if (!isPocus.value) {
-    // 未选中棋子
     if (!hoverChess) return;
     if (hoverChess.camp !== camp.value) return;
     isPocus.value = true;
     focusChess.value = hoverChess;
-    GEBI(`${position}`).classList.add('chess-highlight')
-    console.log(focusChess.value);
-  } else {
-    // 选中棋子
+  }
+  // 选中
+  else {
     isPocus.value = false;
-    GEBI(focusChess.value.position).classList.remove('chess-highlight')
-
     if (
         focusChess.value.canMove().includes(position) &&
         moveChess(focusChess.value, position)
     ) {
-      camp.value = camp.value ? 0 : 1;
+      // 根据当前棋子的阵营进行切换
+      switch (focusChess.value.camp) {
+        case 0:
+          camp.value = 1;
+          break;
+        case 1:
+          camp.value = 2;
+          break;
+        case 2:
+          camp.value = 0;
+          break;
+        default:
+          // 在这里处理默认情况
+          break;
+      }
     }
   }
 };
+
 const moveChess = (chess, to) => {
   if (map.get(to)?.camp === camp.value) return false;
   map.delete(chess.position);
@@ -46,7 +58,19 @@ const initMap = () => {
   for (const [k, camp] of Object.entries(camps)) {
     camp.get().forEach((chess) => {
       GEBI(`${chess.position}`).innerText = chess.name;
-      GEBI(`${chess.position}`).classList.add(chess.camp ? 'camp1' : 'camp0');
+      switch (chess.camp){
+        case 0:
+          GEBI(`${chess.position}`).classList.add('camp0');
+          break;
+        case 1:
+          GEBI(`${chess.position}`).classList.add('camp1');
+          break;
+        case 2:
+          GEBI(`${chess.position}`).classList.add('camp2');
+          break;
+      }
+      // GEBI(`${chess.position}`).classList.add(chess.camp ? 'camp1' : 'camp0');
+
       map.set(chess.position, chess);
     });
   }
@@ -57,7 +81,6 @@ const hover = (position) => {
   hoverChess = map.get(position);
   hoverChess.canMove().forEach((posi) => {
     GEBI(`${posi}`).classList.add('moviable');
-
   });
 };
 
@@ -70,37 +93,16 @@ const out = (position) => {
 
 onMounted(initMap);
 
-const rowDataA = 5
-
 </script>
 
 <template>
   <div class="Game">
-    <div class="camp">目前行动:{{camp?'黑方':'红方'}}</div>
+    <div class="camp">目前行动:{{camp == 1 ?'黑方':(camp == 0 ? '红方':'金方')}}</div>
 
-    <div class="board-tilt-left">
+    <div class="board">
       <!-- 遍历成棋盘 -->
       <!-- 渲染所要的行数 -->
-      <div v-for="(row, index) in ROW"
-           :key="row"
-           class="row"
-           >
-        <!-- 渲染所要的列数 -->
-        <div class="block chess"
-             :id="getid(index, i) + ''"
-             v-for="(col, i) in COL"
-             :key="col"
-             @mouseover="hover(getid(index, i))"
-             @mouseout="out(getid(index, i))"
-             @click="action(getid(index, i))"
-             v-if="index <= 4"
-             >
-        </div>
-      </div>
-
-    </div>
-    <div class="board">
-      <div v-for="(row, index) in ROW"
+      <div v-for="(row, index) in ROWTOP"
            :key="row"
            class="row"
       >
@@ -112,7 +114,45 @@ const rowDataA = 5
              @mouseover="hover(getid(index, i))"
              @mouseout="out(getid(index, i))"
              @click="action(getid(index, i))"
-             v-if="index > 4"
+             v-if="index <= 4"
+        >
+        </div>
+      </div>
+    </div>
+
+    <div class="board-tilt-left">
+      <div v-for="(row, index) in ROWTOP"
+           :key="row"
+           class="row"
+      >
+        <!-- 渲染所要的列数 -->
+        <div class="block chess"
+             :id="getid(index, i) + ''"
+             v-for="(col, i) in COL"
+             :key="col"
+             @mouseover="hover(getid(index, i))"
+             @mouseout="out(getid(index, i))"
+             @click="action(getid(index, i))"
+             v-if="index > 4 && index <= 9"
+        >
+        </div>
+      </div>
+    </div>
+
+    <div class="board-tilt-right">
+      <div v-for="(row, index) in ROWTOP"
+           :key="row"
+           class="row"
+      >
+        <!-- 渲染所要的列数 -->
+        <div class="block chess"
+             :id="getid(index, i) + ''"
+             v-for="(col, i) in COL"
+             :key="col"
+             @mouseover="hover(getid(index, i))"
+             @mouseout="out(getid(index, i))"
+             @click="action(getid(index, i))"
+             v-if="index > 9 && index <= 14"
         >
         </div>
       </div>
@@ -139,7 +179,7 @@ const rowDataA = 5
 }
 // 金方阵营
 .camp2 {
-  background-color: #FFD700 !important;
+  background-color: #999900 !important;
 }
 
 
@@ -161,10 +201,6 @@ const rowDataA = 5
   animation: fade 2s;
   animation-iteration-count: infinite;
 }
-.can-eat{
-  background-color: red;
-
-}
 .chess {
   color: wheat;
   // 文本不可选中
@@ -172,9 +208,6 @@ const rowDataA = 5
   display: flex;
   justify-content: center;
   align-items: center;
-}
-.chess-highlight {
-  color: rgb(241, 59, 27) !important;
 }
 .block {
   width: 50px;
@@ -200,9 +233,9 @@ const rowDataA = 5
 
 .board {
   position: absolute;
-  top: 700px;
+  top: 900px;
   left: 800px;
-  transform: translate(-50%, -50%) rotate(0deg);
+  transform: translate(-50%, -50%) rotate(180deg);
   transform-origin: top left;
   //width: 100vh; /* 设置宽度为视口高度，确保棋盘在旋转时不会溢出 */
   //height: 100vh; /* 设置高度为视口高度，确保棋盘在旋转时不会溢出 */
@@ -226,8 +259,8 @@ const rowDataA = 5
 
 .board-tilt-right {
   position: absolute;
-  top: 40%;
-  left: 31.5%;
+  top: 368px;
+  left: 1105px;
   transform: translate(-50%, -50%) rotate(60deg);
   transform-origin: top left;
   //width: 100vh; /* 设置宽度为视口高度，确保棋盘在旋转时不会溢出 */

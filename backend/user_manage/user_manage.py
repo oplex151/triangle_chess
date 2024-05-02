@@ -11,7 +11,7 @@ USER_TABLE = "user"
 
 load_dotenv()
 password = os.getenv("MYSQL_PASSWORD")
-
+print(password)
 db = pymysql.connect(host="127.0.0.1",user="root",password=password,database=DATA_BASE)
 cursor = db.cursor()
 
