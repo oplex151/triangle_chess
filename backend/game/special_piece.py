@@ -2,13 +2,13 @@ from typing import Literal
 from .piece import *
 from .exception import *
 
-class Pawn(Piece):
+class Soilder(Piece):
     '''
-    Descriptions: Pawn piece 兵或卒
+    Descriptions: Soilder piece 兵或卒
     '''
     def __init__(self, user_z: Literal[0,1,2], px: int, py: int):
         super().__init__(user_z, px, py)
-        self.name = "Pawn-"+str(px//2)
+        self.name = "Soilder"
 
     def _rule(self, nx: int, ny: int, nz: Literal[0,1,2])->bool:
         # 1. 不可以越过棋盘边界
@@ -16,58 +16,69 @@ class Pawn(Piece):
             raise OutOfBoardError("越界")
         # 2. 能且仅能移动一步
         if abs(nx-self.px)+abs(ny-self.py)!= 1:
-            raise InvalidMoveError("非法移动")
+            raise InvalidMoveError("只能走一步")
         # 3. 不可以后退
         if (nz==self.user_z and ny < self.py) or ny > self.py:
             raise InvalidMoveError("不可以后退")
         return True
 
-class Horse(Piece):
+class WarHorse(Piece):
+    '''
+    Descriptions: WarHorse piece 马
+    '''
     def __init__(self, user_z: Literal[0,1,2], px: int, py: int):
         super().__init__(user_z, px, py)
-    '''
-    Descriptions: Horse piece 马
-    '''
+        self.name = "WarHorse"
     pass
 
 class Chariot(Piece):
-    def __init__(self, user_z: Literal[0,1,2], px: int, py: int):
-        super().__init__(user_z, px, py)
+
     '''
     Descriptions: Chariot piece 车
     '''
+    def __init__(self, user_z: Literal[0,1,2], px: int, py: int):
+        super().__init__(user_z, px, py)
+        self.name = "Chariot"
     pass
 
 
-class Cannon(Piece):
+class Gun(Piece):
+
+    '''
+    Descriptions: Gun piece 炮
+    '''
     def __init__(self, user_z: Literal[0,1,2], px: int, py: int):
         super().__init__(user_z, px, py)
-    '''
-    Descriptions: Cannon piece 炮
-    '''
+        self.name = "Gun"
     pass
 
-class King(Piece):
+class Leader(Piece):
+
+    '''
+    Descriptions: Leader piece 帅或将或王
+    '''
     def __init__(self, user_z: Literal[0,1,2], px: int, py: int):
         super().__init__(user_z, px, py)
-    '''
-    Descriptions: King piece 帅或将或王
-    '''
+        self.name = "Leader"
     pass
 
-class Mardarin(Piece):
+class Advisor(Piece):
+
+    '''
+    Descriptions: Advisors piece 仕
+    '''
     def __init__(self, user_z: Literal[0,1,2], px: int, py: int):
         super().__init__(user_z, px, py)
-    '''
-    Descriptions: Mardarins piece 仕
-    '''
+        self.name = "Advisor"
     pass
 
 
-class Minister(Piece):
+class Bishop(Piece):
+
+    '''
+    Descriptions: Bishop piece 象或相
+    '''
     def __init__(self, user_z: Literal[0,1,2], px: int, py: int):
         super().__init__(user_z, px, py)
-    '''
-    Descriptions: Minister piece 象或相
-    '''
+        self.name = "Bishop"
     pass

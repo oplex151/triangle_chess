@@ -41,11 +41,13 @@ const router = createRouter({
     {
       path: '/login',
       component: Login,
+      meta: {isAuth: false},
     },
     //   登出页
     {
       path: '/logout',
       component: Logout,
+      meta: {isAuth: true},
     },
     //   主页-游戏页
     {
@@ -56,7 +58,7 @@ const router = createRouter({
     {
       path:'/register',
       component: Register,
-      meta: {isAuth: true},
+      meta: {isAuth: false},
     }
   ]
 })

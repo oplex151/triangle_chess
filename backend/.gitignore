@@ -1,3 +1,6 @@
 
 # Ignore Python cache files
+.idea/
+*.xml
 __pycache__/
+*.pyc

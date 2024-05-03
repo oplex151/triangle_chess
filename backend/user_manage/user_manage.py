@@ -51,7 +51,6 @@ def register(username, password):
             logger.error("User {0} already exists".format(username))
             return "{}",REGISTER_EXIST_USER
         else:
-            # TODO:为用户生成ID
             insert_query = "INSERT INTO {0} (userName, userPassword) VALUES ({1}, {2});".format(USER_TABLE,"'"+username+"'", "'"+password+"'")
             try:
                 cursor.execute(insert_query)
