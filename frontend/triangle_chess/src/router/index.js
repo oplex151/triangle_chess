@@ -8,7 +8,7 @@ import Category from '@/views/Category/index.vue'
 import Game from '@/views/Game/index.vue'
 import Register from '@/views/Register/index.vue'
 import Logout from '@/views/Logout/index.vue'
-
+import Test from '@/views/Test_socket/index.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -50,7 +50,7 @@ const router = createRouter({
     //   主页-游戏页
     {
       path:'/game',
-      component:Game,
+      component:Test,
       meta: {isAuth: true},
     },
     {
