@@ -4,8 +4,9 @@ import SocketIO from 'socket.io-client'
 import main from '@/main'
 // 先导入包npm install vue-socket.io --save
 import { onMounted,ref,getCurrentInstance } from 'vue'
-import { registerSockets } from '@/sockets'
+import { registerSockets, socket } from '@/sockets'
 import axios from 'axios'
+import Game from '@/views/Game/index.vue'
 const {proxy} = getCurrentInstance()
 
 const msg = ref('')
@@ -14,7 +15,6 @@ const room_id = ref('')
 const userid = ref(1)
 
 // 建立连接
-var socket = ''
 
 const sockets_methods={
   createRoomSuccess(data){
@@ -40,31 +40,46 @@ const sockets_methods={
   createGameSuccess(data){
     console.log(data)
     alert('创建成功')
+  },
+  movePieceSuccess(data){
+    if(userid.value == data.userid){
+      alert('移动成功')
+    }
+
+    console.log(data)
   }
+
 }
+// emit('movePieceSuccess',{'userid':userid,'status':status, 
+//                                      'x1':x1, 'y1':y1, 'z1':z1, 
+//                                      'x2':x2, 'y2':y2, 'z2':z2},
+//                                      
+onMounted(() => {
+  alert('连接成功')
+  establishConnection()
+  // 注册socket监听
+  registerSockets(sockets_methods,socket.value,proxy)
+})
+
 function establishConnection(){
-  socket = new VueSocketIO({
+  
+  socket.value = new VueSocketIO({
     debug: true,
     connection: SocketIO(main.url),
   })
+  
 }
 function createRoom(){
-  establishConnection()
-  // 注册socket监听
-  registerSockets(sockets_methods,socket,proxy)
-  socket.io.emit('createRoom',{'userid':userid.value})
+  socket.value.io.emit('createRoom',{'userid':userid.value})
 }
 function joinRoom(){
-  establishConnection()
-  // 注册socket监听
-  registerSockets(sockets_methods,socket,proxy)
-  socket.io.emit('joinRoom',{'room_id':room_id.value,'userid':userid.value})
+  socket.value.io.emit('joinRoom',{'room_id':room_id.value,'userid':userid.value})
 }
 function sendMessage(){
-  socket.io.emit('sendMessage',{'room_id':room_id.value,'userid':userid.value,'message':msg.value})
+  socket.value.io.emit('sendMessage',{'room_id':room_id.value,'userid':userid.value,'message':msg.value})
 }
 function leaveRoom(){
-  socket.io.emit('leaveRoom',{'room_id':room_id.value,'userid':userid.value})
+  socket.value.io.emit('leaveRoom',{'room_id':room_id.value,'userid':userid.value})
 }
 function createGame(){
   axios.post(main.url+'/api/game/create',
@@ -106,4 +121,5 @@ function createGame(){
   <div>
     <el-button type="primary" @click="createGame">创建游戏</el-button>
   </div >
+  <Game></Game> 
 </template>

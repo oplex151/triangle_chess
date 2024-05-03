@@ -107,7 +107,7 @@ onMounted(initMap);
            class="row"
       >
         <!-- 渲染所要的列数 -->
-        <div class="block chess"
+        <div class="block chess invert"
              :id="getid(index, i) + ''"
              v-for="(col, i) in COL"
              :key="col"
@@ -208,6 +208,9 @@ onMounted(initMap);
   display: flex;
   justify-content: center;
   align-items: center;
+}
+.invert{
+  transform: rotate(180deg);
 }
 .block {
   width: 50px;

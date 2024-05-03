@@ -1,3 +1,6 @@
+
+import { ref } from "vue";
+
 export const registerSockets = (methods, socket, proxy)=>{
     methods && Object.keys(methods).forEach((t)=>{
         "subscribe" !== t &&
@@ -11,3 +14,5 @@ export const removeSockets = (methods, socket, proxy)=>{
         socket.emitter.removeListener(t, proxy);
     })
 }
+
+export const socket = ref("")
