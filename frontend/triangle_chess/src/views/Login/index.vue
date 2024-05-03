@@ -39,11 +39,10 @@ watchEffect(() => {
   }
 });
 
-
 const login = () => {
   if (uname.value === '' || password.value === '') {
     errorMessage.value = '用户名或密码不能为空';
-    
+
     return;
   }
   axios.post(main.url+ '/api/login', {
@@ -61,7 +60,7 @@ const login = () => {
     } else {
       errorMessage.value = '用户名或密码错误';
     }
-  })  
+  })
   .catch(error => {
     // 捕获错误
     if (error.response.status == 506) {
@@ -70,7 +69,7 @@ const login = () => {
       if (Cookies.get('userid') !== undefined) {
         router.push('/');
       }
-    } 
+    }
     else if(error.response.status == 501){
       errorMessage.value = '用户不存在';
     }
@@ -80,7 +79,6 @@ const login = () => {
     else {
       errorMessage.value = '请求错误';
     }
-    
   });
 };
 

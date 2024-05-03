@@ -2,7 +2,7 @@ from enum import Enum
 import sys
 import os
 from flask import Flask, request, jsonify
-from typing import Tuple
+from typing import Tuple, Union
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -226,7 +226,7 @@ class GameTable:
 
 
 class RoomManager:
-    def __init__(self, users:list[int] | int):
+    def __init__(self, users: Union[list[int], int]):
         # 随机生成一串字符串
         self.room_id:str = hashlib.md5(str(random.randint(0,1000000000)).encode('utf-8')).hexdigest()
         self.users = None
@@ -245,7 +245,7 @@ class RoomManager:
     def addGameTable(self, game_table: GameTable):
         self.game_table = game_table
 
-    def addUser(self, userid:int | list[int]):
+    def addUser(self, userid: Union[int, list[int]]):
         if isinstance(userid, list):
             for u in userid:
                 if u not in self.users:
