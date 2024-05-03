@@ -7,13 +7,17 @@ import { onMounted,ref,getCurrentInstance } from 'vue'
 import { registerSockets, socket } from '@/sockets'
 import axios from 'axios'
 import Game from '@/views/Game/index.vue'
+import Cookies from 'js-cookie'
+import { useRouter } from 'vue-router';
+import { ElMessage } from 'element-plus'
 const {proxy} = getCurrentInstance()
-
+const router = useRouter()
 const msg = ref('')
 const receive = ref('')
 const room_id = ref('')
-const userid = ref(1)
-
+const userid = ref(Cookies.get('userid'))
+const camp = ref(-1) 
+const y2 = ref(0)
 // 建立连接
 
 const sockets_methods={
@@ -29,6 +33,7 @@ const sockets_methods={
   },
   receiveMessage(data){
     console.log(data)
+    ElMessage.info('收到消息')
     receive.value = data.message
   },
   leaveRoomSuccess(data){
@@ -39,14 +44,34 @@ const sockets_methods={
   },
   createGameSuccess(data){
     console.log(data)
-    alert('创建成功')
-  },
-  movePieceSuccess(data){
-    if(userid.value == data.userid){
-      alert('移动成功')
+    ElMessage.info('创建成功')
+    for (let i = 0; i < data.users.length; i++){
+      Cookies.set('user'+i,data.users[i])
+      if (data.users[i] == userid.value){
+        camp.value = i
+      }
     }
-
-    console.log(data)
+    if (camp.value>=0){
+      Cookies.set('camp',camp.value)
+      console.log(Cookies.get('camp'))
+      ElMessage.success('游戏开始,你是'+(Cookies.get('camp'))+'号玩家')
+    }
+    router.replace('/game')
+  },
+  // movePieceSuccess(data){
+  //   if(userid.value == data.userid){
+  //     ElMessage.info('移动成功')
+  //   }
+  //   else {
+  //     ElMessage.info(data.userid+'移动成功')
+  //   }
+  // },
+  message(data){
+    ElMessage.info(data)
+  },
+  processWrong(data){
+    status = data.status
+    ElMessage.info(status)
   }
 
 }
@@ -55,7 +80,7 @@ const sockets_methods={
 //                                      'x2':x2, 'y2':y2, 'z2':z2},
 //                                      
 onMounted(() => {
-  alert('连接成功')
+  ElMessage.info('连接成功')
   establishConnection()
   // 注册socket监听
   registerSockets(sockets_methods,socket.value,proxy)
@@ -76,6 +101,7 @@ function joinRoom(){
   socket.value.io.emit('joinRoom',{'room_id':room_id.value,'userid':userid.value})
 }
 function sendMessage(){
+  ElMessage.info('发送')
   socket.value.io.emit('sendMessage',{'room_id':room_id.value,'userid':userid.value,'message':msg.value})
 }
 function leaveRoom(){
@@ -88,9 +114,22 @@ function createGame(){
   {
       headers: {'Content-Type':'application/x-www-form-urlencoded'},
   }
-  ).then(res=>{
-    console.log(res)
-  })
+  )
+}
+
+function movePiece(){
+
+  if (y2.value != 0){
+    y2.value = 0
+  }
+  else{
+    y2.value = 1
+  }
+  // ElMessage.info("走你！")
+  // socket.value.io.emit('movePiece',{'userid':userid.value,'chess_type':1, 
+  //                                 'x1':0, 'y1':0, 'z1':camp.value, 
+  //                                 'x2':0, 'y2':y2.value, 'z2':camp.value})
+
 }
 </script>
 
@@ -99,8 +138,7 @@ function createGame(){
     <h1>Hello World</h1>
   </div>
   <div>
-    <el-input v-model="userid"></el-input>
-    <span>设置用户id</span>
+    <span>你的用户id：{{userid}}</span>
   </div>
   <div>
     当前房间{{room_id}}
@@ -121,5 +159,7 @@ function createGame(){
   <div>
     <el-button type="primary" @click="createGame">创建游戏</el-button>
   </div >
-  <Game></Game> 
+  <div>
+    <el-button type="primary" @click="movePiece">你尝试走了一下！</el-button>
+  </div>
 </template>

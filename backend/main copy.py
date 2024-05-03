@@ -98,7 +98,7 @@ def createGameApi():
             return "{message: '房间人数不足！'}",ROOM_NOT_ENOUGH
         game = GameTable(room.users) # TODO::这里应该是创建游戏
         room.addGameTable(game)
-        emit('createGameSuccess',{'game_id':game.game_id,'users':[room.users[0],room.users[1],room.users[2]]},to=room_id,namespace='/')
+        emit('createGameSuccess',{'game_id':game.game_id},to=room_id,namespace='/')
         logger.info("Create game: {0}".format(game.game_id))
         return "{}",SUCCESS
     except Exception as e:
@@ -131,10 +131,8 @@ def movePiece(data):
     global rooms
     params = {'userid':int, 'chess_type':str, 'x1':int, 'y1':int, 'z1':int, 'x2':int, 'y2':int, 'z2':int}
     try:
-        logger.info(data)
         userid,chess_type,x1,y1,z1,x2,y2,z2 = get_params(params,data)
-    except ValueError as e:
-        logger.error(e)
+    except:
         emit('processWrong',{'status':PARAM_ERROR},to=request.sid)
         return
     # 先判断用户是否在房间中
@@ -147,7 +145,7 @@ def movePiece(data):
         emit('processWrong',{'status':NOT_JOIN_GAME},to=request.sid)
         return
     try:
-        status = game.movePiece(userid, x1, y1, z1, x2, y2, z2)
+        status = game.movePiece(userid, chess_type, x1, y1, z1, x2, y2, z2)
         if status == GAME_END:
             # 游戏结束，判断胜利者或平局
             if game.game_state == "win":

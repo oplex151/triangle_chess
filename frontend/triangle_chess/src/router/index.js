@@ -56,7 +56,7 @@ const router = createRouter({
     {
       path:'/register',
       component: Register,
-      meta: {isAuth: true},
+
     }
   ]
 })

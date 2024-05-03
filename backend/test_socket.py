@@ -12,13 +12,12 @@ import flask
 from flask_socketio import SocketIO,join_room,leave_room,emit
 from flask_cors import CORS
 from flask import request, session, jsonify
-from backend.global_var import games
+# from backend.global_var import games
 from backend.tools import setupLogger 
 from backend.user_manage import *
 from backend.game.exception import *
 from message import *
-from backend.game import GameTable, fetchGameByUserID
-
+from backend.game.game_table import GameTable
 app = flask.Flask(__name__)
 CORS(app,cors_allowed_origins="*")
 socketio = SocketIO(app, cors_allowed_origins="*")
@@ -91,8 +90,12 @@ def createGameApi():
         return "{message: 'parameter error'}",PARAM_ERROR
     try:
         game = GameTable(user1id, user2id, user3id)
-        games.append(game)
+        
+        # games.append(game)
         logger.info("Create game: {0}".format(game.game_id))
+        socketio.emit('message', "创建成功", room=game.game_id)
+        
+        return "{}",SUCCESS
     except:
         logger.error("Create game error", exc_info=True)
         return "{message: 'create game error'}",GAME_CREATE_FAILED
@@ -132,7 +135,15 @@ def moveApi():
         return "{}",status
     except Exception as e:
         return "{message: {0}}".format(str(e)),OTHER_ERROR
-
+    
+@socketio.event
+def sendMessage(data):
+    '''test'''
+    room_id = data['room_id']
+    userid = data['userid']
+    message = data['message']
+    emit('receiveMessage',{'message':message},userid=userid,to=room_id,
+            skip_sid=request.sid)
 
 @socketio.on('connect')
 def test_connect(message):

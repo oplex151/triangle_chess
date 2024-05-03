@@ -15,10 +15,10 @@ class Pawn(Piece):
         if nx < 0 or nx >= self.max_row or ny < 0 or ny >= self.max_col:
             raise OutOfBoardError("越界")
         # 2. 能且仅能移动一步
-        if abs(nx-self.px)+abs(ny-self.py)!= 1:
+        if (abs(nx-self.px)+abs(ny-self.py)!= 1 and self.pz == nz) or (self.pz!=nz and self.py == 4 and ny==4 and self.px == nx):
             raise InvalidMoveError("非法移动")
         # 3. 不可以后退
-        if (nz==self.user_z and ny < self.py) or ny > self.py:
+        if (nz==self.user_z and ny <= self.py) or( nz != self.user_z and ny > self.py):
             raise InvalidMoveError("不可以后退")
         return True
 

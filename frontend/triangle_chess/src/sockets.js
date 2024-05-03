@@ -14,5 +14,10 @@ export const removeSockets = (methods, socket, proxy)=>{
         socket.emitter.removeListener(t, proxy);
     })
 }
-
+export const registerSocketsForce = (methods, socket, proxy)=>{
+    methods && Object.keys(methods).forEach((t)=>{
+        socket.emitter.removeListener(t, proxy);    
+        socket.emitter.addListener(t, methods[t],proxy);
+    })
+}
 export const socket = ref("")
