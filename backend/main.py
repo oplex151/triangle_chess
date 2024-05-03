@@ -99,6 +99,7 @@ def createGameApi():
         game = GameTable(room.users) # TODO::这里应该是创建游戏
         room.addGameTable(game)
         emit('createGameSuccess',{'game_id':game.game_id,'users':[room.users[0],room.users[1],room.users[2]]},to=room_id,namespace='/')
+        emit('initGame',{'game_info':game.getGameInfo()},to=room_id,namespace='/')
         logger.info("Create game: {0}".format(game.game_id))
         return "{}",SUCCESS
     except Exception as e:
@@ -111,7 +112,6 @@ def movePiece(data):
     '''
     Args:
         userid: 用户id           int 
-        chess_type: 棋子类型     str
         x1: 起始横坐标           int
         y1: 起始纵坐标           int
         z1: 起始棋盘             int
@@ -129,7 +129,7 @@ def movePiece(data):
         z2: 目标棋盘             int
     ''' 
     global rooms
-    params = {'userid':int, 'chess_type':str, 'x1':int, 'y1':int, 'z1':int, 'x2':int, 'y2':int, 'z2':int}
+    params = {'userid':int,  'x1':int, 'y1':int, 'z1':int, 'x2':int, 'y2':int, 'z2':int}
     try:
         logger.info(data)
         userid,chess_type,x1,y1,z1,x2,y2,z2 = get_params(params,data)
@@ -166,6 +166,14 @@ def movePiece(data):
                                      'x1':x1, 'y1':y1, 'z1':z1, 
                                      'x2':x2, 'y2':y2, 'z2':z2},
                                      to=room_id)
+            if status == GAME_END:
+                # 游戏结束，判断胜利者或平局
+                if game.game_state == "win":
+                    # 通知所有玩家游戏结束并告知胜利者
+                    emit('gameEnd', {'status': GAME_END, 'winner': userid}, to=room_id)
+                elif game.game_state == "draw":
+                    # 通知所有玩家游戏结束为平局
+                    emit('gameEnd', {'status': GAME_END, 'winner': -1}, to=room_id)
             return
     except Exception as e:
         emit('processWrong',{'status':OTHER_ERROR},to=request.sid)

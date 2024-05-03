@@ -1,3 +1,4 @@
+from enum import Enum
 import sys
 import os
 from flask import Flask, request, jsonify
@@ -14,42 +15,47 @@ from backend.tools import setupLogger
 
 logger = setupLogger()
 
+class EnumGameState(Enum):
+    ongoing = "ongoing"
+    win = "win"
+    draw = "draw"
+
 class GameTable:
+    max_row = 9
+    max_col = 5
     def __init__(self,users:list[int]):
         self.game_id = hashlib.md5(str(sum(users)).encode('utf-8')).hexdigest()
         self.user1 = {'user_id':users[0],'index':0} # 0
         self.user2 = {'user_id':users[1],'index':1} # 1
         self.user3 = {'user_id':users[2],'index':2} # 2
+        self.lives = [True,True,True]
 
         self.Pieces:list[list[Piece]] = [[],[],[]]
         
         self.turn = 0 # 目前轮到谁
-        self.game_state = "ongoing"  # 游戏状态：ongoing（进行中）、win（胜利）、draw（平局）
+        self.game_state = EnumGameState.ongoing # 游戏状态：ongoing（进行中）、win（胜利）、draw（平局）
         self.winner = -1 # 无胜者为-1
-
-        self.max_row = 9
-        self.max_col = 5
 
         for i in range(3):
             self._initChess(i)
 
     def _initChess(self, user_z: int):
         # 初始化棋子
-        # 1 King 2 Mardrain 2 Minister 2 Knight 2 Chariot 2 Cannon 5 Pawn
+        # 1 Leader 2 Mardrain 2 Bishop 2 Knight 2 Chariot 2 Gun 5 Soilder
         # 说明：x是棋盘的横轴，y是棋盘的纵轴，z是用户索引
-        self.Pieces[user_z].append(King(user_z, 4, 0))
-        self.Pieces[user_z].append(Mardarin(user_z, 3, 0))
-        self.Pieces[user_z].append(Mardarin(user_z, 5, 0))
-        self.Pieces[user_z].append(Minister(user_z, 2, 0))
-        self.Pieces[user_z].append(Minister(user_z, 6, 0))
-        self.Pieces[user_z].append(Horse(user_z, 1, 0))
-        self.Pieces[user_z].append(Horse(user_z, 7, 0))
+        self.Pieces[user_z].append(Leader(user_z, 4, 0))
+        self.Pieces[user_z].append(Advisor(user_z, 3, 0))
+        self.Pieces[user_z].append(Advisor(user_z, 5, 0))
+        self.Pieces[user_z].append(Bishop(user_z, 2, 0))
+        self.Pieces[user_z].append(Bishop(user_z, 6, 0))
+        self.Pieces[user_z].append(WarHorse(user_z, 1, 0))
+        self.Pieces[user_z].append(WarHorse(user_z, 7, 0))
         self.Pieces[user_z].append(Chariot(user_z, 0, 0))
         self.Pieces[user_z].append(Chariot(user_z, 8, 0))
-        self.Pieces[user_z].append(Cannon(user_z, 1, 2))
-        self.Pieces[user_z].append(Cannon(user_z, 7, 2))
+        self.Pieces[user_z].append(Gun(user_z, 1, 2))
+        self.Pieces[user_z].append(Gun(user_z, 7, 2))
         for i in range(self.max_row//2+1):
-            self.Pieces[user_z].append(Pawn(user_z, 2*i, 3))
+            self.Pieces[user_z].append(Soilder(user_z, 2*i, 3))
 
     def _getUserIndex(self, user:int) -> int:
         '''
@@ -102,21 +108,31 @@ class GameTable:
             user_z = self._getUserIndex(user) # 获取用户的索引
             for piece in self.Pieces[user_z]: # 遍历用户的所有棋子
                 if piece.findPiece(px, py, pz): 
-                    kill_piece = self.isWithPiece(nx, ny, nz) # 获取被杀死的棋子
-                    if piece.move(nx, ny, nz): # 移动棋子
+                    # 获取被杀死的棋子
+                    kill_piece = self.isWithPiece(nx, ny, nz) 
+                    # 移动棋子
+                    if piece.move(nx, ny, nz):
                         logger.info(f"用户{user}移动棋子{piece.name}从({px},{py},{pz})到({nx},{ny},{nz})")
                         # 判断是否杀死棋子
                         if kill_piece:
                             logger.info(f"用户{user}击杀棋子{kill_piece.name}({nx},{ny},{nz}) by {piece.name}({px},{py},{pz})")
-                            kill_piece.setDead() # 被杀死的棋子死亡
-                            # 如果死的是某个人的
-                        # print(piece.name, piece.live)
-                        # print(kill_piece.name, kill_piece.live)
+                            # 被杀死的棋子死亡
+                            kill_piece.setDead() 
+                            # 杀死Leader，该玩家阵亡，请前端自己判断阵亡，后端不发出通知
+                            if kill_piece.name == 'Leader':
+                                self.lives[kill_piece.user_z] = False
+                                logger.info(f"用户{user}阵亡")
+
                         # 判断游戏是否结束
                         if self.checkGameEnd():
                             return GAME_END
                         
-                        self.turn = (self.turn+1)%3 # 切换到下一个用户
+                         # 切换到下一个用户
+                        self.turn = (self.turn+1)%3
+                        
+                        # 轮到下一个用户，但该用户阵亡，直接下一个人
+                        if not self.lives[self.turn]:
+                            self.turn = (self.turn+1)%3
 
                         return SUCCESS
             else:
@@ -152,22 +168,22 @@ class GameTable:
     def checkGameEnd(self):
         # 检查胜利条件和平局条件
         if self.checkVictory():
-            self.game_state = "win"
+            self.game_state = EnumGameState.win
             return True
         
         if self.checkDraw():
-            self.game_state = "draw"
+            self.game_state =EnumGameState.draw
             return True
         
         return False
 
     def checkVictory(self):
         # 实现判断胜利条件的逻辑
-        # 计算存活的 King 的数量
-        living_kings = [user_z for user_z in range(3) if self.Pieces[user_z][0].live]
-        if len(living_kings) == 1:
-            # 只有一个 King 存活，游戏结束
-            self.winner = living_kings[0]
+        # 计算存活的 Leader 的数量
+        living_leaders = [user_z for user_z in range(3) if self.Pieces[user_z][0].live]
+        if len(living_leaders) == 1:
+            # 只有一个 Leader 存活，游戏结束
+            self.winner = living_leaders[0]
             return True
         
         return False
@@ -175,6 +191,20 @@ class GameTable:
     def checkDraw(self):
         # 实现判断平局条件的逻辑
         pass
+
+    def getGameInfo(self):
+        '''
+        Description: 获取游戏数据
+        Returns:
+            dict: 游戏数据
+        '''
+        data ={
+            'turn': self.turn,
+            'game_state': self.game_state.value,
+            'winner': self.winner,
+            'pieces': [piece.getPieceInfo() for piece_list in self.Pieces for piece in piece_list]
+        }
+        return data
 
     def showBoard(self):
         '''

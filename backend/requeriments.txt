@@ -1,6 +1,0 @@
-flask
-pymysql
-Path
-logging
-python-dotenv
-flask_socketio
