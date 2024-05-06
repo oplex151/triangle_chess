@@ -139,49 +139,39 @@ const action = (position) => {
       return;
     }
     isPocus.value = true;
+    GEBI(`${hoverChess.position}`).classList.add('chess_on');
     focusChess.value = hoverChess;
   }
   // 选中
   else {
     isPocus.value = false;
-    
+    GEBI(`${focusChess.value.position}`).classList.remove('chess_on');    
     if (
         focusChess.value.canMove().includes(position) 
         // 暂时不启用, 阻止自己的棋子吃掉自己的棋子
-        // && map.get(position)?.camp === camp.value
+        && map.get(position)?.camp !== camp.value
     ) {
+      alert("try")
+
       xyz.value = PositionToXYZ(position)
       xyzn.value = PositionToXYZ(focusChess.value.position)
       socket.value.io.emit('movePiece',{'userid':userid,'chess_type':1, 
                                       'x1':xyzn.value[0], 'y1':xyzn.value[1], 'z1':xyzn.value[2], 
                                       'x2':xyz.value[0], 'y2':xyz.value[1], 'z2':xyz.value[2]})
-      // 根据当前棋子的阵营进行切换
-      // switch (focusChess.value.camp) {
-      //   case 0:
-      //     camp.value = 1;
-      //     break;
-      //   case 1:
-      //     camp.value = 2;
-      //     break;
-      //   case 2:
-      //     camp.value = 0;
-      //     break;
-      //   default:
-      //     // 在这里处理默认情况
-      //     break;
-      // }
     }
+
     // 暂时不启用，重新选择棋子
-    // else{
-    //   if (!hoverChess) return;
-    //   if (hoverChess.camp !== camp.value) return;
-    //   // 如果不是你走，不能选中
-    //   if (camp.value != my_camp && my_camp>=0){
-    //     return;
-    //   }
-    //   isPocus.value = true;
-    //   focusChess.value = hoverChess;
-    // }
+    else{
+      if (!hoverChess) return;
+      if (hoverChess.camp !== camp.value) return;
+      // 如果不是你走，不能选中
+      if (camp.value != my_camp && my_camp>=0){
+        return;
+      }
+      isPocus.value = true;
+      focusChess.value = hoverChess;
+      GEBI(`${hoverChess.position}`).classList.add('chess_on');
+    }
   }
 };
 
@@ -371,6 +361,9 @@ onUnmounted(Destory);
   justify-content: center;
   align-items: center;
 }
+.chess_on{
+  color: red !important;
+}
 .invert{
   transform: rotate(180deg);
 }
@@ -408,7 +401,7 @@ onUnmounted(Destory);
   flex-direction: column;
   align-items: center;
 }
-.board ::v-deep .chess{
+.board :deep(.chess){
   rotate: 180deg;
   // 某些浏览器（例如小智双核）不支持 ::v-deep 伪元素选择器，这个我也没办法，只能这样了
   // 御三家firefox,chrome,edge都支持
