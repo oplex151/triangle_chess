@@ -81,7 +81,8 @@ const sockets_methods={
 //                                      
 onMounted(() => {
   ElMessage.info('连接成功')
-  establishConnection()
+  if (!socket.value)
+    establishConnection()
   // 注册socket监听
   registerSockets(sockets_methods,socket.value,proxy)
 })
@@ -91,7 +92,6 @@ function establishConnection(){
     debug: true,
     connection: SocketIO(main.url),
   })
-  
 }
 function createRoom(){
   socket.value.io.emit('createRoom',{'userid':userid.value})

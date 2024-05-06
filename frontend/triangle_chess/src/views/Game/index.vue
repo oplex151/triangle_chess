@@ -13,6 +13,7 @@ import { GEBI } from '@/utils/utils';
 import Cookies from 'js-cookie';
 import { registerSockets, socket ,registerSocketsForce} from '@/sockets'
 import {XYZToPosition, PositionToXYZ} from '@/lib/convert'
+import router from '@/router';
 const map = new Map();
 const getid = (row, col) => (ROWTOP - row - 1) * COL + col + 1;
 const camp = ref(0);
@@ -239,7 +240,13 @@ const Destory = () => {
 
 };
 
-onMounted(initMap);
+onMounted(()=>{
+  if (!Cookies.get('camp')){
+    router.replace('/room')
+    return
+  }
+  initMap();
+});
 onUnmounted(Destory);
 </script>
 

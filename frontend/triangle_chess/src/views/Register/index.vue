@@ -229,7 +229,9 @@ watch(errorMessage, (oldValue ,newValue) => {
     border: 1px solid #ccc;
     border-radius: 20px;
     position: relative;
-    transform: translate(-0%, -0%);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     background-color: rgba(248, 234, 171, 0.8); /* 设置一个半透明的背景色 */
 }
