@@ -132,7 +132,7 @@ def movePiece(data):
     params = {'userid':int,  'x1':int, 'y1':int, 'z1':int, 'x2':int, 'y2':int, 'z2':int}
     try:
         logger.info(data)
-        userid,chess_type,x1,y1,z1,x2,y2,z2 = get_params(params,data)
+        userid,x1,y1,z1,x2,y2,z2 = get_params(params,data)
     except ValueError as e:
         logger.error(e)
         emit('processWrong',{'status':PARAM_ERROR},to=request.sid)
@@ -148,16 +148,7 @@ def movePiece(data):
         return
     try:
         status = game.movePiece(userid, x1, y1, z1, x2, y2, z2)
-        if status == GAME_END:
-            # 游戏结束，判断胜利者或平局
-            if game.game_state == "win":
-                # 通知所有玩家游戏结束并告知胜利者
-                emit('gameEnd', {'status': 'win', 'winner': userid}, to=room_id)
-            elif game.game_state == "draw":
-                # 通知所有玩家游戏结束为平局
-                emit('gameEnd', {'status': 'draw'}, to=room_id)
-            return
-        elif status != SUCCESS:
+        if status != SUCCESS and status != GAME_END:
             emit('processSuccess',{'status':status},to=request.sid)
             return
         else:
@@ -175,6 +166,86 @@ def movePiece(data):
                     # 通知所有玩家游戏结束为平局
                     emit('gameEnd', {'status': GAME_END, 'winner': -1}, to=room_id)
             return
+    except Exception as e:
+        emit('processWrong',{'status':OTHER_ERROR},to=request.sid)
+        return 
+
+@socketio.event
+def request_draw(data):
+    """
+    接收玩家发起求和请求的数据。
+    Args:
+        userid: 用户id          int 
+    """
+    global rooms
+    params = {'userid':int}
+    try:
+        userid = get_params(params,data)
+    except:
+        emit('processWrong',{'status':PARAM_ERROR},to=request.sid)
+        return
+    # 先判断用户是否在房间中
+    room_id = inWhitchRoom(userid,rooms)
+    if room_id is None:
+        emit('processWrong',{'status':NOT_IN_ROOM},to=request.sid)
+        return
+    game:GameTable = fetchRoomByRoomID(room_id,rooms).game_table
+    if game is None:
+        emit('processWrong',{'status':NOT_JOIN_GAME},to=request.sid)
+        return
+    try:
+        game.request_draw(userid)
+        # 广播求和请求给其他存活的玩家
+        for user in game.get_alive_players():
+            if user != userid:
+                emit('drawRequest', {'requester': userid}, to=user)
+        return
+    except Exception as e:
+        emit('processWrong',{'status':OTHER_ERROR},to=request.sid)
+        return 
+    
+
+@socketio.event
+def respond_draw(data):
+    """
+    接收玩家回应求和请求的数据。
+    Args:
+        userid: 用户id          int 
+        agree: 玩家是否同意求和  bool
+    """
+    global rooms
+    params = {'userid':int,  'agree':bool}
+    try:
+        userid, agree = get_params(params,data)
+    except:
+        emit('processWrong',{'status':PARAM_ERROR},to=request.sid)
+        return
+    # 先判断用户是否在房间中
+    room_id = inWhitchRoom(userid,rooms)
+    if room_id is None:
+        emit('processWrong',{'status':NOT_IN_ROOM},to=request.sid)
+        return
+    game:GameTable = fetchRoomByRoomID(room_id,rooms).game_table
+    if game is None:
+        emit('processWrong',{'status':NOT_JOIN_GAME},to=request.sid)
+        return
+    try:
+        # 通知所有玩家游戏结束
+        game.respond_draw(userid, agree)
+        # 所有存活的玩家均已回应
+        if len(game.draw_respondents) == len(game.get_alive_players):
+            for res_agree in game.draw_agree:
+                if res_agree == False:
+                    for user in game.get_alive_players:
+                        emit('gameOngoing', {'status': SUCCESS}, to=user)
+                    game.set_draw()
+                    return
+            for user in game.users:
+                emit('gameEnd', {'status': GAME_END, 'winner': -1}, to=room_id)
+            game.set_draw()
+        else:
+            emit('wait_for_others', {'status': SUCCESS}, to=user)
+        return
     except Exception as e:
         emit('processWrong',{'status':OTHER_ERROR},to=request.sid)
         return 

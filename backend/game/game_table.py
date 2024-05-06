@@ -36,6 +36,10 @@ class GameTable:
         self.game_state = EnumGameState.ongoing # 游戏状态：ongoing（进行中）、win（胜利）、draw（平局）
         self.winner = -1 # 无胜者为-1
 
+        self.draw_requester = None  # 发起求和请求的玩家
+        self.draw_respondents = set()  # 记录回应求和请求的玩家
+        self.draw_agree = set()  # 记录对求和请求的回应
+
         for i in range(3):
             self._initChess(i)
 
@@ -165,6 +169,69 @@ class GameTable:
         else:
             return None
     
+    def get_alive_players(self):
+        '''
+        Description: 返回存活玩家的 user_id 列表。
+        Returns:
+            alive_players: 存活玩家的列表
+        '''
+        # 存活玩家的列表
+        alive_players = []
+        
+        # 遍历 lives 列表中的存活状态
+        for index, alive in enumerate(self.lives):
+            if alive:
+                # 根据索引找到对应的用户
+                if index == 0:
+                    alive_players.append(self.user1['user_id'])
+                elif index == 1:
+                    alive_players.append(self.user2['user_id'])
+                elif index == 2:
+                    alive_players.append(self.user3['user_id'])
+        
+        # 返回存活玩家的 user_id 列表
+        return alive_players
+
+    def request_draw(self, userid:int):
+        '''
+        Description: 处理求和请求
+        '''
+        # 如果已经有一个求和请求，则忽略新请求
+        if self.draw_requester is not None:
+            return
+        
+        # 记录发起求和请求的玩家
+        self.draw_requester = userid
+        
+        # 初始化回应求和请求的玩家列表
+        self.draw_respondents = set()
+
+    def respond_draw(self, userid:int, agree:bool):
+        '''
+        Description: 处理求和回应
+        '''
+        # 如果用户不是求和请求的回应对象之一，忽略
+        if self.draw_requester is None or userid == self.draw_requester or self.lives[userid] == False:
+            return
+        
+        # 添加回应的用户
+        self.draw_respondents.add(userid)
+        
+        # 添加对求和请求的回应
+        self.draw_agree.add(agree)
+
+    def set_draw(self, agree:bool):
+        '''
+        Description: 处理求和的结果
+        '''
+        if agree:
+            # 所有玩家都同意求和
+            self.game_state = EnumGameState.draw
+        else:
+            # 至少有一个玩家不同意求和
+            self.draw_requester = None
+            self.draw_respondents = set()
+
     def checkGameEnd(self):
         # 检查胜利条件和平局条件
         if self.checkVictory():
@@ -172,7 +239,7 @@ class GameTable:
             return True
         
         if self.checkDraw():
-            self.game_state =EnumGameState.draw
+            self.game_state = EnumGameState.draw
             return True
         
         return False
