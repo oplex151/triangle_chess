@@ -13,6 +13,7 @@ import { GEBI } from '@/utils/utils';
 import Cookies from 'js-cookie';
 import { registerSockets, socket ,registerSocketsForce} from '@/sockets'
 import {XYZToPosition, PositionToXYZ} from '@/lib/convert'
+import {ElMessage} from "element-plus";
 const map = new Map();
 const getid = (row, col) => (ROWTOP - row - 1) * COL + col + 1;
 const camp = ref(0);
@@ -47,8 +48,7 @@ const sockets_methods={
     focusChess.value = map.get(position_start);
 
     moveChess(focusChess.value,position_end);
-    // 在这里改变阵营
-    //　如果一方战败后，那么应该动态调整camp.value的赋值
+    // 在这里改变阵营,如果一方战败后，那么应该动态调整camp.value的赋值
     if(data.userid==Cookies.get('user0')){
           camp.value = 1;
     }

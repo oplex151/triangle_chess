@@ -52,7 +52,7 @@ const router = createRouter({
     //   主页-游戏页
     {
       path:'/game',
-      component:Test,
+      component:Game,
       meta: {isAuth: true},
     },
     {
