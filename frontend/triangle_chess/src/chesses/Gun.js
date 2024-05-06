@@ -33,14 +33,20 @@ export class Gun extends Chess {
         switch (this.inWhichArea){
             case 0:
                 MarkFlag[0] = 0;
+                MarkFlag[1] = 1;
+                MarkFlag[2] = 1;
                 ROW = ROWBOT
                 break;
             case 1:
+                MarkFlag[0] = 1;
                 MarkFlag[1] = 0;
+                MarkFlag[2] = 1;
                 ROW = ROWMID;
                 break;
             case 2:
-                MarkFlag[3] = 0;
+                MarkFlag[0] = 1;
+                MarkFlag[1] = 1;
+                MarkFlag[2] = 0;
                 ROW = ROWTOP;
                 break;
         }
