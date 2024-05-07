@@ -233,6 +233,7 @@ def createGameApi():
         成功返回200
         game_id: 游戏id str
         users: 玩家列表 list
+        usernames: 玩家用户名列表 list
     '''
     global rooms
     params = {'userid':int, 'room_id':str}
@@ -247,9 +248,9 @@ def createGameApi():
             return "{message: '房间不存在！'}",ROOM_NOT_EXIST
         if len(room.users) != 3:
             return "{message: '房间人数不足！'}",ROOM_NOT_ENOUGH
-        game = GameTable(room.users) # TODO::这里应该是创建游戏
+        game:GameTable = GameTable(room.users) # TODO::这里应该是创建游戏
         room.addGameTable(game)
-        emit('createGameSuccess',{'game_id':game.game_id,'users':[room.users[0],room.users[1],room.users[2]]},to=room_id,namespace='/')
+        emit('createGameSuccess',{'game_id':game.game_id,'users':[room.users[0],room.users[1],room.users[2]],'usernames':[sessions[room.users[0]],sessions[room.users[1]],sessions[room.users[2]]]},to=room_id,namespace='/')
         emit('initGame',{'game_info':game.getGameInfo()},to=room_id,namespace='/')
         logger.info("Create game: {0}".format(game.game_id))
         return "{}",SUCCESS
