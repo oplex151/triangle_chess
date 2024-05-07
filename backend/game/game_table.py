@@ -115,7 +115,7 @@ class GameTable:
                     # 获取将要被杀死的棋子
                     kill_piece = self.isWithPiece(nx, ny, nz) 
                     # 移动棋子
-                    if kill_piece.user_z == user_z:
+                    if kill_piece and kill_piece.user_z == user_z:
                         # 不能杀自己的棋子
                         return MOVE_INVALID
                     if piece.move(nx, ny, nz):
