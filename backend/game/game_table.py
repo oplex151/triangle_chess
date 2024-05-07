@@ -128,7 +128,7 @@ class GameTable:
                             # 杀死Leader，该玩家阵亡，请前端自己判断阵亡，后端不发出通知
                             if kill_piece.name == 'Leader':
                                 self.lives[kill_piece.user_z] = False
-                                logger.info(f"用户{user}阵亡")
+                                logger.info(f"用户{kill_piece.user_z}阵亡")
 
                         # 判断游戏是否结束
                         if self.checkGameEnd():

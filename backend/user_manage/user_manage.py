@@ -68,7 +68,6 @@ def register(username, password):
 def logout(userid:int):
 
     global sessions
-    print(sessions)
     if userid in sessions.keys(): 
         sessions.pop(userid)
         logger.info("User {0} logged out successfully".format(userid))

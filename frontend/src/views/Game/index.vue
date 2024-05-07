@@ -7,8 +7,6 @@
 import VueSocketIO from 'vue-socket.io'
 import SocketIO from 'socket.io-client'
 import main from '@/main'
-import { onMounted, ref ,onUnmounted,computed,getCurrentInstance} from 'vue';
-import {COL, ROWTOP, ROWMID, AREABOT, ROWBOT} from '@/config/config';
 import { camps } from '@/lib/game';
 import { GEBI } from '@/utils/utils';
 import Cookies from 'js-cookie';
@@ -16,6 +14,10 @@ import { registerSockets, socket} from '@/sockets'
 import {XYZToPosition, PositionToXYZ} from '@/lib/convert'
 import router from '@/router';
 import {ElMessage} from "element-plus";
+import { lives } from '@/chesses/Live';
+import { onMounted, ref ,onUnmounted,computed,getCurrentInstance} from 'vue';
+import {COL, ROWTOP, ROWMID, AREABOT, ROWBOT} from '@/config/config';
+
 const map = new Map();
 const getid = (row, col) => (ROWTOP - row - 1) * COL + col + 1;
 const camp = ref(0);
@@ -42,28 +44,26 @@ const sockets_methods={
       ElMessage.info('移动成功')
     }
     else {
-      ElMessage.info('玩家'+data.userid+'移动成功')
+      ElMessage.info('玩家'+data.username+'移动成功')
     }
     let position_start = XYZToPosition(data.x1,data.y1,data.z1)
     let position_end = XYZToPosition(data.x2,data.y2,data.z2)
     
     focusChess.value = map.get(position_start);
-
+    // 移动棋子
     moveChess(focusChess.value,position_end);
-    // 在这里改变阵营,如果一方战败后，那么应该动态调整camp.value的赋值
-    if(data.userid==Cookies.get('user0')){
-          camp.value = 1;
-    }
-    else if(data.userid==Cookies.get('user1')){
-          camp.value = 2;
-    }
-    else if(data.userid==Cookies.get('user2')){
-          camp.value = 0;
-    }
 
+    // 切换到下一个阵营
+    camp.value = (camp.value + 1)%3;
+    while(lives[camp.value]==false){
+      camp.value = (camp.value + 1)%3;
+    }
   },
-  message(data){
-    ElMessage.info(data)
+  gameEnd(data){
+    ElMessage.info('游戏结束'+"获胜者为"+data.winner_name)
+    Cookies.remove('game_id')
+    Cookies.remove('camp')
+    router.replace('/room')
   },
   processWrong(data){
     status = data.status
@@ -210,7 +210,7 @@ const initMap = () => {
 
 const hover = (position) => {
   hoverposition.value = position;
-  //hover_xyz.value = PositionToXYZ(position)
+  
   if (!map.has(position)) return;
   hoverChess = map.get(position);
   hoverChess.canMove().forEach((posi) => {
@@ -226,7 +226,6 @@ const out = (position) => {
 };
 
 const Destory = () => {
-
 };
 
 onMounted(()=>{
@@ -242,7 +241,7 @@ onMounted(()=>{
     // 重新加入房间
     socket.value.io.emit('joinRoom',{'userid':userid,'room_id':Cookies.get('room_id')})
   }
-  initMap();
+  initMap(); // 初始化棋盘，改成相应后端消息来哦初始化棋盘
 });
 onUnmounted(Destory);
 </script>

@@ -8,6 +8,7 @@ import axios from 'axios'
 import Cookies from 'js-cookie'
 import { useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus'
+
 const {proxy} = getCurrentInstance()
 const router = useRouter()
 const msg = ref('')
@@ -23,6 +24,7 @@ const sockets_methods={
   createRoomSuccess(data){
     Cookies.set('room_id',data.room_id)
     room_id.value = data.room_id
+    ElMessage.success('创建房间成功')
   },
   joinRoomSuccess(data){
     if (data.userid == userid.value){
@@ -35,15 +37,9 @@ const sockets_methods={
     }
   },
   processWrong(data){
-    console.log(data)
-  },
-  receiveMessage(data){
-    console.log(data)
-    ElMessage.info('收到消息')
-    receive.value = data.message
+    ElMessage.error(data.status)
   },
   leaveRoomSuccess(data){
-    console.log(data)
     if (data.userid == userid.value){
       Cookies.set('room_id',null)
       room_id.value = null
@@ -66,29 +62,26 @@ const sockets_methods={
     router.replace('/game')
   },
 
-  message(data){
-    ElMessage.info(data)
-  },
-  processWrong(data){
-    status = data.status
-    ElMessage.info(status)
-  }
-
 }
 
 
 onMounted(() => {
   ElMessage.info('连接成功')
   establishConnection()
+  if (Cookies.get('room_id')){
+    room_id.value = Cookies.get('room_id')
+  }
   // 注册socket监听
   registerSockets(sockets_methods,socket.value,proxy)
 })
 
 function establishConnection(){
-  socket.value = new VueSocketIO({
-    debug: true,
-    connection: SocketIO(main.url),
-  })
+  if (!socket.value){
+    socket.value = new VueSocketIO({
+      debug: true,
+      connection: SocketIO(main.url),
+    })
+  }
   socket.value.io.on('disconnect',()=>{
     socket.value = null
   })

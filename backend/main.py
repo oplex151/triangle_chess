@@ -175,6 +175,9 @@ def joinRoom(data):
     elif room.game_table is not None and room.game_table.searchGameTable(userid): 
         logger.info(f"User {userid} rejoin to game {room.game_table.game_id}")
         emit('initGame',{'game_info':room.game_table.getGameInfo()},to=room_id,namespace='/')
+    elif tmp_id is None:
+        emit("processWrong",{'status':NOT_IN_ROOM},to=request.sid)
+        return
     
     room.addUser(userid)
     join_room(room_id)
@@ -307,12 +310,14 @@ def movePiece(data):
                                      to=room_id)
             if status == GAME_END:
                 # 游戏结束，判断胜利者或平局
-                if game.game_state == "win":
+                if game.game_state == EnumGameState.win:
                     # 通知所有玩家游戏结束并告知胜利者
-                    emit('gameEnd', {'status': GAME_END, 'winner': userid}, to=room_id)
-                elif game.game_state == "draw":
+                    logger.info(f"Game {game.game_id} end, winner is {userid}")
+                    emit('gameEnd', {'status': GAME_END, 'winner': userid, 'winner_name': sessions[userid]}, to=room_id)
+                elif game.game_state == EnumGameState.draw:
                     # 通知所有玩家游戏结束为平局
-                    emit('gameEnd', {'status': GAME_END, 'winner': -1}, to=room_id)
+                    logger.info(f"Game {game.game_id} end, winner is {userid}")
+                    emit('gameEnd', {'status': GAME_END, 'winner': -1, 'winner_name': None}, to=room_id)
                 room.removeGameTable()
             return
     except Exception as e:
