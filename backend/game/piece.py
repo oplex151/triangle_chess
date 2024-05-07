@@ -1,6 +1,8 @@
 from typing import Literal
 
 class Piece:
+    max_row = 9
+    max_col = 5
     def __init__(self, user_z: Literal[0,1,2], px: int, py: int):
         assert px >= 0 and px < 9 and py >= 0 and py < 5 and user_z >= 0 and user_z < 3
         self.user_z = user_z
@@ -10,9 +12,6 @@ class Piece:
         self.pz = user_z
 
         self.name = 'Piece'
-
-        self.max_row = 9
-        self.max_col = 5
 
     def _rule(self, nx: int, ny: int, nz: Literal[0,1,2])->bool:
         '''
@@ -50,6 +49,13 @@ class Piece:
             return True
         else:
             return False
+        
+    def getPieceInfo(self)->dict:
+        '''
+        Descriptions: Get piece information
+        Note: name 是棋子的名字，px, py, pz 是棋子的位置，live 是棋子的存活状态，user_z 是棋子的所属用户在游戏内的索引(0,1,2)
+        '''
+        return {'name': self.name, 'px': self.px, 'py': self.py, 'pz': self.pz, 'live': self.live, 'user_z': self.user_z}
 
 
 
