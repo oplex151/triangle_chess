@@ -112,9 +112,12 @@ class GameTable:
             user_z = self._getUserIndex(user) # 获取用户的索引
             for piece in self.Pieces[user_z]: # 遍历用户的所有棋子
                 if piece.findPiece(px, py, pz): 
-                    # 获取被杀死的棋子
+                    # 获取将要被杀死的棋子
                     kill_piece = self.isWithPiece(nx, ny, nz) 
                     # 移动棋子
+                    if kill_piece.user_z == user_z:
+                        # 不能杀自己的棋子
+                        return MOVE_INVALID
                     if piece.move(nx, ny, nz):
                         logger.info(f"用户{user}移动棋子{piece.name}从({px},{py},{pz})到({nx},{ny},{nz})")
                         # 判断是否杀死棋子
@@ -312,6 +315,9 @@ class RoomManager:
     def addGameTable(self, game_table: GameTable):
         self.game_table = game_table
 
+    def removeGameTable(self):
+        self.game_table = None
+
     def addUser(self, userid: Union[int, list[int]]):
         if isinstance(userid, list):
             for u in userid:
@@ -328,28 +334,7 @@ class RoomManager:
             logger.info(f"用户{userid}退出房间{self.room_id}")
             return True
         return False
-    
-    # def alertSide(self, user:str, new_sid:str):
-    #     for i,(uid,sid) in enumerate(self.users):
-    #         if uid == user:
-    #             self.users[i][1] = new_sid
-    #             return
-        
 
-
-# def fetchGameByUserID(user_id:str, game_tables:list[GameTable]) -> GameTable:
-#     '''
-#     Description: 根据用户ID获取游戏
-#     Args:
-#         user_id: 用户ID
-#     Returns:
-#         GameTable: 游戏
-#     '''
-#     for game_table in game_tables:
-#         if user_id in [game_table.user1['user_id'], game_table.user2['user_id'], game_table.user3['user_id']]:
-#             return game_table
-#     else:
-#         return None
 
 
 def fetchRoomByRoomID(room_id:str, room_managers:list[RoomManager]) -> RoomManager:
@@ -376,26 +361,7 @@ def inWhitchRoom(user_id:int, room_managers:list[RoomManager]) -> str:
         str: 房间ID
     '''
     for room in room_managers:
-        # for (uid,sid) in room.users:
-        #     if uid == user_id:
-        #         return room.getRoomId()
         if user_id in room.users:
             return room.getRoomId()
     else:
         return None
-    
-# def ifInRoomBySid(sid:str, room_managers:list[RoomManager]) :
-#     '''
-#     Description: 根据sid判断用户是否在某个房间中
-#     Args:
-#         sid: sid
-#         room_managers: 房间列表
-#     Returns:
-#         str: 房间ID
-#     '''
-#     for room in room_managers:
-#         for (uid,sid) in room.users:
-#             if sid == sid:
-#                 return room.getRoomId(),uid
-#     else:
-#         return None,None

@@ -25,6 +25,9 @@ def test1():
     # with open('./backend/tests/test.json', 'w') as f:
     #     json.dump(game.getGameInfo(), f, indent=4)
 
+def test2():
+    pass
+
 if __name__ == '__main__':
     test1()
     print('测试完成')

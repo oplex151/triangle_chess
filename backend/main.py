@@ -142,7 +142,8 @@ def movePiece(data):
     if room_id is None:
         emit('processWrong',{'status':NOT_IN_ROOM},to=request.sid)
         return
-    game:GameTable = fetchRoomByRoomID(room_id,rooms).game_table
+    room:RoomManager = fetchRoomByRoomID(room_id,rooms)
+    game:GameTable = room.game_table
     if game is None:
         emit('processWrong',{'status':NOT_JOIN_GAME},to=request.sid)
         return
@@ -165,6 +166,7 @@ def movePiece(data):
                 elif game.game_state == "draw":
                     # 通知所有玩家游戏结束为平局
                     emit('gameEnd', {'status': GAME_END, 'winner': -1}, to=room_id)
+                room.removeGameTable()
             return
     except Exception as e:
         emit('processWrong',{'status':OTHER_ERROR},to=request.sid)

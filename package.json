@@ -1,5 +1,0 @@
-{
-  "dependencies": {
-    "vue-socket.io": "^3.0.10"
-  }
-}
