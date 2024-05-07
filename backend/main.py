@@ -73,6 +73,152 @@ def logoutApi():
         return "{message: 'parameter error'}",PARAM_ERROR
     return logout(userid)
 
+@socketio.on('connect')
+def connect():
+    '''
+    建立socket连接
+    '''
+    logger.info("User {0} connect".format(request.sid))
+
+@socketio.on('disconnect')
+def disconnect():
+    '''
+    断开socket连接
+    '''
+    if request.sid in sid2uid:
+        # 断开连接时,判断用户是否在房间中,如果在房间中,则退出房间
+        userid = sid2uid[request.sid] 
+        room_id = inWhitchRoom(userid,rooms)
+        if room_id is not None:
+            logger.info(f"User {userid} leave room {room_id}"+
+                        f"this room's users: {fetchRoomByRoomID(room_id,rooms).users}")
+            room = fetchRoomByRoomID(room_id,rooms)
+            room.removeUser(userid)
+            leave_room(room.room_id)
+        sid2uid.pop(request.sid)
+    logger.info("User {0} disconnect".format(request.sid))
+
+@socketio.event
+def createRoom(data):
+    '''
+    Description: 创建房间
+    Args:
+        userid: 用户id 作为房主 int
+    '''
+    global rooms,sid2uid
+    params = {'userid':int}
+    try:
+        userid = get_params(params,data)
+    except:
+        emit('processWrong',{'status':PARAM_ERROR},to=request.sid)
+        return
+    
+    room_id = inWhitchRoom(userid,rooms)
+    if room_id is not None:
+        logger.error("User {0} is already in room {1}".format(userid,room_id))
+        emit('processWrong',{'status':ALREADY_IN_ROOM},to=request.sid)
+        return
+    new_room = RoomManager(userid)
+    rooms.append(new_room)
+    room_id = rooms[-1].room_id
+    join_room(room_id)
+    logger.info(f"Create room {room_id} by user {userid}, sid={request.sid}\n"
+                +f"this room's users: {new_room.users}")
+    emit('createRoomSuccess',{'room_id':room_id},to=request.sid)
+    # 更新sid2uid
+    if request.sid not in sid2uid:
+        sid2uid[request.sid] = userid
+
+@socketio.event
+def joinRoom(data):
+    '''
+    Description: 加入房间
+    Args:
+        room_id: 房间id  str
+        userid: 用户id  int
+    Return:
+        成功返回200
+        room_id: 房间id  str
+        userid: 用户id  int
+        username: 用户名 str
+    '''
+    global rooms,sessions
+    parms = {'room_id':str, 'userid':int}
+    try:
+        room_id,userid = get_params(parms,data)
+    except:
+        logger.error("Join room error", exc_info=True)
+        emit('processWrong',{'status':PARAM_ERROR},to=request.sid)
+        return
+    
+    room = fetchRoomByRoomID(room_id,rooms)
+    if room is None:
+        logger.error("No such room {0}".format(room_id))
+        emit('processWrong',{'status':ROOM_NOT_EXIST},to=request.sid)
+        return
+    # 查询该用户是否在某个房间中
+    tmp_id = inWhitchRoom(userid,rooms)
+    # 已经在某个房间中, 先退出
+    if tmp_id is not None and tmp_id != room_id: 
+        logger.info(f"User {userid} leave room {tmp_id}"+
+                    f"this room's users: {fetchRoomByRoomID(tmp_id,rooms).users}")
+        room = fetchRoomByRoomID(tmp_id,rooms)
+        room.removeUser(userid)
+        leave_room(tmp_id)
+    # 已经在这个房间中, 不可以重复加入
+    elif tmp_id is not None: 
+        logger.info(f"User {userid} already in room {room_id}"+
+                    f"this room's users: {fetchRoomByRoomID(room_id,rooms).users}")
+        emit('processWrong',{'status':ALREADY_IN_ROOM},to=request.sid)
+        return
+    # 用户在游戏中
+    elif room.game_table is not None and room.game_table.searchGameTable(userid): 
+        logger.info(f"User {userid} rejoin to game {room.game_table.game_id}")
+        emit('initGame',{'game_info':room.game_table.getGameInfo()},to=room_id,namespace='/')
+    
+    room.addUser(userid)
+    join_room(room_id)
+    logger.info(f"User {userid} join room {room_id}, sid={request.sid}"
+                +f"this room's users: {room.users}")
+    emit('joinRoomSuccess',{'room_id':room_id,'userid':userid,'username':sessions[userid]},to=room_id)
+    # 更新sid2uid
+    if request.sid not in sid2uid: 
+        sid2uid[request.sid] = userid
+
+@socketio.event
+def leaveRoom(data):
+    '''
+    Description: 离开房间
+    Args:
+        room_id: 房间id str
+        userid: 用户id int
+    '''
+    global rooms,sid2uid
+    parms = {'room_id':str, 'userid':int}
+    try:
+        room_id,userid = get_params(parms,data)
+    except:
+        logger.error("Leave room error", exc_info=True)
+        emit('processWrong',{'status':PARAM_ERROR},to=request.sid)
+        return
+    room:RoomManager = fetchRoomByRoomID(room_id,rooms)
+    if room is None:
+        logger.error("No such room {0}".format(room_id))
+        emit('processWrong',{'status':ROOM_NOT_EXIST},to=request.sid)
+        return
+    if room.removeUser(userid):
+        emit('leaveRoomSuccess',{'userid':sid2uid[request.sid]},to=room_id)
+        leave_room(room_id)
+        # 更新sid2uid
+        if request.sid in sid2uid:
+            sid2uid.pop(request.sid)
+        # 房间为空, 移除房间
+        if len(room.users) == 0:
+            rooms.remove(room)
+            logger.info(f"Room {room_id} is empty, remove it")
+    else:
+        logger.error("User {0} not in room {1}".format(userid,room_id))
+        emit('processWrong',{'status':NOT_IN_ROOM},to=request.sid)
 
 @app.route('/api/game/create', methods=['POST'])
 def createGameApi():
@@ -82,6 +228,8 @@ def createGameApi():
         room_id: 房间id str
     Returns:
         成功返回200
+        game_id: 游戏id str
+        users: 玩家列表 list
     '''
     global rooms
     params = {'userid':int, 'room_id':str}
@@ -106,7 +254,6 @@ def createGameApi():
         logger.error("Create game error due to {0}".format(str(e)), exc_info=True)
         return "{message: 'create game error'}",GAME_CREATE_FAILED
 
-
 @socketio.event
 def movePiece(data):
     '''
@@ -121,6 +268,7 @@ def movePiece(data):
     Returns:
         移动成功200(房间广播)
         userid: 用户id           int
+        status:状态码            int       
         x1: 起始横坐标           int
         y1: 起始纵坐标           int
         z1: 起始棋盘             int
@@ -131,7 +279,6 @@ def movePiece(data):
     global rooms
     params = {'userid':int,  'x1':int, 'y1':int, 'z1':int, 'x2':int, 'y2':int, 'z2':int}
     try:
-        logger.info(data)
         userid,x1,y1,z1,x2,y2,z2 = get_params(params,data)
     except ValueError as e:
         logger.error(e)
@@ -206,7 +353,6 @@ def request_draw(data):
         emit('processWrong',{'status':OTHER_ERROR},to=request.sid)
         return 
     
-
 @socketio.event
 def respond_draw(data):
     """
@@ -252,159 +398,8 @@ def respond_draw(data):
         emit('processWrong',{'status':OTHER_ERROR},to=request.sid)
         return 
 
-@socketio.on('connect')
-def establishConnection():
-    '''
-    建立socket连接
-    '''
-    logger.info("User {0} connect".format(request.sid))
-
-@socketio.on('disconnect')
-def disconnect():
-    '''
-    断开socket连接
-    '''
-    if request.sid in sid2uid:
-        # 断开连接时,判断用户是否在房间中,如果在房间中,则退出房间
-        userid = sid2uid[request.sid] 
-        room_id = inWhitchRoom(userid,rooms)
-        if room_id is not None:
-            logger.info(f"User {userid} leave room {room_id}"+
-                        f"this room's users: {fetchRoomByRoomID(room_id,rooms).users}")
-            room = fetchRoomByRoomID(room_id,rooms)
-            room.removeUser(userid)
-            leave_room(room.room_id)
-        sid2uid.pop(request.sid)
-    logger.info("User {0} disconnect".format(request.sid))
-
-@socketio.event
-def createRoom(data):
-    '''
-    Description: 创建房间
-    Args:
-        userid: 用户id 作为房主 int
-    '''
-    global rooms,sid2uid
-    params = {'userid':int}
-    try:
-        userid = get_params(params,data)
-    except:
-        emit('processWrong',{'status':PARAM_ERROR},to=request.sid)
-        return
-    
-    room_id = inWhitchRoom(userid,rooms)
-    if room_id is not None:
-        logger.error("User {0} is already in room {1}".format(userid,room_id))
-        emit('processWrong',{'status':ALREADY_IN_ROOM},to=request.sid)
-        return
-    new_room = RoomManager(userid)
-    rooms.append(new_room)
-    room_id = rooms[-1].room_id
-    join_room(room_id)
-    logger.info(f"Create room {room_id} by user {userid}, sid={request.sid}\n"
-                +f"this room's users: {new_room.users}")
-    emit('createRoomSuccess',{'room_id':room_id},to=request.sid)
-    # 更新sid2uid
-    if request.sid not in sid2uid:
-        sid2uid[request.sid] = userid
-
-@socketio.event
-def joinRoom(data):
-    '''
-    Description: 加入房间
-    Args:
-        room_id: 房间id  str
-        userid: 用户id  int
-    '''
-    global rooms
-    parms = {'room_id':str, 'userid':int}
-    try:
-        room_id,userid = get_params(parms,data)
-    except:
-        logger.error("Join room error", exc_info=True)
-        emit('processWrong',{'status':PARAM_ERROR},to=request.sid)
-        return
-    
-    room = fetchRoomByRoomID(room_id,rooms)
-    if room is None:
-        logger.error("No such room {0}".format(room_id))
-        emit('processWrong',{'status':ROOM_NOT_EXIST},to=request.sid)
-        return
-    # 查询该用户是否在某个房间中
-    tmp_id = inWhitchRoom(userid,rooms)
-    # 已经在某个房间中, 先退出
-    if tmp_id is not None and tmp_id != room_id: 
-        logger.info(f"User {userid} leave room {tmp_id}"+
-                    f"this room's users: {fetchRoomByRoomID(tmp_id,rooms).users}")
-        room = fetchRoomByRoomID(tmp_id,rooms)
-        room.removeUser(userid)
-        leave_room(tmp_id)
-    # 已经在这个房间中, 不可以重复加入
-    elif tmp_id is not None: 
-        logger.info(f"User {userid} already in room {room_id}"+
-                    f"this room's users: {fetchRoomByRoomID(room_id,rooms).users}")
-        emit('processWrong',{'status':ALREADY_IN_ROOM},to=request.sid)
-        return
-    elif room.game_table is not None and room.game_table.searchGameTable(userid): 
-        # 用户在游戏中
-        logger.info(f"User {userid} reconnect to game {room.game_table.game_id}")
-    
-    # if room.isFull():
-    #     logger.error("Room {0} is full".format(room_id))
-    #     emit('processWrong',status=ROOM_FULL,to=request.sid)
-    room.addUser(userid)
-    join_room(room_id)
-    logger.info(f"User {userid} join room {room_id}, sid={request.sid}"
-                +f"this room's users: {room.users}")
-    emit('joinRoomSuccess',to=room_id)
-    # 更新sid2uid
-    if request.sid not in sid2uid: 
-        sid2uid[request.sid] = userid
-
-@socketio.event
-def leaveRoom(data):
-    '''
-    Description: 离开房间
-    Args:
-        room_id: 房间id str
-        userid: 用户id int
-    '''
-    global rooms,sid2uid
-    parms = {'room_id':str, 'userid':int}
-    try:
-        room_id,userid = get_params(parms,data)
-    except:
-        logger.error("Leave room error", exc_info=True)
-        emit('processWrong',{'status':PARAM_ERROR},to=request.sid)
-        return
-    room:RoomManager = fetchRoomByRoomID(room_id,rooms)
-    if room is None:
-        logger.error("No such room {0}".format(room_id))
-        emit('processWrong',{'status':ROOM_NOT_EXIST},to=request.sid)
-        return
-    if room.removeUser(userid):
-        emit('leaveRoomSuccess',{'userid':sid2uid[request.sid]},to=room_id)
-        logger.info(f"User {userid} leave room {room_id}, sid={request.sid}"
-                    +f"this room's users: {room.users}")
-        leave_room(room_id)
-        # 更新sid2uid
-        if request.sid in sid2uid:
-            sid2uid.pop(request.sid)
-    else:
-        logger.error("User {0} not in room {1}".format(userid,room_id))
-        emit('processWrong',{'status':NOT_IN_ROOM},to=request.sid)
 
 # TODO::重新连接
-
-@socketio.event
-def sendMessage(data):
-    '''test'''
-    room_id = data['room_id']
-    userid = data['userid']
-    message = data['message']
-
-    emit('receiveMessage',{'message':message},userid=userid,to=room_id,
-         skip_sid=request.sid)
 
 if __name__ == "__main__":
     socketio.run(app,debug=True,host='0.0.0.0',port=8888,allow_unsafe_werkzeug=True)

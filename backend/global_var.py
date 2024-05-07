@@ -7,6 +7,6 @@ global sessions
 global sid2uid
 
 rooms:list[RoomManager] = []
-sessions:list[int] = []
+sessions:dict[int, str] = {}
 match_queue:queue = queue.Queue()
 sid2uid:dict[str, int] = {}

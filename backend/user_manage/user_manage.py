@@ -29,7 +29,7 @@ def login(username, password):
                 return "{}",ALREADY_LOGIN
             logger.info("User {0} logged in successfully usring id {1}".format(username,result[1]))
             res = {"userid":result[1]}
-            sessions.append(result[1])
+            sessions[result[1]] = username
             return jsonify(res),SUCCESS
         elif result is not None and result[0] != password:
             logger.error("User {0} failed to login due to wrong password".format(username))
@@ -69,8 +69,8 @@ def logout(userid:int):
 
     global sessions
     print(sessions)
-    if userid in sessions: 
-        sessions.remove(userid)
+    if userid in sessions.keys(): 
+        sessions.pop(userid)
         logger.info("User {0} logged out successfully".format(userid))
         return "{}",SUCCESS
     else:

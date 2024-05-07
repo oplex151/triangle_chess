@@ -4,21 +4,22 @@
 // 故意留下来的，以便于测试离线情况下的棋子逻辑
 // 正式版本请删除。
 
-
+import VueSocketIO from 'vue-socket.io'
+import SocketIO from 'socket.io-client'
+import main from '@/main'
 import { onMounted, ref ,onUnmounted,computed,getCurrentInstance} from 'vue';
-import { Chess } from '@/chesses/Chess';
 import {COL, ROWTOP, ROWMID, AREABOT, ROWBOT} from '@/config/config';
 import { camps } from '@/lib/game';
 import { GEBI } from '@/utils/utils';
 import Cookies from 'js-cookie';
-import { registerSockets, socket ,registerSocketsForce} from '@/sockets'
+import { registerSockets, socket} from '@/sockets'
 import {XYZToPosition, PositionToXYZ} from '@/lib/convert'
 import router from '@/router';
 import {ElMessage} from "element-plus";
 const map = new Map();
 const getid = (row, col) => (ROWTOP - row - 1) * COL + col + 1;
 const camp = ref(0);
-// 这俩当时写错了没声明成相应的，后来发现也不需要
+
 const userid =  Cookies.get('userid')
 const my_camp = Cookies.get('camp')
 let hoverChess;
@@ -151,8 +152,6 @@ const action = (position) => {
         // 暂时不启用, 阻止自己的棋子吃掉自己的棋子
         && map.get(position)?.camp !== camp.value
     ) {
-      alert("try")
-
       xyz.value = PositionToXYZ(position)
       xyzn.value = PositionToXYZ(focusChess.value.position)
       socket.value.io.emit('movePiece',{'userid':userid,'chess_type':1, 
@@ -206,7 +205,7 @@ const initMap = () => {
     });
   }
   // 注册socket监听
-  registerSockets(sockets_methods,socket.value,proxy)
+  registerSockets(sockets_methods,socket.value,proxy);
 };
 
 const hover = (position) => {
@@ -234,6 +233,14 @@ onMounted(()=>{
   if (!Cookies.get('camp')){
     router.replace('/room')
     return
+  }
+  if (!socket.value){
+    socket.value = new VueSocketIO({
+      debug: true,
+      connection: SocketIO(main.url),
+    })
+    // 重新加入房间
+    socket.value.io.emit('joinRoom',{'userid':userid,'room_id':Cookies.get('room_id')})
   }
   initMap();
 });

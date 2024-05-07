@@ -14,11 +14,6 @@ import { socket } from '@/sockets';
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-    {
-      path: '/test',
-      name: 'test',
-      component: () => import('@/views/Test_socket/index.vue')
-    },
     //   主页
     {
       path: '/',
