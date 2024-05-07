@@ -71,6 +71,7 @@ router.beforeEach((to, from, next) => {
   //在不需要连接的页面，断开连接
   if (!to.meta.connection) {
     socket.value = ""
+    Cookies.remove('room_id')
   }
   if (to.meta.isAuth) {
     if (Cookies.get('userid')) {

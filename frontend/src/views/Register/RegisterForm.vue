@@ -52,7 +52,7 @@
 <script lang="ts" setup>
 import { reactive, ref } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
-import { RTL_OFFSET_POS_ASC } from 'element-plus/es/components/virtual-list/src/defaults';
+// import { RTL_OFFSET_POS_ASC } from 'element-plus/es/components/virtual-list/src/defaults';
 
 const formRef = ref<FormInstance>()
 const disableForm = ref(false)

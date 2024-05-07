@@ -1,8 +1,5 @@
 <script setup >
-// 这里故意留下来的bug
-// 没有登录的时候，可以选择任意的棋子(func action).
-// 故意留下来的，以便于测试离线情况下的棋子逻辑
-// 正式版本请删除。
+
 
 import VueSocketIO from 'vue-socket.io'
 import SocketIO from 'socket.io-client'
@@ -32,9 +29,7 @@ const hover_xyz = ref([0,0,0])
 const xyz = ref([0,0,0])
 const xyzn = ref([0,0,0])
 const my_camp_str = ['红方','黑方','金方']
-// 请注意现在的流程：
-// 玩家发出一个move请求，服务器会返回一个move成功的消息，然后前端再进行渲染
-// 为了实现这个流程，我们需要一个状态来判断是否移动成功
+
 const move_succ = ref(false)
 const {proxy} = getCurrentInstance()
 const sockets_methods={
@@ -71,32 +66,31 @@ const sockets_methods={
   }
 }
 
-// 计算当前的渲染方案
-// 因为逻辑和渲染是分开的，我们只需要为不同的角色分配不同的渲染就可以了
-const front_position = computed(() => {
-  switch (my_camp) {
-    case 0:
-      return 2;
-    case 1:
-      return 1;
-    case 2:
-      return 0;
-    default:
-      return 2;
-}}
-);
-const back_position = computed(() => {
-  switch (my_camp) {
-    case 0:
-      return 1;
-    case 1:
-      return 2;
-    case 2:
-      return 0;
-    default:
-      return 1;
-}}
-);
+
+// const front_position = computed(() => {
+//   switch (my_camp) {
+//     case 0:
+//       return 2;
+//     case 1:
+//       return 1;
+//     case 2:
+//       return 0;
+//     default:
+//       return 2;
+// }}
+// );
+// const back_position = computed(() => {
+//   switch (my_camp) {
+//     case 0:
+//       return 1;
+//     case 1:
+//       return 2;
+//     case 2:
+//       return 0;
+//     default:
+//       return 1;
+// }}
+// );
 const camp_1_style = computed(() => {
   if (my_camp==1){
     return 'board'
