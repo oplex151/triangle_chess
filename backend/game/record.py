@@ -90,7 +90,7 @@ class GameRecord:
 def viewUserGameRecords(user_id):
     try:
         # 查询特定用户参与的游戏记录
-        select_query = "SELECT * FROM {0} WHERE p1=%s OR p2=%s OR p3=%s;".format(GAME_RECORD_TABLE)
+        select_query = "SELECT * FROM {0} WHERE p1=%s OR p2=%s OR p3=%s ORDER BY startTime DESC;".format(GAME_RECORD_TABLE)
         cursor.execute(select_query, (user_id, user_id, user_id))
         records = cursor.fetchall()
         return records,SUCCESS
