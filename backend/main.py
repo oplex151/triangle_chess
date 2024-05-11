@@ -310,23 +310,30 @@ def movePiece(data):
                                      'x2':x2, 'y2':y2, 'z2':z2},
                                      to=room_id)
             if status == GAME_END:
-                # 游戏结束，判断胜利者或平局
-                if game.game_state == EnumGameState.win:
-                    # 通知所有玩家游戏结束并告知胜利者
-                    logger.info(f"Game {game.game_id} end, winner is {userid}")
-                    emit('gameEnd', {'status': GAME_END, 'winner': userid, 'winner_name': sessions[userid]}, to=room_id)
-                elif game.game_state == EnumGameState.draw:
-                    # 通知所有玩家游戏结束为平局
-                    logger.info(f"Game {game.game_id} end, winner is {userid}")
-                    emit('gameEnd', {'status': GAME_END, 'winner': -1, 'winner_name': None}, to=room_id)
-                room.removeGameTable()
+                roomOver(game=game, room=room, userid=userid)
             return
     except Exception as e:
         emit('processWrong',{'status':OTHER_ERROR},to=request.sid)
         return 
 
+def roomOver(game:GameTable, room:RoomManager, userid:int):
+    # 游戏结束，判断胜利者或平局
+    if game.game_state == EnumGameState.win:
+        # 通知所有玩家游戏结束并告知胜利者
+        logger.info(f"Game {game.game_id} end, winner is {userid}")
+        emit('gameEnd', {'status': GAME_END, 'winner': userid, 'winner_name': sessions[userid]}, to=room.room_id)
+    elif game.game_state == EnumGameState.draw:
+        # 通知所有玩家游戏结束为平局
+        logger.info(f"Game {game.game_id} end, winner is {userid}")
+        emit('gameEnd', {'status': GAME_END, 'winner': -1, 'winner_name': None}, to=room.room_id)
+    room.removeGameTable()
+    if room.room_type == RoomType.matched:
+        # 匹配模式下，游戏结束后，关闭房间
+        # 请前端自行处理匹配模式下的后续操作
+        rooms.remove(room)
+
 @socketio.event
-def request_draw(data):
+def requestDraw(data):
     """
     接收玩家发起求和请求的数据。
     Args:
@@ -360,7 +367,7 @@ def request_draw(data):
         return 
     
 @socketio.event
-def respond_draw(data):
+def respondDraw(data):
     """
     接收玩家回应求和请求的数据。
     Args:
@@ -404,6 +411,35 @@ def respond_draw(data):
         emit('processWrong',{'status':OTHER_ERROR},to=request.sid)
         return 
 
+@socketio.event
+def startMatch(data):
+    """
+    接收玩家开始匹配请求
+    Args:
+        userid: 用户id      int 
+    """
+    global rooms, match_queue
+    params = {'userid':int}
+    try:
+        userid = get_params(params,data)
+    except:
+        emit('processWrong',{'status':PARAM_ERROR},to=request.sid)
+        return
+    match_queue.put(userid)
+    if (match_queue.qsize() >= 3):
+        user0,user1,user2 = match_queue.get(),match_queue.get(),match_queue.get()
+        # 开始游戏
+        room = RoomManager([user0,user1,user2],RoomType.matched)
+        rooms.append(room)
+        room.game_table = GameTable(room.users)
+        for user in room.users:
+            join_room(room=room.room_id,sid=uid2sid(user))
+        logger.info(f"Create room : {room.room_id} and game: {room.game_table.game_id}")
+        emit('startMatchSuccess',{'room_id':room.room_id,'game_id':room.game_table.game_id,
+                                  'users':[room.users[0],room.users[1],room.users[2]],
+                                  'usernames':[sessions[room.users[0]],sessions[room.users[1]],sessions[room.users[2]]]},
+                                  to=room.room_id,namespace='/')
+        emit('initGame',{'game_info':room.game_table.getGameInfo()},to=room.room_id,namespace='/')
 
 # TODO::重新连接
 
