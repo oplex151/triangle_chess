@@ -2,24 +2,24 @@ import os
 import pymysql
 import datetime
 from dotenv import load_dotenv
-from flask import jsonify
+
 from backend.tools import setupLogger
 from backend.message import *
-from backend.global_var import rooms,sessions
 
-DATA_BASE = "triangleChess"
+
+DATA_BASE = "trianglechess"
 GAME_RECORD_TABLE = "game_record"
 GAME_MOVE_TABLE = "game_move"
 
 load_dotenv()
 password = os.getenv("MYSQL_PASSWORD")
-print(password)
+
 db = pymysql.connect(host="127.0.0.1",user="root",password=password,database=DATA_BASE)
 cursor = db.cursor()
 
 logger = setupLogger()
 
-def init_record(p1, p2, p3, start_time=datetime.datetime.now(), end_time=None, winner=None, like_num=0, comment_num=0):
+def initRecord(p1, p2, p3, start_time=datetime.datetime.now(), end_time=None, winner=None, like_num=0, comment_num=0):
     try:
         insert_query = """
             INSERT INTO {0} (p1, p2, p3, startTime, endTime, winner, likeNum, commentNum)
@@ -49,7 +49,7 @@ def init_record(p1, p2, p3, start_time=datetime.datetime.now(), end_time=None, w
 
 class GameRecord:
     def __init__(self, p1, p2, p3, start_time=datetime.datetime.now(), end_time=None, winner=None, like_num=0, comment_num=0):
-        self.record_id = init_record(p1, p2, p3)
+        self.record_id = initRecord(p1, p2, p3)
         self.p1 = p1
         self.p2 = p2
         self.p3 = p3
@@ -59,7 +59,7 @@ class GameRecord:
         self.like_num = like_num
         self.comment_num = comment_num
 
-    def record_move(self, playerId, chessType, startPos, endPos):
+    def recordMove(self, playerId, chessType, startPos, endPos):
         try:
             insert_query = "INSERT INTO {0} (recordId, playerId, chessType, startPos, endPos) VALUES (%s, %s, %s, %s, %s, %s);".format(GAME_MOVE_TABLE)
             cursor.execute(insert_query, (self.record_id, playerId, chessType, startPos, endPos))
@@ -71,7 +71,7 @@ class GameRecord:
             logger.error("Failed to record move for game {0} due to\n{1}".format(self.record_id, str(e)))
             return OTHER_ERROR
         
-    def record_end(self, winnerid):
+    def recordEnd(self, winnerid):
         self.end_time = datetime.datetime.now(),  # 对局结束时间为当前时间
         self.winner = winnerid
         try:
@@ -87,7 +87,7 @@ class GameRecord:
             logger.error("Failed to end record {0} due to\n{1}".format(self.record_id, str(e)))
             return OTHER_ERROR
 
-def view_user_game_records(user_id):
+def viewUserGameRecords(user_id):
     try:
         # 查询特定用户参与的游戏记录
         select_query = "SELECT * FROM {0} WHERE p1=%s OR p2=%s OR p3=%s;".format(GAME_RECORD_TABLE)

@@ -30,6 +30,7 @@ onBeforeMount(() =>{
                 showClose: true
             })
             Cookies.remove('userid');
+            Cookies.remove('room_id');
             router.push('/');
         }
         else {

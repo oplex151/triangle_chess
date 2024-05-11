@@ -145,7 +145,7 @@ class GameTable:
                         chessType = "piece"
                         startPos = str(px) + ',' + str(py) + ',' + str(pz)
                         endPos = str(nx) + ',' + str(ny) + ',' + str(nz)
-                        self.record.record_move(user, chessType, startPos, endPos)
+                        self.record.recordMove(user, chessType, startPos, endPos)
 
                          # 切换到下一个用户
                         self.turn = (self.turn+1)%3
@@ -185,7 +185,7 @@ class GameTable:
         else:
             return None
     
-    def get_alive_players(self):
+    def getAlivePlayers(self):
         '''
         Description: 返回存活玩家的 user_id 列表。
         Returns:
@@ -208,7 +208,7 @@ class GameTable:
         # 返回存活玩家的 user_id 列表
         return alive_players
 
-    def request_draw(self, userid:int):
+    def requestDraw(self, userid:int):
         '''
         Description: 处理求和请求
         '''
@@ -222,7 +222,7 @@ class GameTable:
         # 初始化回应求和请求的玩家列表
         self.draw_respondents = set()
 
-    def respond_draw(self, userid:int, agree:bool):
+    def respondDraw(self, userid:int, agree:bool):
         '''
         Description: 处理求和回应
         '''
@@ -236,7 +236,7 @@ class GameTable:
         # 添加对求和请求的回应
         self.draw_agree.add(agree)
 
-    def set_draw(self, agree:bool):
+    def setDraw(self, agree:bool):
         '''
         Description: 处理求和的结果
         '''
