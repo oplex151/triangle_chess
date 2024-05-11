@@ -1,6 +1,0 @@
-flask
-pymysql
-python-dotenv
-Path
-hashlib
-logging

@@ -1,2 +1,7 @@
-logs/
+*.log
 .vscode/
+node_modules/
+__pycache__/
+.idea/
+*.pyc
+*.venv

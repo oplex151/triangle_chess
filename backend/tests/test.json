@@ -1,0 +1,391 @@
+{
+    "turn": 1,
+    "game_state": "ongoing",
+    "winner": -1,
+    "pieces": [
+        {
+            "name": "Piece",
+            "px": 4,
+            "py": 0,
+            "pz": 0,
+            "live": true,
+            "user_z": 0
+        },
+        {
+            "name": "Piece",
+            "px": 3,
+            "py": 0,
+            "pz": 0,
+            "live": true,
+            "user_z": 0
+        },
+        {
+            "name": "Piece",
+            "px": 5,
+            "py": 0,
+            "pz": 0,
+            "live": true,
+            "user_z": 0
+        },
+        {
+            "name": "Piece",
+            "px": 2,
+            "py": 0,
+            "pz": 0,
+            "live": true,
+            "user_z": 0
+        },
+        {
+            "name": "Piece",
+            "px": 6,
+            "py": 0,
+            "pz": 0,
+            "live": true,
+            "user_z": 0
+        },
+        {
+            "name": "Piece",
+            "px": 1,
+            "py": 0,
+            "pz": 0,
+            "live": true,
+            "user_z": 0
+        },
+        {
+            "name": "Piece",
+            "px": 7,
+            "py": 0,
+            "pz": 0,
+            "live": true,
+            "user_z": 0
+        },
+        {
+            "name": "Piece",
+            "px": 0,
+            "py": 0,
+            "pz": 1,
+            "live": true,
+            "user_z": 0
+        },
+        {
+            "name": "Piece",
+            "px": 8,
+            "py": 0,
+            "pz": 0,
+            "live": true,
+            "user_z": 0
+        },
+        {
+            "name": "Piece",
+            "px": 1,
+            "py": 2,
+            "pz": 0,
+            "live": true,
+            "user_z": 0
+        },
+        {
+            "name": "Piece",
+            "px": 7,
+            "py": 2,
+            "pz": 0,
+            "live": true,
+            "user_z": 0
+        },
+        {
+            "name": "Soilder",
+            "px": 0,
+            "py": 3,
+            "pz": 0,
+            "live": true,
+            "user_z": 0
+        },
+        {
+            "name": "Soilder",
+            "px": 2,
+            "py": 3,
+            "pz": 0,
+            "live": true,
+            "user_z": 0
+        },
+        {
+            "name": "Soilder",
+            "px": 4,
+            "py": 3,
+            "pz": 0,
+            "live": true,
+            "user_z": 0
+        },
+        {
+            "name": "Soilder",
+            "px": 6,
+            "py": 3,
+            "pz": 0,
+            "live": true,
+            "user_z": 0
+        },
+        {
+            "name": "Soilder",
+            "px": 8,
+            "py": 3,
+            "pz": 0,
+            "live": true,
+            "user_z": 0
+        },
+        {
+            "name": "Piece",
+            "px": 4,
+            "py": 0,
+            "pz": 1,
+            "live": true,
+            "user_z": 1
+        },
+        {
+            "name": "Piece",
+            "px": 3,
+            "py": 0,
+            "pz": 1,
+            "live": true,
+            "user_z": 1
+        },
+        {
+            "name": "Piece",
+            "px": 5,
+            "py": 0,
+            "pz": 1,
+            "live": true,
+            "user_z": 1
+        },
+        {
+            "name": "Piece",
+            "px": 2,
+            "py": 0,
+            "pz": 1,
+            "live": true,
+            "user_z": 1
+        },
+        {
+            "name": "Piece",
+            "px": 6,
+            "py": 0,
+            "pz": 1,
+            "live": true,
+            "user_z": 1
+        },
+        {
+            "name": "Piece",
+            "px": 1,
+            "py": 0,
+            "pz": 1,
+            "live": true,
+            "user_z": 1
+        },
+        {
+            "name": "Piece",
+            "px": 7,
+            "py": 0,
+            "pz": 1,
+            "live": true,
+            "user_z": 1
+        },
+        {
+            "name": "Piece",
+            "px": 0,
+            "py": 0,
+            "pz": 1,
+            "live": false,
+            "user_z": 1
+        },
+        {
+            "name": "Piece",
+            "px": 8,
+            "py": 0,
+            "pz": 1,
+            "live": true,
+            "user_z": 1
+        },
+        {
+            "name": "Piece",
+            "px": 1,
+            "py": 2,
+            "pz": 1,
+            "live": true,
+            "user_z": 1
+        },
+        {
+            "name": "Piece",
+            "px": 7,
+            "py": 2,
+            "pz": 1,
+            "live": true,
+            "user_z": 1
+        },
+        {
+            "name": "Soilder",
+            "px": 0,
+            "py": 3,
+            "pz": 1,
+            "live": true,
+            "user_z": 1
+        },
+        {
+            "name": "Soilder",
+            "px": 2,
+            "py": 3,
+            "pz": 1,
+            "live": true,
+            "user_z": 1
+        },
+        {
+            "name": "Soilder",
+            "px": 4,
+            "py": 3,
+            "pz": 1,
+            "live": true,
+            "user_z": 1
+        },
+        {
+            "name": "Soilder",
+            "px": 6,
+            "py": 3,
+            "pz": 1,
+            "live": true,
+            "user_z": 1
+        },
+        {
+            "name": "Soilder",
+            "px": 8,
+            "py": 3,
+            "pz": 1,
+            "live": true,
+            "user_z": 1
+        },
+        {
+            "name": "Piece",
+            "px": 4,
+            "py": 0,
+            "pz": 2,
+            "live": true,
+            "user_z": 2
+        },
+        {
+            "name": "Piece",
+            "px": 3,
+            "py": 0,
+            "pz": 2,
+            "live": true,
+            "user_z": 2
+        },
+        {
+            "name": "Piece",
+            "px": 5,
+            "py": 0,
+            "pz": 2,
+            "live": true,
+            "user_z": 2
+        },
+        {
+            "name": "Piece",
+            "px": 2,
+            "py": 0,
+            "pz": 2,
+            "live": true,
+            "user_z": 2
+        },
+        {
+            "name": "Piece",
+            "px": 6,
+            "py": 0,
+            "pz": 2,
+            "live": true,
+            "user_z": 2
+        },
+        {
+            "name": "Piece",
+            "px": 1,
+            "py": 0,
+            "pz": 2,
+            "live": true,
+            "user_z": 2
+        },
+        {
+            "name": "Piece",
+            "px": 7,
+            "py": 0,
+            "pz": 2,
+            "live": true,
+            "user_z": 2
+        },
+        {
+            "name": "Piece",
+            "px": 0,
+            "py": 0,
+            "pz": 2,
+            "live": true,
+            "user_z": 2
+        },
+        {
+            "name": "Piece",
+            "px": 8,
+            "py": 0,
+            "pz": 2,
+            "live": true,
+            "user_z": 2
+        },
+        {
+            "name": "Piece",
+            "px": 1,
+            "py": 2,
+            "pz": 2,
+            "live": true,
+            "user_z": 2
+        },
+        {
+            "name": "Piece",
+            "px": 7,
+            "py": 2,
+            "pz": 2,
+            "live": true,
+            "user_z": 2
+        },
+        {
+            "name": "Soilder",
+            "px": 0,
+            "py": 3,
+            "pz": 2,
+            "live": true,
+            "user_z": 2
+        },
+        {
+            "name": "Soilder",
+            "px": 2,
+            "py": 3,
+            "pz": 2,
+            "live": true,
+            "user_z": 2
+        },
+        {
+            "name": "Soilder",
+            "px": 4,
+            "py": 3,
+            "pz": 2,
+            "live": true,
+            "user_z": 2
+        },
+        {
+            "name": "Soilder",
+            "px": 6,
+            "py": 3,
+            "pz": 2,
+            "live": true,
+            "user_z": 2
+        },
+        {
+            "name": "Soilder",
+            "px": 8,
+            "py": 3,
+            "pz": 2,
+            "live": true,
+            "user_z": 2
+        }
+    ]
+}
