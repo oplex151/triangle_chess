@@ -10,6 +10,7 @@ import hashlib
 import random
 from .piece import Piece
 from .special_piece import *
+from .record import GameRecord
 from backend.message import *
 from backend.tools import setupLogger
 
@@ -39,6 +40,12 @@ class GameTable:
         self.draw_requester = None  # 发起求和请求的玩家
         self.draw_respondents = set()  # 记录回应求和请求的玩家
         self.draw_agree = set()  # 记录对求和请求的回应
+
+        self.record = GameRecord(
+                p1=self.user1['user_id'],
+                p2=self.user2['user_id'],
+                p3=self.user3['user_id']
+            )
 
         for i in range(3):
             self._initChess(i)
@@ -134,6 +141,12 @@ class GameTable:
                         if self.checkGameEnd():
                             return GAME_END
                         
+                        # 记录这一步
+                        chessType = "piece"
+                        startPos = str(px) + ',' + str(py) + ',' + str(pz)
+                        endPos = str(nx) + ',' + str(ny) + ',' + str(nz)
+                        self.record.record_move(user, chessType, startPos, endPos)
+
                          # 切换到下一个用户
                         self.turn = (self.turn+1)%3
                         

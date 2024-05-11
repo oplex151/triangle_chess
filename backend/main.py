@@ -16,6 +16,7 @@ from backend.global_var import *
 from backend.tools import setupLogger, get_params
 from backend.user_manage import *
 from backend.game.exception import *
+from backend.game.record import *
 from message import *
 from backend.game import *
 
@@ -325,10 +326,14 @@ def roomOver(game:GameTable, room:RoomManager, userid:int):
         # 通知所有玩家游戏结束并告知胜利者
         logger.info(f"Game {game.game_id} end, winner is {userid}")
         emit('gameEnd', {'status': GAME_END, 'winner': userid, 'winner_name': sessions[userid]}, to=room.room_id)
+        # 结束记录
+        game.record.record_end(userid)
     elif game.game_state == EnumGameState.draw:
         # 通知所有玩家游戏结束为平局
         logger.info(f"Game {game.game_id} end, winner is {userid}")
         emit('gameEnd', {'status': GAME_END, 'winner': -1, 'winner_name': None}, to=room.room_id)
+        # 结束记录
+        game.record.record_end(None)
     room.removeGameTable()
     if room.room_type == RoomType.matched:
         # 匹配模式下，游戏结束后，关闭房间
@@ -443,6 +448,27 @@ def startMatch(data):
                                   'usernames':[sessions[room.users[0]],sessions[room.users[1]],sessions[room.users[2]]]},
                                   to=room.room_id,namespace='/')
         emit('initGame',{'game_info':room.game_table.getGameInfo()},to=room.room_id,namespace='/')
+
+@socketio.event
+def view_game_records(data):
+    """
+    接收玩家查看对局记录请求
+    Args:
+        userid: 用户id      int 
+    """
+    params = {'userid':int}
+    try:
+        userid = get_params(params,data)
+    except:
+        emit('processWrong',{'status':PARAM_ERROR},to=request.sid)
+        return
+    try:
+        # 查询游戏记录
+        records = view_user_game_records(userid)
+        emit('gameRecord', {'record': records}, to=request.sid)
+    except Exception as e:
+        emit('processWrong',{'status':OTHER_ERROR},to=request.sid)
+        return 
 
 # TODO::重新连接
 
