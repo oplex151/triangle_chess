@@ -1,24 +1,24 @@
 <script setup >
-// 这里故意留下来的bug
-// 没有登录的时候，可以选择任意的棋子(func action).
-// 故意留下来的，以便于测试离线情况下的棋子逻辑
-// 正式版本请删除。
 
 
-import { onMounted, ref ,onUnmounted,computed,getCurrentInstance} from 'vue';
-import { Chess } from '@/chesses/Chess';
-import {COL, ROWTOP, ROWMID, AREABOT, ROWBOT} from '@/config/config';
+import VueSocketIO from 'vue-socket.io'
+import SocketIO from 'socket.io-client'
+import main from '@/main'
 import { camps } from '@/lib/game';
 import { GEBI } from '@/utils/utils';
 import Cookies from 'js-cookie';
-import { registerSockets, socket ,registerSocketsForce} from '@/sockets'
+import { registerSockets, socket} from '@/sockets'
 import {XYZToPosition, PositionToXYZ} from '@/lib/convert'
 import router from '@/router';
 import {ElMessage} from "element-plus";
+import { lives } from '@/chesses/Live';
+import { onMounted, ref ,onUnmounted,computed,getCurrentInstance} from 'vue';
+import {COL, ROWTOP, ROWMID, AREABOT, ROWBOT} from '@/config/config';
+
 const map = new Map();
 const getid = (row, col) => (ROWTOP - row - 1) * COL + col + 1;
 const camp = ref(0);
-// 这俩当时写错了没声明成相应的，后来发现也不需要
+
 const userid =  Cookies.get('userid')
 const my_camp = Cookies.get('camp')
 let hoverChess;
@@ -29,9 +29,7 @@ const hover_xyz = ref([0,0,0])
 const xyz = ref([0,0,0])
 const xyzn = ref([0,0,0])
 const my_camp_str = ['红方','黑方','金方']
-// 请注意现在的流程：
-// 玩家发出一个move请求，服务器会返回一个move成功的消息，然后前端再进行渲染
-// 为了实现这个流程，我们需要一个状态来判断是否移动成功
+
 const move_succ = ref(false)
 const {proxy} = getCurrentInstance()
 const sockets_methods={
@@ -41,28 +39,26 @@ const sockets_methods={
       ElMessage.info('移动成功')
     }
     else {
-      ElMessage.info('玩家'+data.userid+'移动成功')
+      ElMessage.info('玩家'+data.username+'移动成功')
     }
     let position_start = XYZToPosition(data.x1,data.y1,data.z1)
     let position_end = XYZToPosition(data.x2,data.y2,data.z2)
     
     focusChess.value = map.get(position_start);
-
+    // 移动棋子
     moveChess(focusChess.value,position_end);
-    // 在这里改变阵营,如果一方战败后，那么应该动态调整camp.value的赋值
-    if(data.userid==Cookies.get('user0')){
-          camp.value = 1;
-    }
-    else if(data.userid==Cookies.get('user1')){
-          camp.value = 2;
-    }
-    else if(data.userid==Cookies.get('user2')){
-          camp.value = 0;
-    }
 
+    // 切换到下一个阵营
+    camp.value = (camp.value + 1)%3;
+    while(lives[camp.value]==false){
+      camp.value = (camp.value + 1)%3;
+    }
   },
-  message(data){
-    ElMessage.info(data)
+  gameEnd(data){
+    ElMessage.info('游戏结束'+"获胜者为"+data.winner_name)
+    Cookies.remove('game_id')
+    Cookies.remove('camp')
+    router.replace('/room')
   },
   processWrong(data){
     status = data.status
@@ -70,32 +66,6 @@ const sockets_methods={
   }
 }
 
-// 计算当前的渲染方案
-// 因为逻辑和渲染是分开的，我们只需要为不同的角色分配不同的渲染就可以了
-const front_position = computed(() => {
-  switch (my_camp) {
-    case 0:
-      return 2;
-    case 1:
-      return 1;
-    case 2:
-      return 0;
-    default:
-      return 2;
-}}
-);
-const back_position = computed(() => {
-  switch (my_camp) {
-    case 0:
-      return 1;
-    case 1:
-      return 2;
-    case 2:
-      return 0;
-    default:
-      return 1;
-}}
-);
 const camp_1_style = computed(() => {
   if (my_camp==1){
     return 'board'
@@ -151,8 +121,6 @@ const action = (position) => {
         // 暂时不启用, 阻止自己的棋子吃掉自己的棋子
         && map.get(position)?.camp !== camp.value
     ) {
-      alert("try")
-
       xyz.value = PositionToXYZ(position)
       xyzn.value = PositionToXYZ(focusChess.value.position)
       socket.value.io.emit('movePiece',{'userid':userid,'chess_type':1, 
@@ -206,12 +174,12 @@ const initMap = () => {
     });
   }
   // 注册socket监听
-  registerSockets(sockets_methods,socket.value,proxy)
+  registerSockets(sockets_methods,socket.value,proxy);
 };
 
 const hover = (position) => {
   hoverposition.value = position;
-  //hover_xyz.value = PositionToXYZ(position)
+  
   if (!map.has(position)) return;
   hoverChess = map.get(position);
   hoverChess.canMove().forEach((posi) => {
@@ -227,7 +195,6 @@ const out = (position) => {
 };
 
 const Destory = () => {
-
 };
 
 onMounted(()=>{
@@ -235,7 +202,15 @@ onMounted(()=>{
     router.replace('/room')
     return
   }
-  initMap();
+  if (!socket.value){
+    socket.value = new VueSocketIO({
+      debug: true,
+      connection: SocketIO(main.url),
+    })
+    // 重新加入房间
+    socket.value.io.emit('joinRoom',{'userid':userid,'room_id':Cookies.get('room_id')})
+  }
+  initMap(); // 初始化棋盘，改成相应后端消息来哦初始化棋盘
 });
 onUnmounted(Destory);
 </script>

@@ -1,5 +1,6 @@
 import { COL, ROWMID, ROWTOP, ROWBOT } from "@/config/config";
 import { GEBI, getCol, getRow } from "@/utils/utils";
+import { lives } from "./Live";
 
 export class Chess {
     constructor(position, camp) {
@@ -11,12 +12,12 @@ export class Chess {
 
     move(to) {
         let point = GEBI(this.position + '');
-        let boginPosition;
+        let beginPosition;
         let hoveFinish = false;
 
         point.innerText = '';
         point.classList.remove(`camp${this.camp}`);
-        boginPosition = this.position;
+        beginPosition = this.position;
         this.position = to;
         point = GEBI(this.position + '');
 
@@ -30,7 +31,7 @@ export class Chess {
             }
             point.classList.remove(`camp${originalCamp}`);
             if (point?.innerText === '将') {
-                switch (this.camp){
+                switch (originalCamp){
                     case 0:
                         alert('红方淘汰');
                         break;
@@ -43,6 +44,7 @@ export class Chess {
                     default:
                         break;
                 }
+                lives[originalCamp] = false;
                 hoveFinish = true;
             }
         }

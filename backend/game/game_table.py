@@ -128,7 +128,7 @@ class GameTable:
                             # 杀死Leader，该玩家阵亡，请前端自己判断阵亡，后端不发出通知
                             if kill_piece.name == 'Leader':
                                 self.lives[kill_piece.user_z] = False
-                                logger.info(f"用户{user}阵亡")
+                                logger.info(f"用户{kill_piece.user_z}阵亡")
 
                         # 判断游戏是否结束
                         if self.checkGameEnd():
@@ -294,9 +294,12 @@ class GameTable:
                 board += '\n'
         print(board)
 
+class RoomType(Enum):
+    created = 'created'
+    matched ='matched'
 
 class RoomManager:
-    def __init__(self, users: Union[list[int], int]):
+    def __init__(self, users: Union[list[int], int], room_type: RoomType=RoomType.created):
         # 随机生成一串字符串
         self.room_id:str = hashlib.md5(str(random.randint(0,1000000000)).encode('utf-8')).hexdigest()
         self.users = None
@@ -308,6 +311,7 @@ class RoomManager:
             self.users = [users]
 
         self.holder = self.users[0] # 房主
+        self.room_type = room_type # 房间类型
     
     def getRoomId(self) -> str:
         return self.room_id

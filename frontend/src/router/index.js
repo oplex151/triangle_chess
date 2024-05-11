@@ -14,11 +14,6 @@ import { socket } from '@/sockets';
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-    {
-      path: '/test',
-      name: 'test',
-      component: () => import('@/views/Test_socket/index.vue')
-    },
     //   主页
     {
       path: '/',
@@ -76,6 +71,7 @@ router.beforeEach((to, from, next) => {
   //在不需要连接的页面，断开连接
   if (!to.meta.connection) {
     socket.value = ""
+    Cookies.remove('room_id')
   }
   if (to.meta.isAuth) {
     if (Cookies.get('userid')) {
