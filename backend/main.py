@@ -150,7 +150,7 @@ def joinRoom(data):
         logger.error("Join room error", exc_info=True)
         emit('processWrong',{'status':PARAM_ERROR},to=request.sid)
         return
-    
+    logger.info(f"User {userid} join room {room_id}")
     room = fetchRoomByRoomID(room_id,rooms)
     if room is None:
         logger.error("No such room {0}".format(room_id))
@@ -165,6 +165,7 @@ def joinRoom(data):
         room = fetchRoomByRoomID(tmp_id,rooms)
         room.removeUser(userid)
         leave_room(tmp_id)
+        room = fetchRoomByRoomID(room_id,rooms)
     # 已经在这个房间中, 不可以重复加入
     elif tmp_id is not None: 
         logger.info(f"User {userid} already in room {room_id}"+
@@ -175,9 +176,6 @@ def joinRoom(data):
     elif room.game_table is not None and room.game_table.searchGameTable(userid): 
         logger.info(f"User {userid} rejoin to game {room.game_table.game_id}")
         emit('initGame',{'game_info':room.game_table.getGameInfo()},to=room_id,namespace='/')
-    elif tmp_id is None:
-        emit("processWrong",{'status':NOT_IN_ROOM},to=request.sid)
-        return
     
     room.addUser(userid)
     join_room(room_id)
@@ -246,10 +244,15 @@ def createGameApi():
         room = fetchRoomByRoomID(room_id,rooms)
         if room is None:
             return "{message: '房间不存在！'}",ROOM_NOT_EXIST
-        if len(room.users) != 3:
+        if len(room.users) < 3:
             return "{message: '房间人数不足！'}",ROOM_NOT_ENOUGH
-        game:GameTable = GameTable(room.users) # TODO::这里应该是创建游戏
+        for user in room.users[:3]:
+            if user < 0:
+                return "{message: '房间人数不足！'}",ROOM_NOT_ENOUGH
+        
+        game:GameTable = GameTable(room.users[:3]) # TODO::这里应该是创建游戏
         room.addGameTable(game)
+        logger.info(f"join user {room.users[:3]} in room {game.game_id}")
         emit('createGameSuccess',{'game_id':game.game_id,'users':[room.users[0],room.users[1],room.users[2]],'usernames':[sessions[room.users[0]],sessions[room.users[1]],sessions[room.users[2]]]},to=room_id,namespace='/')
         emit('initGame',{'game_info':game.getGameInfo()},to=room_id,namespace='/')
         logger.info("Create game: {0}".format(game.game_id))

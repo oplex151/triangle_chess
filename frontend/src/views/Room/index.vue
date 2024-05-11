@@ -8,7 +8,7 @@ import axios from 'axios'
 import Cookies from 'js-cookie'
 import { useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus'
-
+import * as CONST from '@/lib/const.js'
 const {proxy} = getCurrentInstance()
 const router = useRouter()
 const msg = ref('')
@@ -18,7 +18,8 @@ const new_room_id = ref('')   // 加入房间时临时使用的room_id
 const userid = ref(Cookies.get('userid'))
 const camp = ref(-1) 
 const y2 = ref(0)
-// 建立连接
+
+
 
 const sockets_methods={
   createRoomSuccess(data){
@@ -37,7 +38,28 @@ const sockets_methods={
     }
   },
   processWrong(data){
-    ElMessage.error(data.status)
+    switch(data.status){
+      case CONST.ALREADY_IN_ROOM:
+        ElMessage.error('已经在房间中')
+        break
+      case CONST.ROOM_NOT_EXIST:
+        ElMessage.error('不存在此房间')
+        if(data.message){
+          ElMessage.error(data.message)
+        }
+        break
+      case CONST.NOT_IN_ROOM:
+        ElMessage.error('不在房间中')
+        break
+      case CONST.ROOM_NOT_ENOUGH:
+        ElMessage.error('房间人数不足')
+        break
+      case CONST.GAME_CREATE_FAILED:
+        ElMessage.error('游戏创建失败:未知错误')
+        break
+      default:
+        ElMessage.error('未知错误')
+    }
   },
   leaveRoomSuccess(data){
     if (data.userid == userid.value){
@@ -48,16 +70,17 @@ const sockets_methods={
   createGameSuccess(data){
     console.log(data)
     ElMessage.info('创建成功')
+    camp.value = -1
     for (let i = 0; i < data.users.length; i++){
       Cookies.set('user'+i,data.users[i])
       if (data.users[i] == userid.value){
         camp.value = i
       }
     }
-    if (camp.value>=0){
+    if (camp.value>=-1){
       Cookies.set('camp',camp.value)
       console.log(Cookies.get('camp'))
-      ElMessage.success('游戏开始,你是'+(Cookies.get('camp'))+'号玩家')
+      ElMessage.success('游戏开始,你是'+camp.value>0?(camp.value>1?'金方玩家':'黑方玩家'):camp.value==0?'红方玩家':'观战者')
     }
     router.replace('/game')
   },
@@ -66,7 +89,6 @@ const sockets_methods={
 
 
 onMounted(() => {
-  ElMessage.info('连接成功')
   establishConnection()
   if (Cookies.get('room_id')){
     room_id.value = Cookies.get('room_id')
@@ -90,6 +112,8 @@ function createRoom(){
   socket.value.io.emit('createRoom',{'userid':userid.value})
 }
 function joinRoom(){
+  // alert(new_room_id.value)
+  // alert(userid.value)
   socket.value.io.emit('joinRoom',{'room_id':new_room_id.value,'userid':userid.value})
 }
 

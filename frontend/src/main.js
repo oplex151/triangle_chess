@@ -11,7 +11,7 @@ const app = createApp(App)
 
 app.use(router)
 app.use(ElementPlus)
-app.use(jsCookie)
+// app.use(jsCookie)
 app.mount('#app')
 
 
