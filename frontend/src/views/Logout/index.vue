@@ -15,6 +15,7 @@ onBeforeMount(() =>{
     },
     {
         headers: {'Content-Type':'application/x-www-form-urlencoded'},
+        timeout:4000,
     }
     ).then(res => {
         if (res.status == 200) {
@@ -22,6 +23,15 @@ onBeforeMount(() =>{
         router.push('/');
         }         
     }).catch(err => {
+        if (err.code === 'ECONNABORTED') {
+            ElMessage({
+            message: '请求超时',
+            grouping: true,
+            type: 'error',
+            showClose: true
+        })
+        router.push('/');
+        }
         if (err.response.status == 507) {
             ElMessage({
                 message: '用户未登录或登录超时',
@@ -43,5 +53,6 @@ onBeforeMount(() =>{
         router.push('/');
         }
     });
+
 })
 </script>
