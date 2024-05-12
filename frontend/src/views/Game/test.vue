@@ -1,22 +1,15 @@
 <script setup>
-import { ElMessage } from 'element-plus';
-import { ref, onMounted, onUnmounted } from 'vue'
-const props = defineProps(['camp'])
-const emit = defineEmits(['let_go'])
-const p = ref(1)
-const createRoom = () => {
-    emit('let_go','jump','gogogo')
+// 最小化move示例
+import board from '@/views/Game/board.vue'
+const board = ref(null)
+const Move = (data) => {
+    my_camp.value = (my_camp.value+1)%3
+    board.value.movePieceSuccess(data)
 }
-function go_to(){
-    p.value = p.value + 1
-    ElMessage.success('go_to'+p.value)
-}
-defineExpose({
-    p,
-    go_to
-})
-</script>
+</script setup>
 
 <template>
-    <el-button type="primary" @click="createRoom">往父组件传递消息</el-button>
-</template>
+    <div>
+        <board :my_camp=my_camp ref="board" @requireMove="Move"/>
+    </div>
+</template> 

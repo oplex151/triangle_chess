@@ -11,7 +11,6 @@ import { lives } from '@/chesses/Live';
 import { onMounted, ref ,onUnmounted,computed,getCurrentInstance} from 'vue';
 import {COL, ROWTOP, ROWMID, AREABOT, ROWBOT} from '@/config/config';
 
-
 const map = new Map();
 const getid = (row, col) => (ROWTOP - row - 1) * COL + col + 1;
 const camp = ref(0);
@@ -32,11 +31,6 @@ const emit = defineEmits(['requireMove'])
 const p = ref(1)
 
 // 定义父组件可以调用的函数（这里只有defineExpose）
-defineExpose({
-    movePieceSuccess,
-    initMap,
-})
-
 function movePieceSuccess(data) {
     let position_start = XYZToPosition(data.x1,data.y1,data.z1)
     let position_end = XYZToPosition(data.x2,data.y2,data.z2)
@@ -180,11 +174,14 @@ const Destory = () => {
 };
 
 onMounted(()=>{
-    alert('init')
     initMap(); // 初始化棋盘，改成相应后端消息来哦初始化棋盘
 });
 onUnmounted(Destory);
-
+// 一定要写在最后
+defineExpose({
+    movePieceSuccess,
+    initMap,
+})
 </script>
 <template>
 <div class="Game">

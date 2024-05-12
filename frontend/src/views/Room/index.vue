@@ -83,7 +83,7 @@ const sockets_methods={
     if (camp.value>=-1){
       Cookies.set('camp',camp.value)
       console.log(Cookies.get('camp'))
-      ElMessage.success('游戏开始,你是'+camp.value>0?(camp.value>1?'金方玩家':'黑方玩家'):camp.value==0?'红方玩家':'观战者')
+      ElMessage.success('游戏开始,你是'+(camp.value>0?(camp.value>1?'金方玩家':'黑方玩家'):(camp.value==0?'红方玩家':'观战者')))
     }
     router.replace('/game')
   },
