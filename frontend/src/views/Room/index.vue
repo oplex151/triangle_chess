@@ -160,20 +160,6 @@ function goBackHome(){
   router.push('/')
 }
 
-const copyRoomId = () => {
-  if (room_info.value && room_info.value.room_id) {
-    const textarea = document.createElement('textarea');
-    textarea.value = room_info.value.room_id;
-    document.body.appendChild(textarea);
-    textarea.select();
-    document.execCommand('copy');
-    document.body.removeChild(textarea);
-    ElMessage.success('已复制房间号')
-  } else {
-    console.error('room_info 或 room_info.room_id 未定义');
-  }
-}
-
 </script>
 
 <template>

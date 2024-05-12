@@ -26,7 +26,7 @@ const xyzn = ref([0,0,0])
 const my_camp_str = ['红方','黑方','金方']
 
 
-const props = defineProps(['my_camp','currnet_camp'])
+const props = defineProps(['my_camp'])
 const emit = defineEmits(['requireMove'])
 
 
@@ -209,7 +209,6 @@ onUnmounted(Destory);
 defineExpose({
   movePieceSuccess,
   initMap,
-  loadMap,
 })
 </script>
 <template>
