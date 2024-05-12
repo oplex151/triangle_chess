@@ -4,8 +4,8 @@ import { Chess } from "./Chess";
 // import {camp} from "@/lib/game.js";
 
 export class Soilder extends Chess {
-    constructor(position, camp) {
-        super(position, camp);
+    constructor(position, camp,inWhichArea) {
+        super(position, camp,inWhichArea);
         this.name = "兵";
     }
 

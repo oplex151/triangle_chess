@@ -39,10 +39,6 @@ const sockets_methods = {
     room_id.value = data.room_id
     room_info.value = data.room_info
 
-    //debug
-    console.log(room_id.value)
-    console.log(room_info.value)
-
     ElMessage.success('创建房间成功')
   },
   joinRoomSuccess(data){
@@ -112,7 +108,7 @@ const sockets_methods = {
     if (camp>=-1){
       Cookies.set('camp',camp)
       console.log(Cookies.get('camp'))
-      ElMessage.success('游戏开始,你是'+camp>0?(camp>1?'金方玩家':'黑方玩家'):camp==0?'红方玩家':'观战者')
+      ElMessage.success('游戏开始,你是'+camp>0?(camp>1?'金方玩家':'黑方玩家'):(camp==0?'红方玩家':'观战者'))
     }
     router.replace('/game')
   }
@@ -133,9 +129,9 @@ function establishConnection() {
       debug: true,
       connection: SocketIO(main.url),
     })
-    // 注册socket监听
-    registerSockets(sockets_methods, socket.value, proxy)
   }
+  // 注册socket监听
+  registerSockets(sockets_methods, socket.value, proxy)
   socket.value.io.on('disconnect', () => {
     socket.value = null
   })

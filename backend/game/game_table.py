@@ -1,8 +1,5 @@
 from enum import Enum
-import sys
-import os
-from flask import Flask, request, jsonify
-from typing import Dict, Tuple, Union
+from typing import Dict, Union
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -117,7 +114,7 @@ class GameTable:
             return NOT_JOIN_GAME # 用户不在游戏中
 
         if self._getUserIndex(user) != self.turn:
-            logger.error(f"用户{user}不是轮到移动棋子")
+            logger.error(f"用户{user}不是轮到移动棋子，应该是{self.turn}号玩家")
             return NOT_YOUR_TURN # 不是轮到该用户移动棋子
         try:
             user_z = self._getUserIndex(user) # 获取用户的索引
@@ -289,6 +286,7 @@ class GameTable:
             'turn': self.turn,
             'game_state': self.game_state.value,
             'winner': self.winner,
+            'lives': self.lives,
             'pieces': [piece.getPieceInfo() for piece_list in self.Pieces for piece in piece_list]
         }
         return data

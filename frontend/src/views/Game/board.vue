@@ -1,15 +1,16 @@
 <script setup >
 import main from '@/main'
-import { camps } from '@/lib/game';
+import { camps,initChess } from '@/lib/game';
 import { GEBI } from '@/utils/utils';
 import Cookies from 'js-cookie';
 import { registerSockets, socket} from '@/sockets'
 import {XYZToPosition, PositionToXYZ} from '@/lib/convert'
 import router from '@/router';
 import {ElMessage} from "element-plus";
-import { lives } from '@/chesses/Live';
+import { lives, changeLives } from '@/chesses/Live';
 import { onMounted, ref ,onUnmounted,computed,getCurrentInstance} from 'vue';
 import {COL, ROWTOP, ROWMID, AREABOT, ROWBOT} from '@/config/config';
+import axios from 'axios';
 
 const map = new Map();
 const getid = (row, col) => (ROWTOP - row - 1) * COL + col + 1;
@@ -28,7 +29,6 @@ const my_camp_str = ['红方','黑方','金方']
 const props = defineProps(['my_camp'])
 const emit = defineEmits(['requireMove'])
 
-const p = ref(1)
 
 // 定义父组件可以调用的函数（这里只有defineExpose）
 function movePieceSuccess(data) {
@@ -135,25 +135,50 @@ const moveChess = (chess, to) => {
     return true;
 };
 const initMap = () => {
-
-    ElMessage.info('初始化棋盘')    // 调试用的
-    for (const [k, camp] of Object.entries(camps)) {
-        camp.get().forEach((chess) => {
-        GEBI(`${chess.position}`).innerText = chess.name;
-        switch (chess.camp){
-            case 0:
-            GEBI(`${chess.position}`).classList.add('camp0');
-            break;
-            case 1:
-            GEBI(`${chess.position}`).classList.add('camp1');
-            break;
-            case 2:
-            GEBI(`${chess.position}`).classList.add('camp2');
-            break;
-        }
-        map.set(chess.position, chess);
-        });
+    var game_info = null
+    axios.post(main.url + '/api/game/init',{
+        'room_id': Cookies.get('room_id')
+    },
+    {
+        headers: {'Content-Type':'application/x-www-form-urlencoded'},
     }
+    ).then(res => {
+        if(res.status==200){
+            game_info = res.data.game_info
+            // 设置轮到谁走
+            camp.value = game_info.turn
+            // 设置活着的玩家
+            changeLives(game_info.lives)
+            
+            initChess(game_info)
+            for (const [k, camp] of Object.entries(camps)) {
+    
+                camp.get().forEach((chess) => {
+                    GEBI(`${chess.position}`).innerText = chess.name;
+                    
+                    switch (chess.camp){
+                        case 0:
+                        GEBI(`${chess.position}`).classList.add('camp0');
+                        break;
+                        case 1:
+                        GEBI(`${chess.position}`).classList.add('camp1');
+                        break;
+                        case 2:
+                        GEBI(`${chess.position}`).classList.add('camp2');
+                        break;
+                    }
+                    map.set(chess.position, chess);
+                });
+            }
+        }
+        else{
+            ElMessage.error('获取房间信息失败')
+            return
+        }
+    }).catch(error => {
+        console.log(error)
+    })
+    
 };
 
 const hover = (position) => {
@@ -176,8 +201,9 @@ const Destory = () => {
 };
 
 onMounted(()=>{
-    // initMap(); // 初始化棋盘，改成相应后端消息来哦初始化棋盘
+    initMap(); // 初始化棋盘，改成相应后端消息来哦初始化棋盘
 });
+
 onUnmounted(Destory);
 // 一定要写在最后
 defineExpose({

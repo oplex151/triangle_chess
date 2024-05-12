@@ -3,8 +3,8 @@ import {GEBI, getCol, getRow} from "@/utils/utils";
 import { Chess } from "./Chess";
 
 export class Gun extends Chess {
-    constructor(position, camp) {
-        super(position, camp);
+    constructor(position, camp,inWhichArea) {
+        super(position, camp,inWhichArea);
         this.name = "炮";
     }
 

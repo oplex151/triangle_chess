@@ -261,13 +261,37 @@ def createGameApi():
         room.addGameTable(game)
         
         emit('createGameSuccess',{'game_id':game.game_id,'room_info':room.getRoomInfo()},to=room_id,namespace='/')
-        emit('initGame',{'game_info':game.getGameInfo()},to=room_id,namespace='/')
+
         logger.info("Create game: {0}".format(game.game_id))
         return "{}",SUCCESS
     except Exception as e:
         logger.error("Create game error due to {0}".format(str(e)), exc_info=True)
         emit('processWrong',{'status':GAME_CREATE_FAILED},to=uid2sid(userid),namespace='/')
         return "{message: 'create game error'}",GAME_CREATE_FAILED
+
+@app.route('/api/game/init', methods=['POST'])
+def initGame():
+    '''
+    Args:
+        room_id: 房间id str
+    Returns:
+        成功返回200
+        game_info: 游戏信息 dict
+    '''
+    global rooms
+    params = {'room_id':str}
+    try:
+        room_id = getParams(params,request.form)
+    except:
+        return "{message: 'parameter error'}",PARAM_ERROR
+
+    room:RoomManager = fetchRoomByRoomID(room_id,rooms)
+    if room is None:
+        return "{message: 'room not exist'}",ROOM_NOT_EXIST
+    game:GameTable = room.game_table
+ 
+    return jsonify({'game_info':game.getGameInfo()}),SUCCESS
+
 
 @socketio.event
 def movePiece(data):
