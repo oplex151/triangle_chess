@@ -9,6 +9,10 @@ import Cookies from 'js-cookie'
 import { useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus'
 import * as CONST from '@/lib/const.js'
+import Board from '@/views/Game/board.vue';
+
+
+
 const {proxy} = getCurrentInstance()
 const router = useRouter()
 const msg = ref('')
@@ -18,7 +22,6 @@ const new_room_id = ref('')   // 加入房间时临时使用的room_id
 const userid = ref(Cookies.get('userid'))
 const camp = ref(-1) 
 const y2 = ref(0)
-
 
 
 const sockets_methods={
@@ -152,4 +155,5 @@ function createGame(){
   <div>
     <el-button type="primary" @click="createGame">创建游戏</el-button>
   </div >
+
 </template>
