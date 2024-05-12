@@ -31,7 +31,7 @@ const emit = defineEmits(['requireMove'])
 
 
 // 定义父组件可以调用的函数（这里只有defineExpose）
-function movePieceSuccess(data) {
+const movePiecesuc = (data) => {
   let position_start = XYZToPosition(data.x1,data.y1,data.z1)
   let position_end = XYZToPosition(data.x2,data.y2,data.z2)
 
@@ -207,9 +207,8 @@ onMounted(()=>{
 onUnmounted(Destory);
 // 一定要写在最后
 defineExpose({
-  movePieceSuccess,
+  movePiecesuc,
   initMap,
-  loadMap,
 })
 </script>
 <template>
