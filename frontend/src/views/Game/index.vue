@@ -4,7 +4,7 @@ import SocketIO from 'socket.io-client'
 import main from '@/main'
 
 import Cookies from 'js-cookie';
-import { registerSockets, socket, registerSocketsForce} from '@/sockets'
+import { registerSockets, socket, registerSocketsForce,removeSockets} from '@/sockets'
 import router from '@/router';
 import {ElMessage} from "element-plus";
 
@@ -28,12 +28,12 @@ onMounted(()=>{
       debug: true,
       connection: SocketIO(main.url),
     })
+    
     // 重新加入房间
     socket.value.io.emit('joinRoom',{'userid':userid,'room_id':Cookies.get('room_id')})
   }
-  console.log(board.value)
   registerSocketsForce(sockets_methods,socket.value,proxy);
-
+  console.log(socket.value)
 });
 
 const sockets_methods={
@@ -45,13 +45,33 @@ const sockets_methods={
       ElMessage.info('玩家'+data.username+'移动成功')
     }
     // 移动棋子_切换阵营
-    console.log(board.value)
-    board.value.movePieceSuccess(data);
+   
+    board.value.moveSuccess(data);
+  },
+  joinRoomSuccess(data){
+    if (data.userid == Cookies.get('userid')){
+      Cookies.set('room_id',data.room_id)
+      ElMessage.success('加入房间成功')
+    }
+    else{
+      ElMessage.success('玩家'+data.username+'加入房间')
+    }
+  },
+  leaveRoomSuccess(data){
+    if (data.userid == Cookies.get('userid')){
+      Cookies.remove('room_id')
+      Cookies.remove('room_info')
+      ElMessage.success('离开房间成功')
+    }
+    else{
+      ElMessage.success('玩家'+data.username+'离开房间')
+    }
   },
   gameEnd(data){
     ElMessage.info('游戏结束'+"获胜者为"+data.winner_name)
     Cookies.remove('game_id')
     Cookies.remove('camp')
+    removeSockets(sockets_methods,socket.value,proxy);
     router.replace('/room')
   },
   processWrong(data){
@@ -69,10 +89,21 @@ const Move = (data) => {
 </script>
 
 <template>
+  <div class="background-image"></div>
   <Board :my_camp="my_camp"  ref="board" @requireMove="Move"/>
 </template>
 
 
 <style scoped lang="scss">
+.background-image {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url('@/assets/images/login/图1.jpg');
+  background-size: cover;
+  z-index: -1;
+}
 
 </style>

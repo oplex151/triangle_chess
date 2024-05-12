@@ -179,7 +179,7 @@ def joinRoom(data):
     # 用户在游戏中
     elif room.game_table is not None and room.game_table.searchGameTable(userid): 
         logger.info(f"User {userid} rejoin to game {room.game_table.game_id}")
-        emit('initGame',{'game_info':room.game_table.getGameInfo()},to=request.sid,namespace='/')
+        emit('rejoinGameSuccess',{'room_id':room_id},to=request.sid,namespace='/')
     
     room.addUser(UserDict(userid=userid,username=sessions[userid]))
     join_room(room_id)
@@ -340,7 +340,7 @@ def movePiece(data):
             return
         else:
             # 建议前端根据userid来判断到底是自己走成功了，还是其他人走的，自己这边要更新状态
-            emit('movePieceSuccess',{'userid':userid,'status':status, 
+            emit('movePieceSuccess',{'userid':userid,'status':status, 'username':sessions[userid],
                                      'x1':x1, 'y1':y1, 'z1':z1, 
                                      'x2':x2, 'y2':y2, 'z2':z2},
                                      to=room_id)

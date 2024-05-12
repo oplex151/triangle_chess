@@ -31,7 +31,7 @@ const emit = defineEmits(['requireMove'])
 
 
 // 定义父组件可以调用的函数（这里只有defineExpose）
-function movePieceSuccess(data) {
+function moveSuccess(data) {
   let position_start = XYZToPosition(data.x1,data.y1,data.z1)
   let position_end = XYZToPosition(data.x2,data.y2,data.z2)
 
@@ -86,6 +86,7 @@ const action = (position) => {
   // 未选中
   if (!isPocus.value) {
     if (!hoverChess) return;
+
     if (hoverChess.camp !== camp.value) return;
     // 如果不是你走，不能选中
     if (camp.value != props.my_camp && props.my_camp>=0){
@@ -182,12 +183,22 @@ const initMap = () => {
 };
 
 const hover = (position) => {
-  hoverposition.value = position;
-  if (!map.has(position)) return;
-  hoverChess = map.get(position);
-  hoverChess.canMove().forEach((posi) => {
-    GEBI(`${posi}`).classList.add('moviable');
-  });
+    hoverposition.value = position;
+
+    if (hoverChess)
+        GEBI(`${hoverChess.position}`).classList.remove('chess_hover');
+
+    if (!map.has(position)) return;
+
+    hoverChess = map.get(position);
+
+
+    if (hoverChess.camp != props.my_camp) return;
+
+    GEBI(`${hoverChess.position}`).classList.add('chess_hover');
+    hoverChess.canMove().forEach((posi) => {
+        GEBI(`${posi}`).classList.add('moviable');
+    });
 };
 
 const out = (position) => {
@@ -207,7 +218,7 @@ onMounted(()=>{
 onUnmounted(Destory);
 // 一定要写在最后
 defineExpose({
-  movePieceSuccess,
+  moveSuccess,
   initMap,
 })
 </script>
@@ -216,10 +227,6 @@ defineExpose({
     <div class="camp">
       目前行动:{{camp == 1 ?'黑方':(camp == 0 ? '红方':'金方')}}
       我的阵营:{{props.my_camp>=0?my_camp_str[props.my_camp]:'未知'}}
-      位置：{{hoverposition}}
-      XYZ：{{[hover_xyz[0],hover_xyz[1],hover_xyz[2]]}}
-      金色:{{camp_2_style}}
-      Mycamp:{{props.my_camp}}
     </div>
     <!--2号-->
     <div :class="camp_2_style">
@@ -290,6 +297,8 @@ defineExpose({
   position: absolute;
   top: 0;
   left: 0;
+  font-size: 24px;
+  color: #e9b526;
 }
 // 红方阵营
 .camp0 {
@@ -330,9 +339,42 @@ defineExpose({
   display: flex;
   justify-content: center;
   align-items: center;
+  font-size:20px;
+  border-radius: 20px;
+  box-shadow: #383a3f;
+  border-width: 4px;
+  border-color: white;
+  border-style: inset;
 }
+
+.chess_hover {
+  border-color: #fff !important;
+  border-left-width: -8px !important;
+  border-top-width: -8px !important;
+  border-left-style: inset !important;
+  border-top-style: inset !important;
+  border-bottom-width: 8px !important;
+  border-right-width: 8px !important;
+  border-bottom-style: outset !important;
+  border-right-style: outset !important;
+}
+
+//定义一个动画时间戳
+@keyframes vary {
+  0% {
+    color: rgba(rgb(244, 8, 47), 0.6);
+  }
+  50% {
+    color: rgba(rgb(244, 8, 47), 1.2);
+  }
+  100% {
+    color: rgba(rgb(244, 8, 47), 0.6);
+  }
+}
+
 .chess_on{
-  color: red !important;
+  animation: vary 2s !important;
+  animation-iteration-count: infinite !important;
 }
 .invert{
   transform: rotate(180deg);
