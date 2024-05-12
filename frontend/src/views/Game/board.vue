@@ -25,7 +25,7 @@ const xyzn = ref([0,0,0])
 const my_camp_str = ['红方','黑方','金方']
 
 
-const props = defineProps(['my_camp'])
+const props = defineProps(['my_camp','currnet_camp'])
 const emit = defineEmits(['requireMove'])
 
 const p = ref(1)
@@ -135,7 +135,6 @@ const moveChess = (chess, to) => {
     return true;
 };
 const initMap = () => {
-
     ElMessage.info('初始化棋盘')    // 调试用的
     for (const [k, camp] of Object.entries(camps)) {
         camp.get().forEach((chess) => {
@@ -154,6 +153,28 @@ const initMap = () => {
         map.set(chess.position, chess);
         });
     }
+};
+
+const loadMap = (camps) => {
+  console.log("调用了loadMap")
+  // console.log(camps)
+  // ElMessage.info('初始化棋盘')    // 调试用的
+  for (const camp of camps) {
+    // console.log(camp.name)
+    GEBI(`${camp.position}`).innerText = camp.name;
+    switch (camp.camp){
+      case 0:
+        GEBI(`${camp.position}`).classList.add('camp0');
+        break;
+      case 1:
+        GEBI(`${camp.position}`).classList.add('camp1');
+        break;
+      case 2:
+        GEBI(`${camp.position}`).classList.add('camp2');
+        break;
+    }
+    map.set(camp.position, camp);
+  }
 };
 
 const hover = (position) => {
@@ -176,6 +197,7 @@ const Destory = () => {
 };
 
 onMounted(()=>{
+  // console.log("当前的移动棋子是："+props.currnet_camp)
     // initMap(); // 初始化棋盘，改成相应后端消息来哦初始化棋盘
 });
 onUnmounted(Destory);
@@ -183,6 +205,7 @@ onUnmounted(Destory);
 defineExpose({
     movePieceSuccess,
     initMap,
+    loadMap,
 })
 </script>
 <template>
