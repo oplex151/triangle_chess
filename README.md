@@ -14,6 +14,14 @@
 
 
 
+#### 重新编译前端
+
+```sudo npm i```
+
+```sudo npm run build```
+
+
+
 #### 启动`nginx`
 
 ```systemctl restart nginx```
@@ -48,3 +56,4 @@
 
 
 
+  url: "http://124.70.208.148"

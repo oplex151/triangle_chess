@@ -26,8 +26,13 @@ def test1():
     #     json.dump(game.getGameInfo(), f, indent=4)
 
 def test2():
-    pass
+    game = GameTable([11, 12, 13])
+    print(game.movePiece(11,0,3,0,0,4,0))
+    print(game.movePiece(12,0,3,1,0,4,1))
+    game.showBoard()
+    
 
 if __name__ == '__main__':
     test1()
+    test2()
     print('测试完成')
