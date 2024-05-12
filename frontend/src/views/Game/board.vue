@@ -26,113 +26,113 @@ const xyzn = ref([0,0,0])
 const my_camp_str = ['红方','黑方','金方']
 
 
-const props = defineProps(['my_camp'])
+const props = defineProps(['my_camp','currnet_camp'])
 const emit = defineEmits(['requireMove'])
 
 
 // 定义父组件可以调用的函数（这里只有defineExpose）
 function movePieceSuccess(data) {
-    let position_start = XYZToPosition(data.x1,data.y1,data.z1)
-    let position_end = XYZToPosition(data.x2,data.y2,data.z2)
-    
-    focusChess.value = map.get(position_start);
-    // 移动棋子
-    moveChess(focusChess.value,position_end);
+  let position_start = XYZToPosition(data.x1,data.y1,data.z1)
+  let position_end = XYZToPosition(data.x2,data.y2,data.z2)
 
-    // 切换到下一个阵营
+  focusChess.value = map.get(position_start);
+  // 移动棋子
+  moveChess(focusChess.value,position_end);
+
+  // 切换到下一个阵营
+  camp.value = (camp.value + 1)%3;
+  while(lives[camp.value]==false){
     camp.value = (camp.value + 1)%3;
-    while(lives[camp.value]==false){
-        camp.value = (camp.value + 1)%3;
-    }
+  }
 }
 
 const camp_1_style = computed(() => {
-    if (props.my_camp==1){
-        return 'board'
-    }
-    else if(props.my_camp==0){
-        return 'board-tilt-right'
-    }
-    else{
-        return 'board-tilt-left'
-    }
+  if (props.my_camp==1){
+    return 'board'
+  }
+  else if(props.my_camp==0){
+    return 'board-tilt-right'
+  }
+  else{
+    return 'board-tilt-left'
+  }
 });
 const camp_2_style = computed(() => {
-    if(props.my_camp==1){
-        return 'board-tilt-right'
-    }
-    else if(props.my_camp==0){
-        return 'board-tilt-left'
-    }
-    else{
-        return 'board'
-    }
+  if(props.my_camp==1){
+    return 'board-tilt-right'
+  }
+  else if(props.my_camp==0){
+    return 'board-tilt-left'
+  }
+  else{
+    return 'board'
+  }
 });
 const camp_0_style = computed(() => {
-    if (props.my_camp==1){
-        return 'board-tilt-left'
-    }
-    else if(props.my_camp==0){
-        return 'board'
-    }
-    else{
-        return 'board-tilt-right'
-    }
+  if (props.my_camp==1){
+    return 'board-tilt-left'
+  }
+  else if(props.my_camp==0){
+    return 'board'
+  }
+  else{
+    return 'board-tilt-right'
+  }
 });
 
 
 
 const action = (position) => {
   // 未选中
-    if (!isPocus.value) {
-        if (!hoverChess) return;
-        if (hoverChess.camp !== camp.value) return;
-        // 如果不是你走，不能选中
-        if (camp.value != props.my_camp && props.my_camp>=0){
-            return;
-        }
-        isPocus.value = true;
-        GEBI(`${hoverChess.position}`).classList.add('chess_on');
-        focusChess.value = hoverChess;
+  if (!isPocus.value) {
+    if (!hoverChess) return;
+    if (hoverChess.camp !== camp.value) return;
+    // 如果不是你走，不能选中
+    if (camp.value != props.my_camp && props.my_camp>=0){
+      return;
     }
-    // 选中
-    else {
-        isPocus.value = false;
-        GEBI(`${focusChess.value.position}`).classList.remove('chess_on');    
-        if (
-            focusChess.value.canMove().includes(position) 
-            // 暂时不启用, 阻止自己的棋子吃掉自己的棋子
-            && map.get(position)?.camp !== camp.value
-        ) {
-        xyz.value = PositionToXYZ(position)
-        xyzn.value = PositionToXYZ(focusChess.value.position)
-        // 发送移动消息
-        emit('requireMove',{
-            'x1':xyzn.value[0], 'y1':xyzn.value[1], 'z1':xyzn.value[2], 
-            'x2':xyz.value[0], 'y2':xyz.value[1], 'z2':xyz.value[2]})
-        }
+    isPocus.value = true;
+    GEBI(`${hoverChess.position}`).classList.add('chess_on');
+    focusChess.value = hoverChess;
+  }
+  // 选中
+  else {
+    isPocus.value = false;
+    GEBI(`${focusChess.value.position}`).classList.remove('chess_on');
+    if (
+        focusChess.value.canMove().includes(position)
+        // 暂时不启用, 阻止自己的棋子吃掉自己的棋子
+        && map.get(position)?.camp !== camp.value
+    ) {
+      xyz.value = PositionToXYZ(position)
+      xyzn.value = PositionToXYZ(focusChess.value.position)
+      // 发送移动消息
+      emit('requireMove',{
+        'x1':xyzn.value[0], 'y1':xyzn.value[1], 'z1':xyzn.value[2],
+        'x2':xyz.value[0], 'y2':xyz.value[1], 'z2':xyz.value[2]})
+    }
 
     // 暂时不启用，重新选择棋子
     else{
-        if (!hoverChess) return;
-        if (hoverChess.camp !== camp.value) return;
-        // 如果不是你走，不能选中
-        if (camp.value != props.my_camp && props.my_camp>=0){
-            return;
-        }
-        isPocus.value = true;
-        focusChess.value = hoverChess;
-        GEBI(`${hoverChess.position}`).classList.add('chess_on');
-        }
+      if (!hoverChess) return;
+      if (hoverChess.camp !== camp.value) return;
+      // 如果不是你走，不能选中
+      if (camp.value != props.my_camp && props.my_camp>=0){
+        return;
+      }
+      isPocus.value = true;
+      focusChess.value = hoverChess;
+      GEBI(`${hoverChess.position}`).classList.add('chess_on');
     }
+  }
 };
 
 const moveChess = (chess, to) => {
-    if (map.get(to)?.camp === camp.value) return false;
-        map.delete(chess.position);
-    chess.move(to);
-    map.set(to, chess);
-    return true;
+  if (map.get(to)?.camp === camp.value) return false;
+  map.delete(chess.position);
+  chess.move(to);
+  map.set(to, chess);
+  return true;
 };
 const initMap = () => {
     var game_info = null
@@ -182,19 +182,19 @@ const initMap = () => {
 };
 
 const hover = (position) => {
-    hoverposition.value = position;    
-    if (!map.has(position)) return;
-    hoverChess = map.get(position);
-    hoverChess.canMove().forEach((posi) => {
-        GEBI(`${posi}`).classList.add('moviable');
-    });
+  hoverposition.value = position;
+  if (!map.has(position)) return;
+  hoverChess = map.get(position);
+  hoverChess.canMove().forEach((posi) => {
+    GEBI(`${posi}`).classList.add('moviable');
+  });
 };
 
 const out = (position) => {
-    if (!map.has(position)) return;
-    hoverChess.canMove().forEach((posi) => {
-        GEBI(`${posi}`).classList.remove('moviable');
-    });
+  if (!map.has(position)) return;
+  hoverChess.canMove().forEach((posi) => {
+    GEBI(`${posi}`).classList.remove('moviable');
+  });
 };
 
 const Destory = () => {
@@ -207,89 +207,90 @@ onMounted(()=>{
 onUnmounted(Destory);
 // 一定要写在最后
 defineExpose({
-    movePieceSuccess,
-    initMap,
+  movePieceSuccess,
+  initMap,
+  loadMap,
 })
 </script>
 <template>
-<div class="Game">
+  <div class="Game">
     <div class="camp">
-        目前行动:{{camp == 1 ?'黑方':(camp == 0 ? '红方':'金方')}}
-        我的阵营:{{props.my_camp>=0?my_camp_str[props.my_camp]:'未知'}}
-        位置：{{hoverposition}}
-        XYZ：{{[hover_xyz[0],hover_xyz[1],hover_xyz[2]]}}
-        金色:{{camp_2_style}}
-        Mycamp:{{props.my_camp}}
+      目前行动:{{camp == 1 ?'黑方':(camp == 0 ? '红方':'金方')}}
+      我的阵营:{{props.my_camp>=0?my_camp_str[props.my_camp]:'未知'}}
+      位置：{{hoverposition}}
+      XYZ：{{[hover_xyz[0],hover_xyz[1],hover_xyz[2]]}}
+      金色:{{camp_2_style}}
+      Mycamp:{{props.my_camp}}
     </div>
     <!--2号-->
     <div :class="camp_2_style">
-        <!-- 遍历成棋盘 -->
-        <!-- 渲染所要的行数 -->
-        <div v-for="(row, index) in ROWTOP"
-            :key="row"
-            class="row"
-        >
+      <!-- 遍历成棋盘 -->
+      <!-- 渲染所要的行数 -->
+      <div v-for="(row, index) in ROWTOP"
+           :key="row"
+           class="row"
+      >
         <!-- 渲染所要的列数 -->
         <div class="block chess"
-                :id="getid(index, i) + ''"
-                v-for="(col, i) in COL"
-                :key="col"
-                @mouseover="hover(getid(index, i))"
-                @mouseout="out(getid(index, i))"
-                @click="action(getid(index, i))"
-                v-if="index <= 4"
-            >
-            </div>
-        </div>
-    </div>
-    
-    <div :class="camp_1_style">
-        <div v-for="(row, index) in ROWTOP"
-            :key="row"
-            class="row"
+             :id="getid(index, i) + ''"
+             v-for="(col, i) in COL"
+             :key="col"
+             @mouseover="hover(getid(index, i))"
+             @mouseout="out(getid(index, i))"
+             @click="action(getid(index, i))"
+             v-if="index <= 4"
         >
-            <!-- 渲染所要的列数 -->
-            <div class="block chess"
-                :id="getid(index, i) + ''"
-                v-for="(col, i) in COL"
-                :key="col"
-                @mouseover="hover(getid(index, i))"
-                @mouseout="out(getid(index, i))"
-                @click="action(getid(index, i))"
-                v-if="index > 4 && index <= 9"
-            >
-            </div>
         </div>
+      </div>
+    </div>
+
+    <div :class="camp_1_style">
+      <div v-for="(row, index) in ROWTOP"
+           :key="row"
+           class="row"
+      >
+        <!-- 渲染所要的列数 -->
+        <div class="block chess"
+             :id="getid(index, i) + ''"
+             v-for="(col, i) in COL"
+             :key="col"
+             @mouseover="hover(getid(index, i))"
+             @mouseout="out(getid(index, i))"
+             @click="action(getid(index, i))"
+             v-if="index > 4 && index <= 9"
+        >
+        </div>
+      </div>
     </div>
 
     <div :class="camp_0_style">
-        <div v-for="(row, index) in ROWTOP"
-            :key="row"
-            class="row"
+      <div v-for="(row, index) in ROWTOP"
+           :key="row"
+           class="row"
+      >
+        <!-- 渲染所要的列数 -->
+        <div class="block chess"
+             :id="getid(index, i) + ''"
+             v-for="(col, i) in COL"
+             :key="col"
+             @mouseover="hover(getid(index, i))"
+             @mouseout="out(getid(index, i))"
+             @click="action(getid(index, i))"
+             v-if="index > 9 && index <= 14"
         >
-            <!-- 渲染所要的列数 -->
-            <div class="block chess"
-                :id="getid(index, i) + ''"
-                v-for="(col, i) in COL"
-                :key="col"
-                @mouseover="hover(getid(index, i))"
-                @mouseout="out(getid(index, i))"
-                @click="action(getid(index, i))"
-                v-if="index > 9 && index <= 14"
-            >
-            </div>
         </div>
+      </div>
     </div>
-</div>
+  </div>
 </template>
 
 
 <style scoped lang="scss">
 
 .camp {
-    position: absolute;
-    top: 0;
-    left: 0;
+  position: absolute;
+  top: 0;
+  left: 0;
 }
 // 红方阵营
 .camp0 {

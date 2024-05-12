@@ -179,7 +179,7 @@ def joinRoom(data):
     # 用户在游戏中
     elif room.game_table is not None and room.game_table.searchGameTable(userid): 
         logger.info(f"User {userid} rejoin to game {room.game_table.game_id}")
-        emit('initGame',{'game_info':room.game_table.getGameInfo()},to=room_id,namespace='/')
+        emit('initGame',{'game_info':room.game_table.getGameInfo()},to=request.sid,namespace='/')
     
     room.addUser(UserDict(userid=userid,username=sessions[userid]))
     join_room(room_id)
