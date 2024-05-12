@@ -51,6 +51,11 @@ npm i js-cookie
 ```sh
 npm i vue-socket.io
 ```
+### Project Setup
+
+```sh
+npm install @element-plus/icons-vue
+```
 
 ### Compile and Hot-Reload for Development
 

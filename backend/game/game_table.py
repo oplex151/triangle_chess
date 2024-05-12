@@ -2,7 +2,7 @@ from enum import Enum
 import sys
 import os
 from flask import Flask, request, jsonify
-from typing import Tuple, Union
+from typing import Dict, Tuple, Union
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -15,6 +15,10 @@ from backend.message import *
 from backend.tools import setupLogger
 
 logger = setupLogger()
+
+class UserDict(Dict):
+    userid:int
+    username:str
 
 class EnumGameState(Enum):
     ongoing = "ongoing"
@@ -312,7 +316,7 @@ class RoomType(Enum):
     matched ='matched'
 
 class RoomManager:
-    def __init__(self, users: Union[list[int], int], room_type: RoomType=RoomType.created):
+    def __init__(self, users: Union[list[UserDict], UserDict], room_type: RoomType=RoomType.created):
         # 随机生成一串字符串
         self.room_id:str = hashlib.md5(str(random.randint(0,1000000000)).encode('utf-8')).hexdigest()
         self.users = None
@@ -323,7 +327,7 @@ class RoomManager:
         else:
             self.users = [users]
 
-        self.holder = self.users[0] # 房主
+        self.holder = self.users[0]# 房主
         self.room_type = room_type # 房间类型
     
     def getRoomId(self) -> str:
@@ -335,22 +339,45 @@ class RoomManager:
     def removeGameTable(self):
         self.game_table = None
 
-    def addUser(self, userid: Union[int, list[int]]):
-        if isinstance(userid, list):
-            for u in userid:
+    def addUser(self, user: Union[UserDict, list[UserDict]]):
+        if isinstance(user, list):
+            for u in user:
                 if u not in self.users:
                     self.addUser(u)
         else:
-            if userid not in self.users:
-                self.users.append(userid)
+            if user not in self.users:
+                self.users.append(user)
         
     
     def removeUser(self, userid:int):
-        if userid in self.users:
-            self.users.remove(userid)
-            logger.info(f"用户{userid}退出房间{self.room_id}")
+        leaved_user = None
+        for user in self.users:
+            if user['userid'] == userid:
+                leaved_user = user
+                break
+        if leaved_user is None:
+            return False
+        else:
+            logger.info(f"用户{leaved_user['userid']}:{leaved_user['username']}退出房间{self.room_id}")
+            self.users.remove(leaved_user)
+            if self.holder['userid'] == leaved_user['userid'] and len(self.users) > 0:
+                # 房主退出房间，更换房主
+                self.holder = self.users[0]
             return True
-        return False
+    
+    def getRoomInfo(self):
+        '''
+        Description: 获取房间信息
+        Returns:
+            dict: 房间信息
+        '''
+        data = {
+            'room_id': self.room_id,
+            'room_type': self.room_type.value,
+            'holder': self.holder,
+            'users': self.users,
+        }
+        return data
 
 
 
@@ -378,7 +405,7 @@ def inWhitchRoom(user_id:int, room_managers:list[RoomManager]) -> str:
         str: 房间ID
     '''
     for room in room_managers:
-        if user_id in room.users:
+        if user_id in [user['userid'] for user in room.users]:
             return room.getRoomId()
     else:
         return None

@@ -95,7 +95,11 @@ def disconnect():
                         f"this room's users: {fetchRoomByRoomID(room_id,rooms).users}")
             room = fetchRoomByRoomID(room_id,rooms)
             room.removeUser(userid)
+            if len(room.users) == 0:
+                rooms.remove(room)
+                logger.info(f"Room {room_id} is empty, remove it")
             leave_room(room.room_id)
+            emit('leaveRoomSuccess',{'userid':userid,'username':sessions[userid],'room_info':room.getRoomInfo()},to=room.room_id)
         sid2uid.pop(request.sid)
     logger.info("User {0} disconnect".format(request.sid))
 
@@ -119,13 +123,13 @@ def createRoom(data):
         logger.error("User {0} is already in room {1}".format(userid,room_id))
         emit('processWrong',{'status':ALREADY_IN_ROOM},to=request.sid)
         return
-    new_room = RoomManager(userid)
+    new_room = RoomManager(UserDict(userid=userid,username=sessions[userid]))
     rooms.append(new_room)
     room_id = rooms[-1].room_id
     join_room(room_id)
     logger.info(f"Create room {room_id} by user {userid}, sid={request.sid}\n"
                 +f"this room's users: {new_room.users}")
-    emit('createRoomSuccess',{'room_id':room_id},to=request.sid)
+    emit('createRoomSuccess',{'room_id':room_id,'room_info':new_room.getRoomInfo()},to=request.sid)
     # 更新sid2uid
     if request.sid not in sid2uid:
         sid2uid[request.sid] = userid
@@ -151,10 +155,9 @@ def joinRoom(data):
         logger.error("Join room error", exc_info=True)
         emit('processWrong',{'status':PARAM_ERROR},to=request.sid)
         return
-    logger.info(f"User {userid} join room {room_id}")
+    
     room = fetchRoomByRoomID(room_id,rooms)
     if room is None:
-        logger.error("No such room {0}".format(room_id))
         emit('processWrong',{'status':ROOM_NOT_EXIST},to=request.sid)
         return
     # 查询该用户是否在某个房间中
@@ -178,11 +181,11 @@ def joinRoom(data):
         logger.info(f"User {userid} rejoin to game {room.game_table.game_id}")
         emit('initGame',{'game_info':room.game_table.getGameInfo()},to=room_id,namespace='/')
     
-    room.addUser(userid)
+    room.addUser(UserDict(userid=userid,username=sessions[userid]))
     join_room(room_id)
     logger.info(f"User {userid} join room {room_id}, sid={request.sid}"
                 +f"this room's users: {room.users}")
-    emit('joinRoomSuccess',{'room_id':room_id,'userid':userid,'username':sessions[userid]},to=room_id)
+    emit('joinRoomSuccess',{'room_id':room_id,'userid':userid,'username':sessions[userid],'room_info':room.getRoomInfo()},to=room_id)
     # 更新sid2uid
     if request.sid not in sid2uid: 
         sid2uid[request.sid] = userid
@@ -209,7 +212,7 @@ def leaveRoom(data):
         emit('processWrong',{'status':ROOM_NOT_EXIST},to=request.sid)
         return
     if room.removeUser(userid):
-        emit('leaveRoomSuccess',{'userid':sid2uid[request.sid]},to=room_id)
+        emit('leaveRoomSuccess',{'userid':userid,'username':sessions[userid],'room_info':room.getRoomInfo()},to=room_id)
         leave_room(room_id)
         # 更新sid2uid
         if request.sid in sid2uid:
@@ -241,25 +244,29 @@ def createGameApi():
     except:
         return "{message: 'parameter error'}",PARAM_ERROR
     try:
-        print(room_id)
         room = fetchRoomByRoomID(room_id,rooms)
         if room is None:
+            emit('processWrong',{'status':ROOM_NOT_EXIST},to=uid2sid(userid),namespace='/')
             return "{message: '房间不存在！'}",ROOM_NOT_EXIST
         if len(room.users) < 3:
+            emit('processWrong',{'status':ROOM_NOT_ENOUGH},to=uid2sid(userid),namespace='/')
             return "{message: '房间人数不足！'}",ROOM_NOT_ENOUGH
         for user in room.users[:3]:
-            if user < 0:
+            if user['userid'] < 0:
+                emit('processWrong',{'status':ROOM_NOT_ENOUGH},to=uid2sid(userid),namespace='/')
                 return "{message: '房间人数不足！'}",ROOM_NOT_ENOUGH
         
-        game:GameTable = GameTable(room.users[:3]) # TODO::这里应该是创建游戏
+        game:GameTable = GameTable([user['userid'] for user in room.users[:3]]) 
+
         room.addGameTable(game)
-        logger.info(f"join user {room.users[:3]} in room {game.game_id}")
-        emit('createGameSuccess',{'game_id':game.game_id,'users':[room.users[0],room.users[1],room.users[2]],'usernames':[sessions[room.users[0]],sessions[room.users[1]],sessions[room.users[2]]]},to=room_id,namespace='/')
+        
+        emit('createGameSuccess',{'game_id':game.game_id,'room_info':room.getRoomInfo()},to=room_id,namespace='/')
         emit('initGame',{'game_info':game.getGameInfo()},to=room_id,namespace='/')
         logger.info("Create game: {0}".format(game.game_id))
         return "{}",SUCCESS
     except Exception as e:
         logger.error("Create game error due to {0}".format(str(e)), exc_info=True)
+        emit('processWrong',{'status':GAME_CREATE_FAILED},to=uid2sid(userid),namespace='/')
         return "{message: 'create game error'}",GAME_CREATE_FAILED
 
 @socketio.event
@@ -339,6 +346,28 @@ def roomOver(game:GameTable, room:RoomManager, userid:int):
         # 匹配模式下，游戏结束后，关闭房间
         # 请前端自行处理匹配模式下的后续操作
         rooms.remove(room)
+
+# @socketio.event
+# def sendMessage(data):
+#     '''
+#     接收用户发送的消息
+#     Args:
+#         room_id: 房间id str
+#         userid: 用户id int
+#         message: 消息 str
+#     '''
+#     params = {'room_id':str, 'userid':int,'message':str}
+#     try: 
+#         room_id,userid,message = getParams(params,data)
+#     except:
+#         logger.error("Send message error", exc_info=True)
+#     emit('sendMessageSuccess',{'message':message,'userid':userid,'username':sessions[userid]},to=request.sid)
+
+# @socketio.event
+# def receiveMessage(data):
+#     logger.info(f"receive message: {data} ")
+#     emit('message', "接受成功", to=request.sid)
+
 
 @socketio.event
 def requestDraw(data):

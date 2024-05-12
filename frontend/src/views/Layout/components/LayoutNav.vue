@@ -96,9 +96,7 @@ const logged = ref(Cookies.get("userid"))
   position: relative;
   left: 0%;
   transform: translateX(-0%, -0%);
-  //字体宋体
-  font-family: "SimSun", "宋体";
-  font-size: 14px;
+  font-size: 18px;
   font-weight: bold;
   //鼠标悬停时背景颜色变化
   cursor: pointer;
