@@ -135,6 +135,8 @@ const moveChess = (chess, to) => {
     return true;
 };
 const initMap = () => {
+
+    ElMessage.info('初始化棋盘')    // 调试用的
     for (const [k, camp] of Object.entries(camps)) {
         camp.get().forEach((chess) => {
         GEBI(`${chess.position}`).innerText = chess.name;
@@ -174,7 +176,7 @@ const Destory = () => {
 };
 
 onMounted(()=>{
-    initMap(); // 初始化棋盘，改成相应后端消息来哦初始化棋盘
+    // initMap(); // 初始化棋盘，改成相应后端消息来哦初始化棋盘
 });
 onUnmounted(Destory);
 // 一定要写在最后

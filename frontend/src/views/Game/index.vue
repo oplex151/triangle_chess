@@ -34,7 +34,7 @@ const sockets_methods={
   },
   processWrong(data){
     status1 = data.status
-    ElMessage.info(status1)
+    ElMessage.error("Error due to "+status1)
   }
 }
 
@@ -52,6 +52,7 @@ onMounted(()=>{
     socket.value.io.emit('joinRoom',{'userid':userid,'room_id':Cookies.get('room_id')})
   }
   registerSockets(sockets_methods,socket.value,proxy);
+  board.value.initMap();
 });
 const Destory = () => {
   // nothing to do
@@ -62,7 +63,9 @@ const Move = (data) => {
   data.userid = userid
   socket.value.io.emit('movePiece',data)
 }
-
+const init = () => {
+  board.value.initMap();
+}
 </script>
 
 <template>
