@@ -317,7 +317,7 @@ class RoomManager:
     def __init__(self, users: Union[list[UserDict], UserDict], room_type: RoomType=RoomType.created):
         # 随机生成一串字符串
         self.room_id:str = hashlib.md5(str(random.randint(0,1000000000)).encode('utf-8')).hexdigest()
-        self.users = None
+        self.users:list[UserDict] | UserDict = None
         self.game_table = None
 
         if isinstance(users, list):

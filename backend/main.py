@@ -272,6 +272,7 @@ def createGameApi():
 @app.route('/api/game/init', methods=['POST'])
 def initGame():
     '''
+    Description: 初始化游戏，前端主动请求
     Args:
         room_id: 房间id str
     Returns:
@@ -490,17 +491,18 @@ def startMatch(data):
     if (match_queue.qsize() >= 3):
         user0,user1,user2 = match_queue.get(),match_queue.get(),match_queue.get()
         # 开始游戏
-        room = RoomManager([user0,user1,user2],RoomType.matched)
+        room = RoomManager([UserDict(userid=user0,username=sessions[user0]),UserDict(userid=user1,username=sessions[user1]),UserDict(userid=user2,username=sessions[user2])],RoomType.matched)
         rooms.append(room)
-        room.game_table = GameTable(room.users)
+        room.game_table = GameTable([user['userid'] for user in room.users])
         for user in room.users:
-            join_room(room=room.room_id,sid=uid2sid(user))
+            join_room(room=room.room_id,sid=uid2sid(user['userid']))
         logger.info(f"Create room : {room.room_id} and game: {room.game_table.game_id}")
+        # 通知房间所有人匹配到了
         emit('startMatchSuccess',{'room_id':room.room_id,'game_id':room.game_table.game_id,
-                                  'users':[room.users[0],room.users[1],room.users[2]],
-                                  'usernames':[sessions[room.users[0]],sessions[room.users[1]],sessions[room.users[2]]]},
+                                  'users':[room.users[0].userid,room.users[1].userid,room.users[2].userid],
+                                  'usernames':[room.users[0].username,room.users[1].username,room.users[2].username]},
                                   to=room.room_id,namespace='/')
-        emit('initGame',{'game_info':room.game_table.getGameInfo()},to=room.room_id,namespace='/')
+        
 
 @socketio.event
 def viewGameRecords(data):

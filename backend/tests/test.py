@@ -19,11 +19,7 @@ def test1():
     print(game.movePiece(11,0,0,0,0,0,1))
     print(game.movePiece(12,0,0,1,0,0,1))
     print(game.movePiece(11,2,0,2,0,0,1))
-    
     game.showBoard()
-    # print(game.getGameInfo())
-    # with open('./backend/tests/test.json', 'w') as f:
-    #     json.dump(game.getGameInfo(), f, indent=4)
 
 def test2():
     game = GameTable([11, 12, 13])
@@ -32,7 +28,13 @@ def test2():
     game.showBoard()
     
 
+def test3():
+    game = GameTable([11, 12, 13])
+    with open(os.environ['PROJECT_ROOT']+'/backend/tests/test.json', 'w') as f:
+        json.dump(game.getGameInfo(), f, indent=4)
+
 if __name__ == '__main__':
-    test1()
-    test2()
+    #test1()
+    #test2()
+    test3()
     print('测试完成')
