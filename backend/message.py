@@ -1,3 +1,5 @@
+# ECONNABORTED = 103 #"Connection aborted"
+
 SUCCESS = 200 #"success"
 OTHER_ERROR = 500 #"unknown error"
 LOGIN_UNEXIST_USER = 501 #"Login failed: User does not exist"

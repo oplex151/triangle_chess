@@ -1,4 +1,4 @@
--- MySQL dump 10.13  Distrib 8.3.0, for Win64 (x86_64)
+-- MySQL dump 10.13  Distrib 8.0.19, for Win64 (x86_64)
 --
 -- Host: localhost    Database: trianglechess
 -- ------------------------------------------------------
@@ -15,15 +15,6 @@
 /*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
---
--- Current Database: `trianglechess`
---
-
-/*!40000 DROP DATABASE IF EXISTS `trianglechess`*/;
-
-CREATE DATABASE /*!32312 IF NOT EXISTS*/ `trianglechess` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
-
-USE `trianglechess`;
 --
 -- Table structure for table `comment`
 --
@@ -53,6 +44,36 @@ CREATE TABLE `comment` (
 LOCK TABLES `comment` WRITE;
 /*!40000 ALTER TABLE `comment` DISABLE KEYS */;
 /*!40000 ALTER TABLE `comment` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `game_move`
+--
+
+DROP TABLE IF EXISTS `game_move`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `game_move` (
+  `moveId` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `recordId` bigint unsigned NOT NULL,
+  `playerId` bigint unsigned NOT NULL,
+  `chessType` varchar(20) NOT NULL,
+  `startPos` varchar(10) NOT NULL,
+  `endPos` varchar(10) NOT NULL,
+  `timestamp` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`moveId`),
+  KEY `recordId` (`recordId`),
+  CONSTRAINT `game_move_ibfk_1` FOREIGN KEY (`recordId`) REFERENCES `game_record` (`recordId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `game_move`
+--
+
+LOCK TABLES `game_move` WRITE;
+/*!40000 ALTER TABLE `game_move` DISABLE KEYS */;
+/*!40000 ALTER TABLE `game_move` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -119,7 +140,7 @@ LOCK TABLES `user` WRITE;
 UNLOCK TABLES;
 
 --
--- Dumping routines for database 'triangle_chess'
+-- Dumping routines for database 'trianglechess'
 --
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -131,4 +152,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2024-04-26 22:59:46
+-- Dump completed on 2024-05-11 13:07:48

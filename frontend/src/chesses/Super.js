@@ -3,8 +3,11 @@ import { Chess } from "./Chess";
 
 // 超级棋子 继承chass的种类 实现棋子的接口
 export class SuperChess extends Chess {
-    constructor(position, camp) {
-        super(position, camp);
+    constructor(position, camp,inWhichArea=-1) {
+        if (inWhichArea === -1) {
+            inWhichArea = camp;
+        }
+        super(position, camp,inWhichArea);
         // 棋子的名字
         this.name = "超级";
     }

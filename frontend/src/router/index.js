@@ -72,6 +72,7 @@ router.beforeEach((to, from, next) => {
   if (!to.meta.connection) {
     socket.value = ""
     Cookies.remove('room_id')
+    Cookies.remove('room_info')
   }
   if (to.meta.isAuth) {
     if (Cookies.get('userid')) {

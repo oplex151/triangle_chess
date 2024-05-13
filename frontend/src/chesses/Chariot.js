@@ -3,8 +3,8 @@ import { Chess } from "./Chess";
 import {GEBI, getCol, getRow} from "@/utils/utils.js";
 
 export class Chariot extends Chess {
-    constructor(position, camp) {
-        super(position, camp);
+    constructor(position, camp, inWhichArea) {
+        super(position, camp, inWhichArea);
         this.name = "车";
     }
 

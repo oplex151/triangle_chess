@@ -4,7 +4,7 @@ logger = setupLogger()
 
 testdict = {'a': 1, 'b': 'dsa'}
 
-def get_params(required_args:dict, data:dict)->tuple:
+def getParams(required_args:dict, data:dict)->tuple:
     params = {}
     try: 
         for k,t  in required_args.items():
@@ -19,5 +19,5 @@ def get_params(required_args:dict, data:dict)->tuple:
         return tuple(params.values())
 
 if __name__ == '__main__':
-   a,b=get_params({'a': int, 'b': int})
+   a,b=getParams({'a': int, 'b': int})
    print(a,b)

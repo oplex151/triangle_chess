@@ -1,8 +1,5 @@
 from enum import Enum
-import sys
-import os
-from flask import Flask, request, jsonify
-from typing import Tuple, Union
+from typing import Dict, Union
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -10,10 +7,15 @@ import hashlib
 import random
 from .piece import Piece
 from .special_piece import *
+from .record import GameRecord
 from backend.message import *
 from backend.tools import setupLogger
 
 logger = setupLogger()
+
+class UserDict(Dict):
+    userid:int
+    username:str
 
 class EnumGameState(Enum):
     ongoing = "ongoing"
@@ -39,6 +41,12 @@ class GameTable:
         self.draw_requester = None  # 发起求和请求的玩家
         self.draw_respondents = set()  # 记录回应求和请求的玩家
         self.draw_agree = set()  # 记录对求和请求的回应
+
+        self.record = GameRecord(
+                p1=self.user1['user_id'],
+                p2=self.user2['user_id'],
+                p3=self.user3['user_id']
+            )
 
         for i in range(3):
             self._initChess(i)
@@ -106,7 +114,7 @@ class GameTable:
             return NOT_JOIN_GAME # 用户不在游戏中
 
         if self._getUserIndex(user) != self.turn:
-            logger.error(f"用户{user}不是轮到移动棋子")
+            logger.error(f"用户{user}不是轮到移动棋子，应该是{self.turn}号玩家")
             return NOT_YOUR_TURN # 不是轮到该用户移动棋子
         try:
             user_z = self._getUserIndex(user) # 获取用户的索引
@@ -134,6 +142,12 @@ class GameTable:
                         if self.checkGameEnd():
                             return GAME_END
                         
+                        # 记录这一步
+                        chessType = "piece"
+                        startPos = str(px) + ',' + str(py) + ',' + str(pz)
+                        endPos = str(nx) + ',' + str(ny) + ',' + str(nz)
+                        self.record.recordMove(user, chessType, startPos, endPos)
+
                          # 切换到下一个用户
                         self.turn = (self.turn+1)%3
                         
@@ -172,7 +186,7 @@ class GameTable:
         else:
             return None
     
-    def get_alive_players(self):
+    def getAlivePlayers(self):
         '''
         Description: 返回存活玩家的 user_id 列表。
         Returns:
@@ -195,7 +209,7 @@ class GameTable:
         # 返回存活玩家的 user_id 列表
         return alive_players
 
-    def request_draw(self, userid:int):
+    def requestDraw(self, userid:int):
         '''
         Description: 处理求和请求
         '''
@@ -209,7 +223,7 @@ class GameTable:
         # 初始化回应求和请求的玩家列表
         self.draw_respondents = set()
 
-    def respond_draw(self, userid:int, agree:bool):
+    def respondDraw(self, userid:int, agree:bool):
         '''
         Description: 处理求和回应
         '''
@@ -223,7 +237,7 @@ class GameTable:
         # 添加对求和请求的回应
         self.draw_agree.add(agree)
 
-    def set_draw(self, agree:bool):
+    def setDraw(self, agree:bool):
         '''
         Description: 处理求和的结果
         '''
@@ -272,6 +286,7 @@ class GameTable:
             'turn': self.turn,
             'game_state': self.game_state.value,
             'winner': self.winner,
+            'lives': self.lives,
             'pieces': [piece.getPieceInfo() for piece_list in self.Pieces for piece in piece_list]
         }
         return data
@@ -299,10 +314,10 @@ class RoomType(Enum):
     matched ='matched'
 
 class RoomManager:
-    def __init__(self, users: Union[list[int], int], room_type: RoomType=RoomType.created):
+    def __init__(self, users: Union[list[UserDict], UserDict], room_type: RoomType=RoomType.created):
         # 随机生成一串字符串
         self.room_id:str = hashlib.md5(str(random.randint(0,1000000000)).encode('utf-8')).hexdigest()
-        self.users = None
+        self.users:list[UserDict] | UserDict = None
         self.game_table = None
 
         if isinstance(users, list):
@@ -310,7 +325,7 @@ class RoomManager:
         else:
             self.users = [users]
 
-        self.holder = self.users[0] # 房主
+        self.holder = self.users[0]# 房主
         self.room_type = room_type # 房间类型
     
     def getRoomId(self) -> str:
@@ -322,22 +337,45 @@ class RoomManager:
     def removeGameTable(self):
         self.game_table = None
 
-    def addUser(self, userid: Union[int, list[int]]):
-        if isinstance(userid, list):
-            for u in userid:
+    def addUser(self, user: Union[UserDict, list[UserDict]]):
+        if isinstance(user, list):
+            for u in user:
                 if u not in self.users:
                     self.addUser(u)
         else:
-            if userid not in self.users:
-                self.users.append(userid)
+            if user not in self.users:
+                self.users.append(user)
         
     
     def removeUser(self, userid:int):
-        if userid in self.users:
-            self.users.remove(userid)
-            logger.info(f"用户{userid}退出房间{self.room_id}")
+        leaved_user = None
+        for user in self.users:
+            if user['userid'] == userid:
+                leaved_user = user
+                break
+        if leaved_user is None:
+            return False
+        else:
+            logger.info(f"用户{leaved_user['userid']}:{leaved_user['username']}退出房间{self.room_id}")
+            self.users.remove(leaved_user)
+            if self.holder['userid'] == leaved_user['userid'] and len(self.users) > 0:
+                # 房主退出房间，更换房主
+                self.holder = self.users[0]
             return True
-        return False
+    
+    def getRoomInfo(self):
+        '''
+        Description: 获取房间信息
+        Returns:
+            dict: 房间信息
+        '''
+        data = {
+            'room_id': self.room_id,
+            'room_type': self.room_type.value,
+            'holder': self.holder,
+            'users': self.users,
+        }
+        return data
 
 
 
@@ -365,7 +403,7 @@ def inWhitchRoom(user_id:int, room_managers:list[RoomManager]) -> str:
         str: 房间ID
     '''
     for room in room_managers:
-        if user_id in room.users:
+        if user_id in [user['userid'] for user in room.users]:
             return room.getRoomId()
     else:
         return None

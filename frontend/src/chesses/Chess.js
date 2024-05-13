@@ -3,11 +3,11 @@ import { GEBI, getCol, getRow } from "@/utils/utils";
 import { lives } from "./Live";
 
 export class Chess {
-    constructor(position, camp) {
+    constructor(position, camp, inWhichArea) {
         this.name = '';
         this.position = position;
         this.camp = camp;
-        this.inWhichArea = camp;
+        this.inWhichArea = inWhichArea;
     }
 
     move(to) {
