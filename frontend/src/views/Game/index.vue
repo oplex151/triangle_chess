@@ -11,9 +11,8 @@ import {ElMessage} from "element-plus";
 import { onMounted, ref ,onUnmounted,computed,getCurrentInstance,onBeforeUnmount} from 'vue';
 import Board from '@/views/Game/board.vue'
 
-const userid =  Cookies.get('userid')
 let my_camp = Cookies.get('camp')
-let status1 = ''
+const userid =  Cookies.get('userid')
 const {proxy} = getCurrentInstance()
 const board = ref(null)
 
@@ -72,10 +71,18 @@ const sockets_methods={
     Cookies.remove('game_id')
     Cookies.remove('camp')
     removeSockets(sockets_methods,socket.value,proxy);
+    var room_info = JSON.parse(Cookies.get('room_info'))
+    if (room_info.room_type == 'matched'){
+      // 匹配模式，直接跳转到首页
+      Cookies.remove('room_id')
+      Cookies.remove('room_info')
+      router.replace('/')
+      return
+    }
     router.replace('/room')
   },
   processWrong(data){
-    status1 = data.status
+    let status1 = data.status
     ElMessage.error("Error due to "+status1)
   },
 }

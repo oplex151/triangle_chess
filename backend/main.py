@@ -100,6 +100,10 @@ def disconnect():
                 logger.info(f"Room {room_id} is empty, remove it")
             leave_room(room.room_id)
             emit('leaveRoomSuccess',{'userid':userid,'username':sessions[userid],'room_info':room.getRoomInfo()},to=room.room_id)
+        # 断开连接时,判断用户是否在匹配队列中,如果在匹配队列中,则移除
+        if match_queue.is_have(userid):
+            logger.info(f"User {userid} leave match queue")
+            match_queue.remove(sid2uid[request.sid])
         sid2uid.pop(request.sid)
     logger.info("User {0} disconnect".format(request.sid))
 
@@ -487,20 +491,23 @@ def startMatch(data):
     except:
         emit('processWrong',{'status':PARAM_ERROR},to=request.sid)
         return
+    sid2uid[request.sid] = userid # 维护sid2uid映射
     match_queue.put(userid)
+    logger.info(f"User {userid} join match queue: sid {request.sid}")
     if (match_queue.qsize() >= 3):
         user0,user1,user2 = match_queue.get(),match_queue.get(),match_queue.get()
         # 开始游戏
         room = RoomManager([UserDict(userid=user0,username=sessions[user0]),UserDict(userid=user1,username=sessions[user1]),UserDict(userid=user2,username=sessions[user2])],RoomType.matched)
         rooms.append(room)
+        print(room.users)
         room.game_table = GameTable([user['userid'] for user in room.users])
         for user in room.users:
+            print(uid2sid(user['userid']))
             join_room(room=room.room_id,sid=uid2sid(user['userid']))
         logger.info(f"Create room : {room.room_id} and game: {room.game_table.game_id}")
         # 通知房间所有人匹配到了
-        emit('startMatchSuccess',{'room_id':room.room_id,'game_id':room.game_table.game_id,
-                                  'users':[room.users[0].userid,room.users[1].userid,room.users[2].userid],
-                                  'usernames':[room.users[0].username,room.users[1].username,room.users[2].username]},
+        emit('startMatchSuccess',{'game_id':room.game_table.game_id,
+                                  'room_info':room.getRoomInfo()},
                                   to=room.room_id,namespace='/')
         
 

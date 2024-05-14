@@ -16,22 +16,6 @@ const router = useRouter()
 const room_id = ref(null)
 const new_room_id = ref(null)
 const room_info = ref(null)
-// 格式提示：
-// room_info:{
-//   room_id:xxx,
-//   room_type:xxx,
-//   users:[
-//     {
-//       userid:1,
-//       username:'user1',
-//     },
-//     ...
-//   ],
-//   holder:{
-//     userid:1,
-//     username:'user1'
-//   }
-//}
 
 const sockets_methods = {
   createRoomSuccess(data){
@@ -234,7 +218,7 @@ const copyRoomId = () => {
         开始游戏
       </button>
     </div>
-    <ElDivider/>
+    <ElDivider v-if="room_id"/>
     <div class="room-info">
       <div v-if="room_info">
         <li v-for="user in room_info.users" class="user"> 
