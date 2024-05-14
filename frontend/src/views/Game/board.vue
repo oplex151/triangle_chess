@@ -25,10 +25,8 @@ const xyz = ref([0,0,0])
 const xyzn = ref([0,0,0])
 const my_camp_str = ['红方','黑方','金方']
 
-
 const props = defineProps(['my_camp'])
 const emit = defineEmits(['requireMove'])
-
 
 // 定义父组件可以调用的函数（这里只有defineExpose）
 function moveSuccess(data) {
@@ -79,9 +77,6 @@ const camp_0_style = computed(() => {
     return 'board-tilt-right'
   }
 });
-
-
-
 const action = (position) => {
   // 未选中
   if (!isPocus.value) {
@@ -127,7 +122,6 @@ const action = (position) => {
     }
   }
 };
-
 const moveChess = (chess, to) => {
   if (map.get(to)?.camp === camp.value) return false;
   map.delete(chess.position);
@@ -153,7 +147,6 @@ const initMap = () => {
             
             initChess(game_info)
             for (const [k, camp] of Object.entries(camps)) {
-    
                 camp.get().forEach((chess) => {
                     GEBI(`${chess.position}`).innerText = chess.name;
                     
@@ -191,7 +184,6 @@ const hover = (position) => {
     if (!map.has(position)) return;
 
     hoverChess = map.get(position);
-
 
     if (hoverChess.camp != props.my_camp) return;
 

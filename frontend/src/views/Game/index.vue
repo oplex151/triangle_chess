@@ -16,7 +16,9 @@ let my_camp = Cookies.get('camp')
 let status1 = ''
 const {proxy} = getCurrentInstance()
 const board = ref(null)
-
+const dialogVisible = ref(false)
+const winner_name = ref('')
+const step_count = ref(0)
 
 onMounted(()=>{
   if (!Cookies.get('camp')){
@@ -28,7 +30,6 @@ onMounted(()=>{
       debug: true,
       connection: SocketIO(main.url),
     })
-    
     // 重新加入房间
     socket.value.io.emit('joinRoom',{'userid':userid,'room_id':Cookies.get('room_id')})
   }
@@ -45,7 +46,6 @@ const sockets_methods={
       ElMessage.info('玩家'+data.username+'移动成功')
     }
     // 移动棋子_切换阵营
-   
     board.value.moveSuccess(data);
   },
   joinRoomSuccess(data){
@@ -69,10 +69,27 @@ const sockets_methods={
   },
   gameEnd(data){
     ElMessage.info('游戏结束'+"获胜者为"+data.winner_name)
-    Cookies.remove('game_id')
-    Cookies.remove('camp')
-    removeSockets(sockets_methods,socket.value,proxy);
-    router.replace('/room')
+    // 模态框位置(待加入)
+    step_count.value = data.step_count;
+    winner_name.value = data.winner_name;
+    dialogVisible.value = true;
+
+    // 匹配模式退回主页面
+    if(data.room_type == 0){
+      Cookies.remove('game_id')
+      Cookies.remove('camp')
+      removeSockets(sockets_methods,socket.value,proxy);
+      router.replace('/')
+
+    }
+    // 创房间模式
+    else {
+      Cookies.remove('game_id')
+      Cookies.remove('camp')
+      removeSockets(sockets_methods,socket.value,proxy);
+      router.replace('/room')
+    }
+
   },
   processWrong(data){
     status1 = data.status
@@ -90,6 +107,19 @@ const Move = (data) => {
 
 <template>
   <div class="background-image"></div>
+  <el-dialog
+      title="游戏结束"
+      :visible.sync="dialogVisible"
+      width="30%"
+      :close-on-click-modal="false"
+  >
+    <p>当前的胜者是：{{ winner_name }}</p>
+    <p>当前的步数是：{{ step_count }}</p>
+    <div slot="footer" class="dialog-footer">
+      <el-button type="primary" @click="dialogVisible = false">关闭</el-button>
+    </div>
+  </el-dialog>
+
   <Board :my_camp="my_camp"  ref="board" @requireMove="Move"/>
 </template>
 

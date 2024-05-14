@@ -126,8 +126,9 @@ def createRoom(data):
     new_room = RoomManager(UserDict(userid=userid,username=sessions[userid]))
     rooms.append(new_room)
     room_id = rooms[-1].room_id
+    room_type = rooms[-1].room_type
     join_room(room_id)
-    logger.info(f"Create room {room_id} by user {userid}, sid={request.sid}\n"
+    logger.info(f"Create room {room_id} by user {userid}, type is {room_type}, sid={request.sid}\n"
                 +f"this room's users: {new_room.users}")
     emit('createRoomSuccess',{'room_id':room_id,'room_info':new_room.getRoomInfo()},to=request.sid)
     # 更新sid2uid
@@ -353,17 +354,19 @@ def movePiece(data):
         return 
 
 def roomOver(game:GameTable, room:RoomManager, userid:int):
+    # 获取当前的房间类型0是匹配，1是创建房间
+    room_type = 0 if room.room_type == RoomType.matched else 1
     # 游戏结束，判断胜利者或平局
     if game.game_state == EnumGameState.win:
         # 通知所有玩家游戏结束并告知胜利者
         logger.info(f"Game {game.game_id} end, winner is {userid}")
-        emit('gameEnd', {'status': GAME_END, 'winner': userid, 'winner_name': sessions[userid]}, to=room.room_id)
+        emit('gameEnd', {'status': GAME_END, 'room_type':room_type,"step_count":game.step_count,'winner': userid, 'winner_name': sessions[userid]}, to=room.room_id)
         # 结束记录
         game.record.recordEnd(userid)
     elif game.game_state == EnumGameState.draw:
         # 通知所有玩家游戏结束为平局
         logger.info(f"Game {game.game_id} end, winner is {userid}")
-        emit('gameEnd', {'status': GAME_END, 'winner': -1, 'winner_name': None}, to=room.room_id)
+        emit('gameEnd', {'status': GAME_END, 'room_type':room_type,"step_count":game.step_count,'winner': -1, 'winner_name': None}, to=room.room_id)
         # 结束记录
         game.record.recordEnd(None)
     room.removeGameTable()
