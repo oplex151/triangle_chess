@@ -10,7 +10,7 @@ import {ElMessage} from "element-plus";
 import { lives, changeLives } from '@/chesses/Live';
 import { onMounted, ref ,onUnmounted,computed,getCurrentInstance} from 'vue';
 import {COL, ROWTOP, ROWMID, AREABOT, ROWBOT} from '@/config/config';
-import axios from 'axios';
+
 
 const map = new Map();
 const getid = (row, col) => (ROWTOP - row - 1) * COL + col + 1;
@@ -129,50 +129,31 @@ const moveChess = (chess, to) => {
   map.set(to, chess);
   return true;
 };
-const initMap = () => {
-    var game_info = null
-    axios.post(main.url + '/api/game/init',{
-        'room_id': Cookies.get('room_id')
-    },
-    {
-        headers: {'Content-Type':'application/x-www-form-urlencoded'},
-    }
-    ).then(res => {
-        if(res.status==200){
-            game_info = res.data.game_info
-            // 设置轮到谁走
-            camp.value = game_info.turn
-            // 设置活着的玩家
-            changeLives(game_info.lives)
-            
-            initChess(game_info)
-            for (const [k, camp] of Object.entries(camps)) {
-                camp.get().forEach((chess) => {
-                    GEBI(`${chess.position}`).innerText = chess.name;
-                    
-                    switch (chess.camp){
-                        case 0:
-                        GEBI(`${chess.position}`).classList.add('camp0');
-                        break;
-                        case 1:
-                        GEBI(`${chess.position}`).classList.add('camp1');
-                        break;
-                        case 2:
-                        GEBI(`${chess.position}`).classList.add('camp2');
-                        break;
-                    }
-                    map.set(chess.position, chess);
-                });
-            }
-        }
-        else{
-            ElMessage.error('获取房间信息失败')
-            return
-        }
-    }).catch(error => {
-        console.log(error)
-    })
+const initMap = (game_info) => {
+    // 设置轮到谁走
+    camp.value = game_info.turn
+    // 设置活着的玩家
+    changeLives(game_info.lives)
     
+    initChess(game_info)
+    for (const [k, camp] of Object.entries(camps)) {
+        camp.get().forEach((chess) => {
+            GEBI(`${chess.position}`).innerText = chess.name;
+            
+            switch (chess.camp){
+                case 0:
+                GEBI(`${chess.position}`).classList.add('camp0');
+                break;
+                case 1:
+                GEBI(`${chess.position}`).classList.add('camp1');
+                break;
+                case 2:
+                GEBI(`${chess.position}`).classList.add('camp2');
+                break;
+            }
+            map.set(chess.position, chess);
+        });
+    }
 };
 
 const hover = (position) => {
@@ -204,7 +185,7 @@ const Destory = () => {
 };
 
 onMounted(()=>{
-    initMap(); // 初始化棋盘，改成相应后端消息来哦初始化棋盘
+    // initMap(); // 初始化棋盘，改成相应后端消息来哦初始化棋盘
 });
 
 onUnmounted(Destory);

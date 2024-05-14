@@ -9,7 +9,9 @@ import Game from '@/views/Game/index.vue'
 import Register from '@/views/Register/index.vue'
 import Logout from '@/views/Logout/index.vue'
 import Room from '@/views/Room/index.vue'
+import Record from '@/views/Record/index.vue'
 import { socket } from '@/sockets';
+
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -63,7 +65,12 @@ const router = createRouter({
       path:'/register',
       component: Register,
       meta: {isAuth: false,connection: false},
-    }
+    },
+    {
+      path: '/record',
+      component: Record,
+      meta: {isAuth: true,connection: false},
+    },
   ]
 })
 

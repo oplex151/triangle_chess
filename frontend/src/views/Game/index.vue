@@ -10,7 +10,7 @@ import {ElMessage} from "element-plus";
 
 import { onMounted, ref ,onUnmounted,computed,getCurrentInstance,onBeforeUnmount, watch} from 'vue';
 import Board from '@/views/Game/board.vue'
-
+import axios from 'axios';
 const userid =  Cookies.get('userid')
 let my_camp = Cookies.get('camp')
 let status1 = ''
@@ -19,7 +19,7 @@ const board = ref(null)
 const dialogVisible = ref(false)
 const winner_name = ref('')
 const step_count = ref(0)
-
+const room_type = ref(0)
 onMounted(()=>{
   if (!Cookies.get('camp')){
     router.replace('/room')
@@ -34,6 +34,24 @@ onMounted(()=>{
     socket.value.io.emit('joinRoom',{'userid':userid,'room_id':Cookies.get('room_id')})
   }
   registerSocketsForce(sockets_methods,socket.value,proxy);
+  axios.post(main.url + '/api/game/init',{
+        'room_id': Cookies.get('room_id')
+    },
+    {
+        headers: {'Content-Type':'application/x-www-form-urlencoded'},
+    }
+    ).then(res => {
+        if(res.status==200){
+          console.log(res.data)
+          board.value.initMap(res.data.game_info)
+        }
+        else{
+            ElMessage.error('获取房间信息失败')
+            return
+        }
+    }).catch(error => {
+        console.log(error)
+    })
   console.log(socket.value)
 });
 
@@ -72,15 +90,23 @@ const sockets_methods={
     // 模态框位置(待加入)
     step_count.value = data.step_count;
     winner_name.value = data.winner_name;
+    room_type.value = data.room_type;
     dialogVisible.value = true;
-
     // 匹配模式退回主页面
-    if(data.room_type == 0){
+  },
+  processWrong(data){
+    status1 = data.status
+    ElMessage.error("Error due to "+status1)
+  },
+}
+
+const EndGame = () => {
+  dialogVisible.value = false
+  if(room_type.value == 0){
       Cookies.remove('game_id')
       Cookies.remove('camp')
       removeSockets(sockets_methods,socket.value,proxy);
       router.replace('/')
-
     }
     // 创房间模式
     else {
@@ -89,36 +115,35 @@ const sockets_methods={
       removeSockets(sockets_methods,socket.value,proxy);
       router.replace('/room')
     }
-
-  },
-  processWrong(data){
-    status1 = data.status
-    ElMessage.error("Error due to "+status1)
-  },
 }
 
 const Move = (data) => {
   data.userid = userid
   socket.value.io.emit('movePiece',data) 
 }
-
 </script>
 
 <template>
   <div class="background-image"></div>
+
+
+  <el-button plain @click="dialogVisible = true">
+    Click to open the Dialog
+  </el-button>
   <el-dialog
       title="游戏结束"
-      :visible.sync="dialogVisible"
+      v-model="dialogVisible"
       width="30%"
-      :close-on-click-modal="false"
+      :before-close="EndGame"
   >
-    <p>当前的胜者是：{{ winner_name }}</p>
-    <p>当前的步数是：{{ step_count }}</p>
+    <p>获胜者为{{winner_name}}</p>
+    <p>步数为{{step_count}}</p>
+    <template #footer>
     <div slot="footer" class="dialog-footer">
-      <el-button type="primary" @click="dialogVisible = false">关闭</el-button>
+      <el-button type="primary" @click="EndGame">关闭</el-button>
     </div>
+    </template>
   </el-dialog>
-
   <Board :my_camp="my_camp"  ref="board" @requireMove="Move"/>
 </template>
 

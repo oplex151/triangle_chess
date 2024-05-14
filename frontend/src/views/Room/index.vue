@@ -2,12 +2,12 @@
 import VueSocketIO from 'vue-socket.io'
 import SocketIO from 'socket.io-client'
 import main from '@/main'
-import { onMounted, ref, getCurrentInstance } from 'vue'
+import { onMounted, ref, getCurrentInstance ,computed} from 'vue'
 import { registerSockets, socket, registerSocketsForce, removeSockets } from '@/sockets'
 import axios from 'axios'
 import Cookies from 'js-cookie'
 import { useRouter } from 'vue-router';
-import { ElMessage } from 'element-plus'
+import { ElDivider, ElInput, ElMessage } from 'element-plus'
 import * as CONST from '@/lib/const.js'
 import { User, HomeFilled } from '@element-plus/icons-vue'
 
@@ -16,6 +16,8 @@ const router = useRouter()
 const room_id = ref(null)
 const new_room_id = ref(null)
 const room_info = ref(null)
+const i_message = ref('')
+const o_message = ref([])
 // 格式提示：
 // room_info:{
 //   room_id:xxx,
@@ -32,6 +34,22 @@ const room_info = ref(null)
 //     username:'user1'
 //   }
 //}
+const my_name = computed(() => {
+  if (room_info.value) {
+    for (let user of room_info.value.users) {
+      if (user.userid == Cookies.get('userid')) {
+        return user.username
+      }
+    }
+  }
+  return ''
+})
+const i_am_holder = computed(() => {
+  if (room_info.value) {
+    return room_info.value.holder.userid == Cookies.get('userid')
+  }
+  return false
+})  
 
 const sockets_methods = {
   createRoomSuccess(data){
@@ -117,7 +135,11 @@ const sockets_methods = {
     }
     removeSockets(sockets_methods, socket.value, proxy)
     router.replace('/game')
-  }
+  },
+  sendMessageSuccess(data){
+    if(data.username!=my_name.value)
+      o_message.value.push({ 'user': data.username, 'message': data.message })
+  },
 
 }
 
@@ -148,6 +170,9 @@ function joinRoom() {
 }
 function leaveRoom() {
   socket.value.io.emit('leaveRoom', { 'room_id': Cookies.get('room_id'), 'userid': Cookies.get('userid') })
+  i_message.value = ''
+  o_message.value = []
+
 }
 function createGame() {
   axios.post(main.url + '/api/game/create',
@@ -160,6 +185,7 @@ function goBackHome(){
   if (Cookies.get('room_id')){
     leaveRoom()
   }
+  removeSockets(sockets_methods, socket.value, proxy)
   router.push('/')
 }
 
@@ -174,6 +200,14 @@ const copyRoomId = () => {
     ElMessage.success('已复制房间号')
   } else {
     console.error('room_info 或 room_info.room_id 未定义');
+  }
+}
+
+const sendMessage = () => {
+  if (i_message.value) {
+    socket.value.io.emit('sendMessage', { 'room_id': room_id.value, 'userid': Cookies.get('userid'), 'message': i_message.value })
+    o_message.value.push({ 'user': my_name.value, 'message': i_message.value })
+    i_message.value = ''
   }
 }
 
@@ -235,23 +269,101 @@ const copyRoomId = () => {
       </button>
     </div>
     <ElDivider/>
-    <div class="room-info">
-      <div v-if="room_info">
-        <li v-for="user in room_info.users" class="user"> 
-          <el-icon  style="vertical-align: middle" size="40px">
-            <User />
-          </el-icon>
-          <span class="user-name" style="vertical-align: middle">{{ user.username }}</span>
-        </li>
+    <div class="in-room">
+      <div class="room-info">
+        <div v-if="room_info">
+          <li v-for="user in room_info.users" class="user" @mouseover="get_info"> 
+            <div class="user-show">
+              更建议使用el-popover
+              <div>
+                <button class="litter">举办！（还没写好）</button>              
+              </div>
+              <div>              
+                <button class="litter" v-if="user.userid!=Cookies.get('userid') && i_am_holder">踢出！（还没写好）</button>
+                <div class="litter" v-else/><!-- 占位用的 -->
+              </div>
+              在这里写一些描述，比如头像
+            </div>
+            <el-icon  style="vertical-align: middle" size="40px">
+              <User />
+            </el-icon>
+            <span class="user-name" style="vertical-align: middle">{{ user.username }}</span>            
+          </li>
+        </div>
+      </div>
+      <div class="message" v-if="room_id">
+        
+        <div class="message-show">
+          <li v-for="(item, index) in o_message">
+            {{item.user}} - {{ item.message }}
+          </li>
+        </div>
+          <el-input class="custom-input" v-model="i_message" maxlength=80 show-word-limit placeholder="Please input" />
+          <el-button @click="sendMessage" style="width:60px" type="primary">发送消息</el-button>
+      </div>
       </div>
     </div>
- 
-  </div>
-
 </template>
 
 
 <style>
+.litter{
+  min-width: 50px;
+  max-width: 50px;
+  font-size: 10px;
+  color: #4d4533;
+  background-color: #f2d683;
+}
+.custom-input{
+  max-width: 90%;
+  padding-right: 3%;
+}
+  .custom-input .el-input__inner{
+    background-color: beige !important; /* 背景色 */
+    border-color: #dcdfe6; /* 边框色 */
+    color: #606266; /* 文本颜色 */
+  }
+  .message .el-button{
+    color: white;
+    background-color: #ecb920;
+  }
+  .message .el-button:hover{
+    background-color: #ffe7b0;
+  }
+  .custom-input .el-input__inner:focus {
+    border-color: #569eee; /* 聚焦时边框色 */
+  }
+  .custom-input .el-input__wrapper{
+    width: 240px;
+    background-color: beige;
+  }
+  .custom-input .el-input__count-inner{
+    background-color:  beige !important;
+  }
+
+.in-room{
+  display: flex;
+}
+.message{
+  margin-left: 20px;
+  margin-right: 20px;
+  width: 60%;
+
+}
+.message-show{
+  margin-top: 20px;
+  background-color: bisque;  
+  margin-bottom: 20px;
+  overflow-y: auto;
+  border-radius: 10px;
+  height:300px;
+  text-align:left;
+}
+.message-show li{
+  margin: 10px;
+  font-size: 18px;
+  color: darkgrey;
+}
 .background-image {
   position: fixed;
   top: 0;
@@ -403,10 +515,10 @@ const copyRoomId = () => {
 
 .room-info {
   margin-top: 20px;
-  max-width: 400px;
-  position: relative;
-  left: 50%;
-  transform: translateX(-50%);
+  margin-left: 20px;
+  margin-right: 20px;
+  display: flex;
+  max-width: 30%;
   background-color:bisque;
   border-radius: 10px;
 }
@@ -416,13 +528,33 @@ const copyRoomId = () => {
   padding-top: 10px;
   padding-bottom: 10px;
   margin-right: 200px;
+  height: 60px;
+  display: flex;
   color: #ecb920;
 }
 
+.user .user-show{
+    display: none;
+    width: 300px;
+    height: 100px;
+    color: #fff;
+    background: #ecb920;
+    line-height: 40px;
+    cursor: pointer;
+    opacity: 0.8;
+    border-radius: 10px;
+    transform: translate(-20px,-100px);
+}
+.user:hover .user-show{
+  position: fixed;
+  display:flex;
+}
 .user-name{
   margin-left: 20px;
   font-size: 18px;
   font-weight: bold;
+  max-width: 40%;
+  overflow: hidden;
 }
 
 
