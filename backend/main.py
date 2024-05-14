@@ -256,9 +256,9 @@ def createGameApi():
             if user['userid'] < 0:
                 emit('processWrong',{'status':ROOM_NOT_ENOUGH},to=uid2sid(userid),namespace='/')
                 return "{message: '房间人数不足！'}",ROOM_NOT_ENOUGH
-        
-        game:GameTable = GameTable([user['userid'] for user in room.users[:3]]) 
 
+        game:GameTable = GameTable([user['userid'] for user in room.users[:3]])
+        game.record.start_time = datetime.datetime.now()
         room.addGameTable(game)
         
         emit('createGameSuccess',{'game_id':game.game_id,'room_info':room.getRoomInfo()},to=room_id,namespace='/')
@@ -358,17 +358,28 @@ def roomOver(game:GameTable, room:RoomManager, userid:int):
     room_type = 0 if room.room_type == RoomType.matched else 1
     # 游戏结束，判断胜利者或平局
     if game.game_state == EnumGameState.win:
+        # 记录结束时间
+        game.record.end_time = datetime.datetime.now()
         # 通知所有玩家游戏结束并告知胜利者
         logger.info(f"Game {game.game_id} end, winner is {userid}")
-        emit('gameEnd', {'status': GAME_END, 'room_type':room_type,"step_count":game.step_count,'winner': userid, 'winner_name': sessions[userid]}, to=room.room_id)
+        print(game.record.end_time)
+        print(game.record.start_time)
+        match_duration = (game.record.end_time - game.record.start_time)
+        print(f"对局时长为：{match_duration}")
+        emit('gameEnd', {'status': GAME_END, 'room_type':room_type,"step_count":game.step_count,"match_duration": match_duration.total_seconds(),'winner': userid, 'winner_name': sessions[userid]}, to=room.room_id)
         # 结束记录
         game.record.recordEnd(userid)
+
     elif game.game_state == EnumGameState.draw:
+        # 记录结束时间
+        game.record.end_time = datetime.datetime.now()
         # 通知所有玩家游戏结束为平局
         logger.info(f"Game {game.game_id} end, winner is {userid}")
-        emit('gameEnd', {'status': GAME_END, 'room_type':room_type,"step_count":game.step_count,'winner': -1, 'winner_name': None}, to=room.room_id)
+        match_duration = (game.record.end_time - game.record.start_time)
+        emit('gameEnd', {'status': GAME_END, 'room_type':room_type,"step_count":game.step_count,"match_duration": match_duration,'winner': -1, 'winner_name': None}, to=room.room_id)
         # 结束记录
         game.record.recordEnd(None)
+
     room.removeGameTable()
     if room.room_type == RoomType.matched:
         # 匹配模式下，游戏结束后，关闭房间

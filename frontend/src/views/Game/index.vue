@@ -6,7 +6,7 @@ import main from '@/main'
 import Cookies from 'js-cookie';
 import { registerSockets, socket, registerSocketsForce,removeSockets} from '@/sockets'
 import router from '@/router';
-import {ElMessage} from "element-plus";
+import {ElMessage,ElMessageBox} from "element-plus";
 
 import { onMounted, ref ,onUnmounted,computed,getCurrentInstance,onBeforeUnmount} from 'vue';
 import Board from '@/views/Game/board.vue'
@@ -16,9 +16,10 @@ let my_camp = Cookies.get('camp')
 let status1 = ''
 const {proxy} = getCurrentInstance()
 const board = ref(null)
-const dialogVisible = ref(false)
-const winner_name = ref('')
-const step_count = ref(0)
+const winner_name = ref(null)
+const step_count = ref(null)
+const match_duration = ref(null)
+
 
 onMounted(()=>{
   if (!Cookies.get('camp')){
@@ -69,10 +70,37 @@ const sockets_methods={
   },
   gameEnd(data){
     ElMessage.info('游戏结束'+"获胜者为"+data.winner_name)
+
     // 模态框位置(待加入)
     step_count.value = data.step_count;
     winner_name.value = data.winner_name;
-    dialogVisible.value = true;
+    match_duration.value = data.match_duration;
+
+    // 从后端接收到了比赛持续时间的整数值
+    let matchDurationSeconds = data.match_duration;
+
+    // 将整数值转换为毫秒
+    let matchDurationMilliseconds = matchDurationSeconds * 1000;
+
+    // 使用 Date 对象创建一个新的日期时间
+    let matchDurationDate = new Date(matchDurationMilliseconds);
+
+    // 将日期时间格式化为您需要的格式
+    let formattedMatchDuration = matchDurationDate.toISOString().substr(11, 8); // 格式化为 HH:mm:ss
+
+    ElMessageBox.alert(
+        `游戏总步数：${data.step_count} 游戏赢家：${data.winner_name} 游戏时长：${formattedMatchDuration} `,
+        '游戏结算',
+        {
+          confirmButtonText: 'OK',
+          callback: (action) => {
+            ElMessage({
+              type: 'info',
+              message: `action: ${action}`,
+            })
+          },
+        }
+    )
 
     // 匹配模式退回主页面
     if(data.room_type == 0){
@@ -89,8 +117,8 @@ const sockets_methods={
       removeSockets(sockets_methods,socket.value,proxy);
       router.replace('/room')
     }
-
   },
+
   processWrong(data){
     status1 = data.status
     ElMessage.error("Error due to "+status1)
@@ -107,20 +135,20 @@ const Move = (data) => {
 
 <template>
   <div class="background-image"></div>
-  <el-dialog
-      title="游戏结束"
-      :visible.sync="dialogVisible"
-      width="30%"
-      :close-on-click-modal="false"
-  >
-    <p>当前的胜者是：{{ winner_name }}</p>
-    <p>当前的步数是：{{ step_count }}</p>
-    <div slot="footer" class="dialog-footer">
-      <el-button type="primary" @click="dialogVisible = false">关闭</el-button>
-    </div>
-  </el-dialog>
+<!--  <el-dialog-->
+<!--      title="游戏结束"-->
+<!--      :v-if="winner_name"-->
+<!--      width="30%"-->
+<!--      :close-on-click-modal="false"-->
+<!--  >-->
+<!--    <p>当前的胜者是：{{ winner_name }}</p>-->
+<!--    <p>当前的步数是：{{ step_count }}</p>-->
+<!--    <div slot="footer" class="dialog-footer">-->
+<!--      <el-button type="primary" @click="dialogVisible = false">关闭</el-button>-->
+<!--    </div>-->
+<!--  </el-dialog>-->
 
-  <Board :my_camp="my_camp"  ref="board" @requireMove="Move"/>
+  <Board  :my_camp="my_camp"  ref="board" @requireMove="Move"/>
 </template>
 
 
