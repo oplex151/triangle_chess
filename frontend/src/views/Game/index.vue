@@ -108,7 +108,7 @@ const sockets_methods={
       Cookies.remove('camp')
       removeSockets(sockets_methods,socket.value,proxy);
       router.replace('/')
-
+      return
     }
     // 创房间模式
     else {
@@ -116,6 +116,7 @@ const sockets_methods={
       Cookies.remove('camp')
       removeSockets(sockets_methods,socket.value,proxy);
       router.replace('/room')
+      return
     }
   },
 
