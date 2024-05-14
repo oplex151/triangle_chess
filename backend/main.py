@@ -4,7 +4,7 @@ from pathlib import Path
 import threading
 def test1():
     a=1+1
-    b=1+2
+    c=1+3
 
 project_root = Path(__file__).parent.parent.absolute()
 os.environ['PROJECT_ROOT'] = str(project_root)
