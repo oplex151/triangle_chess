@@ -61,7 +61,7 @@ class GameRecord:
 
     def recordMove(self, playerId, chessType, startPos, endPos):
         try:
-            insert_query = "INSERT INTO {0} (recordId, playerId, chessType, startPos, endPos) VALUES (%s, %s, %s, %s, %s);".format(GAME_MOVE_TABLE)
+            insert_query = "INSERT INTO {0} (recordId, playerId, chessType, startPos, endPos) VALUES (%s, %s, %s, %s, %s, %s);".format(GAME_MOVE_TABLE)
             cursor.execute(insert_query, (self.record_id, playerId, chessType, startPos, endPos))
             db.commit()
             logger.info("Recorded move for game {0} successfully".format(self.record_id))
