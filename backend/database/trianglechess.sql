@@ -89,7 +89,7 @@ CREATE TABLE `game_record` (
   `p2` bigint unsigned NOT NULL COMMENT '2号用户id',
   `p3` bigint unsigned NOT NULL COMMENT '3号用户id',
   `startTime` timestamp NOT NULL COMMENT '对局开始时间',
-  `endTime` timestamp NOT NULL COMMENT '对局结束时间',
+  `endTime` timestamp DEFAULT NULL COMMENT '对局结束时间',
   `winner` bigint unsigned DEFAULT NULL COMMENT '对局获胜者id',
   `likeNum` int unsigned DEFAULT '0' COMMENT '点赞数',
   `commentNum` int unsigned DEFAULT '0' COMMENT '评论数',
@@ -127,7 +127,7 @@ CREATE TABLE `user` (
   `userPassword` varchar(15) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '账号密码',
   PRIMARY KEY (`userId`),
   UNIQUE KEY `UserAccounts_unique` (`userName`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -136,6 +136,7 @@ CREATE TABLE `user` (
 
 LOCK TABLES `user` WRITE;
 /*!40000 ALTER TABLE `user` DISABLE KEYS */;
+INSERT INTO `user` VALUES (1,'Xhyntao','12345678');
 /*!40000 ALTER TABLE `user` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -152,4 +153,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2024-05-11 13:07:48
+-- Dump completed on 2024-05-13 21:23:44
