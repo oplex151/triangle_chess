@@ -28,6 +28,7 @@ class UniqueQueue(queue.Queue):
             raise queue.Empty
         item = super()._get()
         while item not in self.queue_set:
+            item = super()._get()
             continue
         self.queue_set.remove(item)
         return item
