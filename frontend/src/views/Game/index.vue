@@ -10,6 +10,7 @@ import {ElMessage,ElMessageBox} from "element-plus";
 
 import { onMounted, ref ,onUnmounted,computed,getCurrentInstance,onBeforeUnmount} from 'vue';
 import Board from '@/views/Game/board.vue'
+import axios from "axios";
 
 const userid =  Cookies.get('userid')
 let my_camp = Cookies.get('camp')
@@ -119,11 +120,36 @@ const sockets_methods={
     }
   },
 
+  // playerSurrender(data){
+  //   ElMessage.info("用户"+data.userid+"投降！");
+  // },
+
   processWrong(data){
     status1 = data.status
     ElMessage.error("Error due to "+status1)
   },
 }
+
+function requestSurrender(){
+  axios.post(main.url + '/api/game/surrender',{
+        'userid': Cookies.get('userid')
+      },{
+    headers: {'Content-Type':'application/x-www-form-urlencoded'},
+  }
+  ).then(res => {
+    if(res.status==200) {
+      ElMessage.info("用户"+res.data.userid+"投降！");
+    }
+    else{
+      ElMessage.error('投降失败')
+      return
+    }
+  }).catch(error => {
+    console.log(error)
+  })
+
+}
+
 
 const Move = (data) => {
   console.log(board.value)
@@ -135,19 +161,9 @@ const Move = (data) => {
 
 <template>
   <div class="background-image"></div>
-<!--  <el-dialog-->
-<!--      title="游戏结束"-->
-<!--      :v-if="winner_name"-->
-<!--      width="30%"-->
-<!--      :close-on-click-modal="false"-->
-<!--  >-->
-<!--    <p>当前的胜者是：{{ winner_name }}</p>-->
-<!--    <p>当前的步数是：{{ step_count }}</p>-->
-<!--    <div slot="footer" class="dialog-footer">-->
-<!--      <el-button type="primary" @click="dialogVisible = false">关闭</el-button>-->
-<!--    </div>-->
-<!--  </el-dialog>-->
-
+  <div>
+    <button class="surrender-button" @click="requestSurrender">投降</button>
+  </div>
   <Board  :my_camp="my_camp"  ref="board" @requireMove="Move"/>
 </template>
 
@@ -162,6 +178,28 @@ const Move = (data) => {
   background-image: url('@/assets/images/login/图1.jpg');
   background-size: cover;
   z-index: -1;
+}
+
+.surrender-button{
+  background-color: #ecb920;
+  border: none;
+  color: white;
+  padding: 15px 32px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  margin: 20px 50px;
+  transition-duration: 0.4s;
+  cursor: pointer;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19); /* Add shadows */
+}
+
+.surrender-button:hover{
+  background-color: #b48d17;
+  color: white;
+  box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2), 0 12px 40px 0 rgba(0,0,0,0.19); /* Add more shadows */
 }
 
 </style>

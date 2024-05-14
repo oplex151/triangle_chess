@@ -205,6 +205,7 @@ const Destory = () => {
 
 onMounted(()=>{
     initMap(); // 初始化棋盘，改成相应后端消息来哦初始化棋盘
+
 });
 
 onUnmounted(Destory);

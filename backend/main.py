@@ -407,8 +407,8 @@ def roomOver(game:GameTable, room:RoomManager, userid:int):
 #     logger.info(f"receive message: {data} ")
 #     emit('message', "接受成功", to=request.sid)
 
-@socketio.event
-def requestSurrender(data):
+@app.route('/api/game/surrender', methods=['POST'])
+def requestSurrender():
     """
     接收玩家投降请求的数据。
     Args:
@@ -417,37 +417,33 @@ def requestSurrender(data):
     global rooms
     params = {'userid': int}
     try:
-        userid = getParams(params, data)
+        userid = getParams(params,request.form)
     except:
-        emit('processWrong', {'status': PARAM_ERROR}, to=request.sid)
-        return
-    
+        return "{message: 'parameter error'}",PARAM_ERROR
+
     # 先判断用户是否在房间中
     room_id = inWhitchRoom(userid, rooms)
     if room_id is None:
-        emit('processWrong', {'status': NOT_IN_ROOM}, to=request.sid)
-        return
-    
+        return "{message: 'user not in room'}", NOT_IN_ROOM
+
     game: GameTable = fetchRoomByRoomID(room_id, rooms).game_table
     if game is None:
-        emit('processWrong', {'status': NOT_JOIN_GAME}, to=request.sid)
-        return
-    
+        return "{message: 'user not join game'}", NOT_JOIN_GAME
+
     try:
         # 玩家投降
         game.surrender(userid)
-        
+
         # 通知所有玩家有玩家投降
-        emit('playerSurrender', {'userid': userid}, to=room_id)
-        
+        return jsonify({'userid': userid}),SUCCESS
         # 判断游戏是否结束
-        if game.checkGameEnd():
-            # 通知所有玩家游戏结束
-            emit('gameEnd', {'status': GAME_END, 'winner': game.get_winner()}, to=room_id)
-        return
+        # if game.checkGameEnd():
+        #     # 通知所有玩家游戏结束
+        #     emit('gameEnd', {'status': GAME_END}, to=room_id)
+        # return
+
     except Exception as e:
-        emit('processWrong', {'status': OTHER_ERROR}, to=request.sid)
-        return
+        return "{message: 'other error'}", OTHER_ERROR
 
 
 @socketio.event
