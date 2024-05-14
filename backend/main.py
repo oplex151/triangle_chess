@@ -258,7 +258,7 @@ def createGameApi():
                 return "{message: '房间人数不足！'}",ROOM_NOT_ENOUGH
 
         game:GameTable = GameTable([user['userid'] for user in room.users[:3]])
-        game.record.start_time = datetime.datetime.now()
+        
         room.addGameTable(game)
         
         emit('createGameSuccess',{'game_id':game.game_id,'room_info':room.getRoomInfo()},to=room_id,namespace='/')

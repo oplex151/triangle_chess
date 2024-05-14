@@ -48,12 +48,12 @@ def initRecord(p1, p2, p3, start_time, end_time=None, winner=None, like_num=0, c
         return None
 
 class GameRecord:
-    def __init__(self, p1, p2, p3, start_time=datetime.datetime.now(), end_time=None, winner=None, like_num=0, comment_num=0):
-        self.record_id = initRecord(p1, p2, p3, start_time)
+    def __init__(self, p1, p2, p3, start_time=None, end_time=None, winner=None, like_num=0, comment_num=0):
+        self.record_id = initRecord(p1, p2, p3, datetime.datetime.now())
         self.p1 = p1
         self.p2 = p2
         self.p3 = p3
-        self.start_time = start_time
+        self.start_time = datetime.datetime.now()
         self.end_time = end_time
         self.winner = winner
         self.like_num = like_num

@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 load_dotenv()
 import hashlib
 import random
+import datetime
 from .piece import Piece
 from .special_piece import *
 from .record import GameRecord
