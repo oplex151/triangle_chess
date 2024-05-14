@@ -19,7 +19,7 @@ cursor = db.cursor()
 
 logger = setupLogger()
 
-def initRecord(p1, p2, p3, start_time, end_time, winner=None, like_num=0, comment_num=0):
+def initRecord(p1, p2, p3, start_time=None, end_time=None, winner=None, like_num=0, comment_num=0):
     try:
         insert_query = """
             INSERT INTO {0} (p1, p2, p3, startTime, endTime, winner, likeNum, commentNum)
@@ -55,7 +55,7 @@ class GameRecord:
         self.p1 = p1
         self.p2 = p2
         self.p3 = p3
-        self.start_time =datetime.datetime.now()
+        self.start_time = datetime.datetime.now()
         self.end_time = end_time
         self.winner = winner
         self.like_num = like_num
@@ -74,7 +74,7 @@ class GameRecord:
             return OTHER_ERROR
         
     def recordEnd(self, winnerid):
-        self.end_time = datetime.datetime.now(),  # 对局结束时间为当前时间
+        # self.end_time = datetime.datetime.now(),  # 对局结束时间为当前时间
         self.winner = winnerid
         try:
             # 更新数据库中的对局记录

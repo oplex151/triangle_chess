@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 load_dotenv()
 import hashlib
 import random
+import datetime
 from .piece import Piece
 from .special_piece import *
 from .record import GameRecord
@@ -212,6 +213,15 @@ class GameTable:
         
         # 返回存活玩家的 user_id 列表
         return alive_players
+
+    def surrender(self, userid:int):
+        '''
+        Description: 处理投降请求
+        '''
+        # 将投降的玩家设为死亡
+        for item in [self.user1, self.user2, self.user3]:
+            if item['user_id'] == userid:
+                self.lives[item['index']] = False
 
     def requestDraw(self, userid:int):
         '''

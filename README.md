@@ -1,33 +1,33 @@
 # No Bug Action
 
-
 ### 操作说明
 
+```
 #### 启动虚拟环境（一定要先做这个）
 
-`source /envs/nb/bin/activate`
+source /envs/nb/bin/activate
 
 
 
 #### 重新部署前端
 
-```sudo npm i```
+sudo npm i
 
-```sudo npm run build```
+sudo npm run build
 
 
 
 #### 启动`nginx`
 
-```systemctl restart nginx```
+systemctl restart nginx
 
 #### 查看状态
 
-`systemctl status nginx`
+systemctl status nginx
 
 #### `nginx`配置文件位置
 
-`/etc/nginx/sites-available/default`
+/etc/nginx/sites-available/default
 
 
 
@@ -35,20 +35,24 @@
 
 #### 启动后端
 
-`nohup uwsgi --ini uwsgi.ini >/dev/null 2>&1 &`(后台挂起)
+nohup uwsgi --ini uwsgi.ini >/dev/null 2>&1 &    (后台挂起)
 
-`uwsgi --ini uwsgi.ini`
+uwsgi --ini uwsgi.ini
 
 #### 关闭
 
-`ps -ef|grep uwsgi`
-
-`kill -9 xxxxx`
+ps -ef|grep uwsgi
+kill -9 xxxxx
 
 #### `nginx`配置文件位置
-
-`..../backend/uwsgi.ini`
-
+..../backend/uwsgi.ini
 
 
-  url: "http://124.70.208.148"
+在main.js更换地址为
+ url: "http://124.70.208.148"
+
+
+### 数据库
+source /project/backend/database/trianglechess.sql
+```
+

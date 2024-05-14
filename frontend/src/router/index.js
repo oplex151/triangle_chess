@@ -10,6 +10,7 @@ import Register from '@/views/Register/index.vue'
 import Logout from '@/views/Logout/index.vue'
 import Room from '@/views/Room/index.vue'
 import Record from '@/views/Record/index.vue'
+import Match from '@/views/Match/index.vue'
 import { socket } from '@/sockets';
 
 
@@ -65,6 +66,11 @@ const router = createRouter({
       path:'/register',
       component: Register,
       meta: {isAuth: false,connection: false},
+    },
+    {
+      path: '/match',
+      component: Match,
+      meta: {isAuth: true,connection: true},
     },
     {
       path: '/record',

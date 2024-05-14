@@ -6,8 +6,14 @@ import {ref} from "vue";
 const categoryList = ref([
   {
     id:2,
-    name:"开始比赛",
+    name:"房间模式",
     url:"/room",
+    picture:""
+  },
+  {
+    id:7,
+    name:"匹配模式",
+    url:"/match",
     picture:""
   },
   {

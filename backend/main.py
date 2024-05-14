@@ -100,6 +100,10 @@ def disconnect():
                 logger.info(f"Room {room_id} is empty, remove it")
             leave_room(room.room_id)
             emit('leaveRoomSuccess',{'userid':userid,'username':sessions[userid],'room_info':room.getRoomInfo()},to=room.room_id)
+        # 断开连接时,判断用户是否在匹配队列中,如果在匹配队列中,则移除
+        if match_queue.is_have(userid):
+            logger.info(f"User {userid} leave match queue")
+            match_queue.remove(sid2uid[request.sid])
         sid2uid.pop(request.sid)
     logger.info("User {0} disconnect".format(request.sid))
 
@@ -256,9 +260,9 @@ def createGameApi():
             if user['userid'] < 0:
                 emit('processWrong',{'status':ROOM_NOT_ENOUGH},to=uid2sid(userid),namespace='/')
                 return "{message: '房间人数不足！'}",ROOM_NOT_ENOUGH
-        
-        game:GameTable = GameTable([user['userid'] for user in room.users[:3]]) 
 
+        game:GameTable = GameTable([user['userid'] for user in room.users[:3]])
+        
         room.addGameTable(game)
         
         emit('createGameSuccess',{'game_id':game.game_id,'room_info':room.getRoomInfo()},to=room_id,namespace='/')
@@ -358,17 +362,28 @@ def roomOver(game:GameTable, room:RoomManager, userid:int):
     room_type = 0 if room.room_type == RoomType.matched else 1
     # 游戏结束，判断胜利者或平局
     if game.game_state == EnumGameState.win:
+        # 记录结束时间
+        game.record.end_time = datetime.datetime.now()
         # 通知所有玩家游戏结束并告知胜利者
         logger.info(f"Game {game.game_id} end, winner is {userid}")
-        emit('gameEnd', {'status': GAME_END, 'room_type':room_type,"step_count":game.step_count,'winner': userid, 'winner_name': sessions[userid]}, to=room.room_id)
+        print(game.record.end_time)
+        print(game.record.start_time)
+        match_duration = (game.record.end_time - game.record.start_time)
+        print(f"对局时长为：{match_duration}")
+        emit('gameEnd', {'status': GAME_END, 'room_type':room_type,"step_count":game.step_count,"match_duration": match_duration.total_seconds(),'winner': userid, 'winner_name': sessions[userid]}, to=room.room_id)
         # 结束记录
         game.record.recordEnd(userid)
+
     elif game.game_state == EnumGameState.draw:
+        # 记录结束时间
+        game.record.end_time = datetime.datetime.now()
         # 通知所有玩家游戏结束为平局
         logger.info(f"Game {game.game_id} end, winner is {userid}")
-        emit('gameEnd', {'status': GAME_END, 'room_type':room_type,"step_count":game.step_count,'winner': -1, 'winner_name': None}, to=room.room_id)
+        match_duration = (game.record.end_time - game.record.start_time)
+        emit('gameEnd', {'status': GAME_END, 'room_type':room_type,"step_count":game.step_count,"match_duration": match_duration,'winner': -1, 'winner_name': None}, to=room.room_id)
         # 结束记录
         game.record.recordEnd(None)
+
     room.removeGameTable()
     if room.room_type == RoomType.matched:
         # 匹配模式下，游戏结束后，关闭房间
@@ -395,6 +410,44 @@ def sendMessage(data):
 # def receiveMessage(data):
 #     logger.info(f"receive message: {data} ")
 #     emit('message', "接受成功", to=request.sid)
+
+@app.route('/api/game/surrender', methods=['POST'])
+def requestSurrender():
+    """
+    接收玩家投降请求的数据。
+    Args:
+        userid: 用户id          int 
+    """
+    global rooms
+    params = {'userid': int}
+    try:
+        userid = getParams(params,request.form)
+    except:
+        return "{message: 'parameter error'}",PARAM_ERROR
+
+    # 先判断用户是否在房间中
+    room_id = inWhitchRoom(userid, rooms)
+    if room_id is None:
+        return "{message: 'user not in room'}", NOT_IN_ROOM
+
+    game: GameTable = fetchRoomByRoomID(room_id, rooms).game_table
+    if game is None:
+        return "{message: 'user not join game'}", NOT_JOIN_GAME
+
+    try:
+        # 玩家投降
+        game.surrender(userid)
+
+        # 通知所有玩家有玩家投降
+        return jsonify({'userid': userid}),SUCCESS
+        # 判断游戏是否结束
+        # if game.checkGameEnd():
+        #     # 通知所有玩家游戏结束
+        #     emit('gameEnd', {'status': GAME_END}, to=room_id)
+        # return
+
+    except Exception as e:
+        return "{message: 'other error'}", OTHER_ERROR
 
 
 @socketio.event
@@ -490,20 +543,23 @@ def startMatch(data):
     except:
         emit('processWrong',{'status':PARAM_ERROR},to=request.sid)
         return
+    sid2uid[request.sid] = userid # 维护sid2uid映射
     match_queue.put(userid)
+    logger.info(f"User {userid} join match queue: sid {request.sid}")
     if (match_queue.qsize() >= 3):
         user0,user1,user2 = match_queue.get(),match_queue.get(),match_queue.get()
         # 开始游戏
         room = RoomManager([UserDict(userid=user0,username=sessions[user0]),UserDict(userid=user1,username=sessions[user1]),UserDict(userid=user2,username=sessions[user2])],RoomType.matched)
         rooms.append(room)
+        print(room.users)
         room.game_table = GameTable([user['userid'] for user in room.users])
         for user in room.users:
+            print(uid2sid(user['userid']))
             join_room(room=room.room_id,sid=uid2sid(user['userid']))
         logger.info(f"Create room : {room.room_id} and game: {room.game_table.game_id}")
         # 通知房间所有人匹配到了
-        emit('startMatchSuccess',{'room_id':room.room_id,'game_id':room.game_table.game_id,
-                                  'users':[room.users[0].userid,room.users[1].userid,room.users[2].userid],
-                                  'usernames':[room.users[0].username,room.users[1].username,room.users[2].username]},
+        emit('startMatchSuccess',{'game_id':room.game_table.game_id,
+                                  'room_info':room.getRoomInfo()},
                                   to=room.room_id,namespace='/')
         
 
