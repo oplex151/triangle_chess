@@ -375,21 +375,21 @@ def roomOver(game:GameTable, room:RoomManager, userid:int):
         # 请前端自行处理匹配模式下的后续操作
         rooms.remove(room)
 
-# @socketio.event
-# def sendMessage(data):
-#     '''
-#     接收用户发送的消息
-#     Args:
-#         room_id: 房间id str
-#         userid: 用户id int
-#         message: 消息 str
-#     '''
-#     params = {'room_id':str, 'userid':int,'message':str}
-#     try: 
-#         room_id,userid,message = getParams(params,data)
-#     except:
-#         logger.error("Send message error", exc_info=True)
-#     emit('sendMessageSuccess',{'message':message,'userid':userid,'username':sessions[userid]},to=request.sid)
+@socketio.event
+def sendMessage(data):
+    '''
+    接收用户发送的消息
+    Args:
+        room_id: 房间id str
+        userid: 用户id int
+        message: 消息 str
+    '''
+    params = {'room_id':str, 'userid':int,'message':str}
+    try: 
+        room_id,userid,message = getParams(params,data)
+    except:
+        logger.error("Send message error", exc_info=True)
+    emit('sendMessageSuccess',{'message':message,'userid':userid,'username':sessions[userid]},to=room_id)
 
 # @socketio.event
 # def receiveMessage(data):
@@ -523,10 +523,14 @@ def viewGameRecords(data):
     try:
         # 查询游戏记录
         records = viewUserGameRecords(userid)
+        logger.info(records)
         emit('gameRecord', {'record': records}, to=request.sid)
     except Exception as e:
         emit('processWrong',{'status':OTHER_ERROR},to=request.sid)
+        logger.error(e)
         return 
+
+
 
 # TODO::重新连接
 
