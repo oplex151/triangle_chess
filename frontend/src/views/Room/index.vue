@@ -3,7 +3,7 @@ import VueSocketIO from 'vue-socket.io'
 import SocketIO from 'socket.io-client'
 import main from '@/main'
 import { onMounted, ref, getCurrentInstance } from 'vue'
-import { registerSockets, socket } from '@/sockets'
+import { registerSockets, socket, registerSocketsForce, removeSockets } from '@/sockets'
 import axios from 'axios'
 import Cookies from 'js-cookie'
 import { useRouter } from 'vue-router';
@@ -92,6 +92,11 @@ const sockets_methods = {
       room_info.value = data.room_info
     }
   },
+  rejoinGameSuccess(data){
+    removeSockets(sockets_methods, socket.value, proxy)
+    Cookies.set('room_id',data.room_id)
+    router.replace('/game')
+  },
   createGameSuccess(data){
     
     Cookies.set('room_info',JSON.stringify(data.room_info))
@@ -110,6 +115,7 @@ const sockets_methods = {
       console.log(Cookies.get('camp'))
       ElMessage.success('游戏开始,你是'+camp>0?(camp>1?'金方玩家':'黑方玩家'):(camp==0?'红方玩家':'观战者'))
     }
+    removeSockets(sockets_methods, socket.value, proxy)
     router.replace('/game')
   }
 
@@ -130,11 +136,8 @@ function establishConnection() {
       connection: SocketIO(main.url),
     })
   }
-  // 注册socket监听
-  registerSockets(sockets_methods, socket.value, proxy)
-  socket.value.io.on('disconnect', () => {
-    socket.value = null
-  })
+  registerSocketsForce(sockets_methods, socket.value, proxy)
+  console.log(socket.value)
 }
 function createRoom() {
   socket.value.io.emit('createRoom', { 'userid': Cookies.get('userid') })
@@ -192,7 +195,8 @@ const copyRoomId = () => {
       <span> 的房间 </span>
       <span class="emphasis-text">
         {{ room_info.room_id }}
-        <button @click="copyRoomId" class="copy-button">复制</button>
+        <button class = "copy-button" 
+        @click="copyRoomId">复制</button>
       </span>
     </div>
 
@@ -262,6 +266,22 @@ const copyRoomId = () => {
 .container {
   text-align: center;
   margin-top: 20px;
+}
+
+.copy-button{
+  background-color: #ecb920;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-size: 14px;
+  cursor: pointer;
+  position: relative;
+  bottom: 4px;
+}
+
+.copy-button:hover{
+  background-color: #e0a61b;
 }
 
 .button-home {

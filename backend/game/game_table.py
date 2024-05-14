@@ -37,6 +37,7 @@ class GameTable:
         self.turn = 0 # 目前轮到谁
         self.game_state = EnumGameState.ongoing # 游戏状态：ongoing（进行中）、win（胜利）、draw（平局）
         self.winner = -1 # 无胜者为-1
+        self.step_count = 0
 
         self.draw_requester = None  # 发起求和请求的玩家
         self.draw_respondents = set()  # 记录回应求和请求的玩家
@@ -138,15 +139,18 @@ class GameTable:
                                 self.lives[kill_piece.user_z] = False
                                 logger.info(f"用户{kill_piece.user_z}阵亡")
 
-                        # 判断游戏是否结束
-                        if self.checkGameEnd():
-                            return GAME_END
-                        
+                        # 记录弈子移动
+                        self.step_count += 1
+
                         # 记录这一步
                         chessType = "piece"
                         startPos = str(px) + ',' + str(py) + ',' + str(pz)
                         endPos = str(nx) + ',' + str(ny) + ',' + str(nz)
                         self.record.recordMove(user, chessType, startPos, endPos)
+
+                        # 判断游戏是否结束
+                        if self.checkGameEnd():
+                            return GAME_END
 
                          # 切换到下一个用户
                         self.turn = (self.turn+1)%3
@@ -317,7 +321,7 @@ class RoomManager:
     def __init__(self, users: Union[list[UserDict], UserDict], room_type: RoomType=RoomType.created):
         # 随机生成一串字符串
         self.room_id:str = hashlib.md5(str(random.randint(0,1000000000)).encode('utf-8')).hexdigest()
-        self.users = None
+        self.users:list[UserDict] | UserDict = None
         self.game_table = None
 
         if isinstance(users, list):

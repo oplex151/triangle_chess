@@ -126,8 +126,9 @@ def createRoom(data):
     new_room = RoomManager(UserDict(userid=userid,username=sessions[userid]))
     rooms.append(new_room)
     room_id = rooms[-1].room_id
+    room_type = rooms[-1].room_type
     join_room(room_id)
-    logger.info(f"Create room {room_id} by user {userid}, sid={request.sid}\n"
+    logger.info(f"Create room {room_id} by user {userid}, type is {room_type}, sid={request.sid}\n"
                 +f"this room's users: {new_room.users}")
     emit('createRoomSuccess',{'room_id':room_id,'room_info':new_room.getRoomInfo()},to=request.sid)
     # 更新sid2uid
@@ -179,7 +180,7 @@ def joinRoom(data):
     # 用户在游戏中
     elif room.game_table is not None and room.game_table.searchGameTable(userid): 
         logger.info(f"User {userid} rejoin to game {room.game_table.game_id}")
-        emit('initGame',{'game_info':room.game_table.getGameInfo()},to=request.sid,namespace='/')
+        emit('rejoinGameSuccess',{'room_id':room_id},to=request.sid,namespace='/')
     
     room.addUser(UserDict(userid=userid,username=sessions[userid]))
     join_room(room_id)
@@ -272,6 +273,7 @@ def createGameApi():
 @app.route('/api/game/init', methods=['POST'])
 def initGame():
     '''
+    Description: 初始化游戏，前端主动请求
     Args:
         room_id: 房间id str
     Returns:
@@ -340,7 +342,7 @@ def movePiece(data):
             return
         else:
             # 建议前端根据userid来判断到底是自己走成功了，还是其他人走的，自己这边要更新状态
-            emit('movePieceSuccess',{'userid':userid,'status':status, 
+            emit('movePieceSuccess',{'userid':userid,'status':status, 'username':sessions[userid],
                                      'x1':x1, 'y1':y1, 'z1':z1, 
                                      'x2':x2, 'y2':y2, 'z2':z2},
                                      to=room_id)
@@ -352,17 +354,19 @@ def movePiece(data):
         return 
 
 def roomOver(game:GameTable, room:RoomManager, userid:int):
+    # 获取当前的房间类型0是匹配，1是创建房间
+    room_type = 0 if room.room_type == RoomType.matched else 1
     # 游戏结束，判断胜利者或平局
     if game.game_state == EnumGameState.win:
         # 通知所有玩家游戏结束并告知胜利者
         logger.info(f"Game {game.game_id} end, winner is {userid}")
-        emit('gameEnd', {'status': GAME_END, 'winner': userid, 'winner_name': sessions[userid]}, to=room.room_id)
+        emit('gameEnd', {'status': GAME_END, 'room_type':room_type,"step_count":game.step_count,'winner': userid, 'winner_name': sessions[userid]}, to=room.room_id)
         # 结束记录
         game.record.recordEnd(userid)
     elif game.game_state == EnumGameState.draw:
         # 通知所有玩家游戏结束为平局
         logger.info(f"Game {game.game_id} end, winner is {userid}")
-        emit('gameEnd', {'status': GAME_END, 'winner': -1, 'winner_name': None}, to=room.room_id)
+        emit('gameEnd', {'status': GAME_END, 'room_type':room_type,"step_count":game.step_count,'winner': -1, 'winner_name': None}, to=room.room_id)
         # 结束记录
         game.record.recordEnd(None)
     room.removeGameTable()
@@ -490,17 +494,18 @@ def startMatch(data):
     if (match_queue.qsize() >= 3):
         user0,user1,user2 = match_queue.get(),match_queue.get(),match_queue.get()
         # 开始游戏
-        room = RoomManager([user0,user1,user2],RoomType.matched)
+        room = RoomManager([UserDict(userid=user0,username=sessions[user0]),UserDict(userid=user1,username=sessions[user1]),UserDict(userid=user2,username=sessions[user2])],RoomType.matched)
         rooms.append(room)
-        room.game_table = GameTable(room.users)
+        room.game_table = GameTable([user['userid'] for user in room.users])
         for user in room.users:
-            join_room(room=room.room_id,sid=uid2sid(user))
+            join_room(room=room.room_id,sid=uid2sid(user['userid']))
         logger.info(f"Create room : {room.room_id} and game: {room.game_table.game_id}")
+        # 通知房间所有人匹配到了
         emit('startMatchSuccess',{'room_id':room.room_id,'game_id':room.game_table.game_id,
-                                  'users':[room.users[0],room.users[1],room.users[2]],
-                                  'usernames':[sessions[room.users[0]],sessions[room.users[1]],sessions[room.users[2]]]},
+                                  'users':[room.users[0].userid,room.users[1].userid,room.users[2].userid],
+                                  'usernames':[room.users[0].username,room.users[1].username,room.users[2].username]},
                                   to=room.room_id,namespace='/')
-        emit('initGame',{'game_info':room.game_table.getGameInfo()},to=room.room_id,namespace='/')
+        
 
 @socketio.event
 def viewGameRecords(data):

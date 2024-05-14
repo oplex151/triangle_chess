@@ -1,6 +1,7 @@
 import { COL, ROWMID, ROWTOP, ROWBOT } from "@/config/config";
 import { GEBI, getCol, getRow } from "@/utils/utils";
 import { lives } from "./Live";
+import {ElMessage} from "element-plus";
 
 export class Chess {
     constructor(position, camp, inWhichArea) {
@@ -31,19 +32,21 @@ export class Chess {
             }
             point.classList.remove(`camp${originalCamp}`);
             if (point?.innerText === '将') {
+                let message = '';
                 switch (originalCamp){
                     case 0:
-                        alert('红方淘汰');
+                        message = '红方淘汰';
                         break;
                     case 1:
-                        alert('黑方淘汰');
+                        message = '黑方淘汰';
                         break;
                     case 2:
-                        alert('金方淘汰');
+                        message = '金方淘汰';
                         break;
                     default:
                         break;
                 }
+                ElMessage.info(message); // 使用ElMessage.info显示消息
                 lives[originalCamp] = false;
                 hoveFinish = true;
             }

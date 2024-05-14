@@ -1,16 +1,19 @@
 # No Bug Action
 
 
-
-
-
-
-
 ### 操作说明
 
 #### 启动虚拟环境（一定要先做这个）
 
 `source /envs/nb/bin/activate`
+
+
+
+#### 重新部署前端
+
+```sudo npm i```
+
+```sudo npm run build```
 
 
 
@@ -48,3 +51,4 @@
 
 
 
+  url: "http://124.70.208.148"

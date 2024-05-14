@@ -4,10 +4,10 @@ export const XYZToPosition = (x, y, z) => {
 }
 export const PositionToXYZ = (position) => {
     position = position-1;
-    let z = Math.floor((position-1)/45);
+    let z = Math.floor((position)/45);
     position = position-z*45;
     let y = 4-Math.floor(position/9);
-    position = position%9;
+    position = position % 9;
     let x = 8-position;
     return [x,y,z];
 }
