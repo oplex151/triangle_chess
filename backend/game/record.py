@@ -19,7 +19,7 @@ cursor = db.cursor()
 
 logger = setupLogger()
 
-def initRecord(p1, p2, p3, start_time=datetime.datetime.now(), end_time=None, winner=None, like_num=0, comment_num=0):
+def initRecord(p1, p2, p3, start_time, end_time=None, winner=None, like_num=0, comment_num=0):
     try:
         insert_query = """
             INSERT INTO {0} (p1, p2, p3, startTime, endTime, winner, likeNum, commentNum)
@@ -48,12 +48,12 @@ def initRecord(p1, p2, p3, start_time=datetime.datetime.now(), end_time=None, wi
         return None
 
 class GameRecord:
-    def __init__(self, p1, p2, p3, start_time=datetime.datetime.now(), end_time=None, winner=None, like_num=0, comment_num=0):
-        self.record_id = initRecord(p1, p2, p3)
+    def __init__(self, p1, p2, p3, start_time=None, end_time=None, winner=None, like_num=0, comment_num=0):
+        self.record_id = initRecord(p1, p2, p3, datetime.datetime.now())
         self.p1 = p1
         self.p2 = p2
         self.p3 = p3
-        self.start_time = start_time
+        self.start_time = datetime.datetime.now()
         self.end_time = end_time
         self.winner = winner
         self.like_num = like_num
@@ -61,7 +61,7 @@ class GameRecord:
 
     def recordMove(self, playerId, chessType, startPos, endPos):
         try:
-            insert_query = "INSERT INTO {0} (recordId, playerId, chessType, startPos, endPos) VALUES (%s, %s, %s, %s, %s, %s);".format(GAME_MOVE_TABLE)
+            insert_query = "INSERT INTO {0} (recordId, playerId, chessType, startPos, endPos) VALUES (%s, %s, %s, %s, %s);".format(GAME_MOVE_TABLE)
             cursor.execute(insert_query, (self.record_id, playerId, chessType, startPos, endPos))
             db.commit()
             logger.info("Recorded move for game {0} successfully".format(self.record_id))
@@ -72,7 +72,7 @@ class GameRecord:
             return OTHER_ERROR
         
     def recordEnd(self, winnerid):
-        self.end_time = datetime.datetime.now(),  # 对局结束时间为当前时间
+        # self.end_time = datetime.datetime.now(),  # 对局结束时间为当前时间
         self.winner = winnerid
         try:
             # 更新数据库中的对局记录
