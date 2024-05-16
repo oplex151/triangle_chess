@@ -615,9 +615,11 @@ def viewGameRecords(data):
     try:
         # 查询游戏记录
         records = viewUserGameRecords(userid)
+        logger.info(records)
         emit('gameRecord', {'record': records}, to=request.sid)
     except Exception as e:
         emit('processWrong',{'status':OTHER_ERROR},to=request.sid)
+        logger.error(e)
         return 
 
 

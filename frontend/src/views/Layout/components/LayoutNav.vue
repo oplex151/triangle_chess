@@ -19,7 +19,7 @@ const categoryList = ref([
   {
     id:3,
     name:"战绩查看",
-    url:"/",
+    url:"/record",
     picture:""
   },
   {

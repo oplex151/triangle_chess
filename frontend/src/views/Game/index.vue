@@ -8,7 +8,7 @@ import { registerSockets, socket, registerSocketsForce,removeSockets} from '@/so
 import router from '@/router';
 import {ElMessage,ElMessageBox} from "element-plus";
 
-import { onMounted, ref ,onUnmounted,computed,getCurrentInstance,onBeforeUnmount} from 'vue';
+import { onMounted, ref ,onUnmounted,computed,getCurrentInstance,onBeforeUnmount, watch} from 'vue';
 import Board from '@/views/Game/board.vue'
 import axios from "axios";
 import { lives } from '@/chesses/Live';
@@ -36,6 +36,24 @@ onMounted(()=>{
     socket.value.io.emit('joinRoom',{'userid':userid,'room_id':Cookies.get('room_id')})
   }
   registerSocketsForce(sockets_methods,socket.value,proxy);
+  axios.post(main.url + '/api/game/init',{
+        'room_id': Cookies.get('room_id')
+    },
+    {
+        headers: {'Content-Type':'application/x-www-form-urlencoded'},
+    }
+    ).then(res => {
+        if(res.status==200){
+          console.log(res.data)
+          board.value.initMap(res.data.game_info)
+        }
+        else{
+            ElMessage.error('获取房间信息失败')
+            return
+        }
+    }).catch(error => {
+        console.log(error)
+    })
   console.log(socket.value)
 });
 
@@ -136,7 +154,7 @@ const sockets_methods={
     }
   },
   processWrong(data){
-    let status1 = data.status
+    status1 = data.status
     ElMessage.error("Error due to "+status1)
   },
 }
@@ -149,11 +167,9 @@ function requestSurrender(){
 
 
 const Move = (data) => {
-  console.log(board.value)
   data.userid = userid
-  socket.value.io.emit('movePiece',data)
+  socket.value.io.emit('movePiece',data) 
 }
-
 </script>
 
 <template>
