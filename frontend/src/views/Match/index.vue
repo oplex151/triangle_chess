@@ -65,10 +65,11 @@ function startMatch(){
 }
 
 function goBackHome(){
-  if (Cookies.get('room_id')){
-    Cookies.remove('room_id')
-    Cookies.remove('room_info')
-  }
+  removeSockets(sockets_methods, socket.value, proxy)
+  Cookies.remove('room_id')
+  Cookies.remove('room_info')
+  socket.value.io.disconnect()
+  socket.value = null
   router.push('/')
 }
 

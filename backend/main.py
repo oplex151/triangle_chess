@@ -2,6 +2,7 @@ import os
 import sys
 from pathlib import Path
 import threading
+import time
 
 project_root = Path(__file__).parent.parent.absolute()
 os.environ['PROJECT_ROOT'] = str(project_root)
@@ -9,9 +10,9 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 print("Project root set to:", os.environ['PROJECT_ROOT']) # 设置项目根目录
 
 import flask
-from flask_socketio import SocketIO,join_room,leave_room,emit
+from flask_socketio import SocketIO,join_room,leave_room,emit,close_room
 from flask_cors import CORS
-from flask import request
+from flask import request,current_app
 from backend.global_var import *
 from backend.tools import setupLogger, getParams
 from backend.user_manage import *
@@ -86,25 +87,33 @@ def disconnect():
     '''
     断开socket连接
     '''
+    global rooms,sid2uid,sessions,match_queue
     if request.sid in sid2uid:
         # 断开连接时,判断用户是否在房间中,如果在房间中,则退出房间
-        userid = sid2uid[request.sid] 
-        room_id = inWhitchRoom(userid,rooms)
-        if room_id is not None:
-            logger.info(f"User {userid} leave room {room_id}"+
-                        f"this room's users: {fetchRoomByRoomID(room_id,rooms).users}")
-            room = fetchRoomByRoomID(room_id,rooms)
-            room.removeUser(userid)
-            if len(room.users) == 0:
-                rooms.remove(room)
-                logger.info(f"Room {room_id} is empty, remove it")
-            leave_room(room.room_id)
-            emit('leaveRoomSuccess',{'userid':userid,'username':sessions[userid],'room_info':room.getRoomInfo()},to=room.room_id)
+        userid = sid2uid[request.sid]
+        sid2uid.pop(request.sid) 
+        try:
+            room_id = inWhitchRoom(userid,rooms)
+            if room_id is not None:
+                room = fetchRoomByRoomID(room_id,rooms)
+                if room is None:
+                    room.removeUser(userid)
+                    leave_room(room.room_id)
+                    logger.info(f"User {userid} leave room {room_id}"+f"this room's users: {room.users}")
+                    if len(room.users) == 0:
+                        rooms.remove(room)
+                        close_room(room=room.room_id,namespace='/')
+                        logger.info(f"Room {room_id} is empty, remove it")
+                else:
+                    emit('leaveRoomSuccess',{'userid':userid,'username':sessions[userid],'room_info':room.getRoomInfo()},to=room.room_id,namespace='/')
+        except:
+            logger.error("User {0} disconnect, ".format(userid), exc_info=True)
+
         # 断开连接时,判断用户是否在匹配队列中,如果在匹配队列中,则移除
         if match_queue.is_have(userid):
             logger.info(f"User {userid} leave match queue")
-            match_queue.remove(sid2uid[request.sid])
-        sid2uid.pop(request.sid)
+            match_queue.remove(userid)
+        
     logger.info("User {0} disconnect".format(request.sid))
 
 @socketio.event
@@ -114,7 +123,7 @@ def createRoom(data):
     Args:
         userid: 用户id 作为房主 int
     '''
-    global rooms,sid2uid
+    global rooms,sid2uid,sessions
     params = {'userid':int}
     try:
         userid = getParams(params,data)
@@ -152,7 +161,7 @@ def joinRoom(data):
         userid: 用户id  int
         username: 用户名 str
     '''
-    global rooms,sessions
+    global rooms,sessions,sid2uid
     parms = {'room_id':str, 'userid':int}
     try:
         room_id,userid = getParams(parms,data)
@@ -203,7 +212,7 @@ def leaveRoom(data):
         room_id: 房间id str
         userid: 用户id int
     '''
-    global rooms,sid2uid
+    global rooms,sid2uid,sessions
     parms = {'room_id':str, 'userid':int}
     try:
         room_id,userid = getParams(parms,data)
@@ -225,6 +234,7 @@ def leaveRoom(data):
         # 房间为空, 移除房间
         if len(room.users) == 0:
             rooms.remove(room)
+            close_room(room=room_id,namespace='/')
             logger.info(f"Room {room_id} is empty, remove it")
     else:
         logger.error("User {0} not in room {1}".format(userid,room_id))
@@ -321,7 +331,7 @@ def movePiece(data):
         y2: 目标纵坐标           int
         z2: 目标棋盘             int
     ''' 
-    global rooms
+    global rooms,sessions
     params = {'userid':int,  'x1':int, 'y1':int, 'z1':int, 'x2':int, 'y2':int, 'z2':int}
     try:
         userid,x1,y1,z1,x2,y2,z2 = getParams(params,data)
@@ -351,13 +361,14 @@ def movePiece(data):
                                      'x2':x2, 'y2':y2, 'z2':z2},
                                      to=room_id)
             if status == GAME_END:
-                roomOver(game=game, room=room, userid=userid)
+                roomOver(game=game, room=room, userid=game.winner_id)
             return
     except Exception as e:
         emit('processWrong',{'status':OTHER_ERROR},to=request.sid)
         return 
 
 def roomOver(game:GameTable, room:RoomManager, userid:int):
+    global rooms,sessions
     # 获取当前的房间类型0是匹配，1是创建房间
     room_type = 0 if room.room_type == RoomType.matched else 1
     # 游戏结束，判断胜利者或平局
@@ -365,7 +376,7 @@ def roomOver(game:GameTable, room:RoomManager, userid:int):
         # 记录结束时间
         game.record.end_time = datetime.datetime.now()
         # 通知所有玩家游戏结束并告知胜利者
-        logger.info(f"Game {game.game_id} end, winner is {userid}")
+        logger.info(f"Game {game.game_id} end, winner is {sessions[userid] if userid in sessions else 'None'}")
         print(game.record.end_time)
         print(game.record.start_time)
         match_duration = (game.record.end_time - game.record.start_time)
@@ -378,7 +389,7 @@ def roomOver(game:GameTable, room:RoomManager, userid:int):
         # 记录结束时间
         game.record.end_time = datetime.datetime.now()
         # 通知所有玩家游戏结束为平局
-        logger.info(f"Game {game.game_id} end, winner is {userid}")
+        logger.info(f"Game {game.game_id} end, winner is {sessions[userid] if userid in sessions else 'None'}")
         match_duration = (game.record.end_time - game.record.start_time)
         emit('gameEnd', {'status': GAME_END, 'room_type':room_type,"step_count":game.step_count,"match_duration": match_duration,'winner': -1, 'winner_name': None}, to=room.room_id)
         # 结束记录
@@ -386,9 +397,12 @@ def roomOver(game:GameTable, room:RoomManager, userid:int):
 
     room.removeGameTable()
     if room.room_type == RoomType.matched:
-        # 匹配模式下，游戏结束后，关闭房间
-        # 请前端自行处理匹配模式下的后续操作
-        rooms.remove(room)
+        try:
+            logger.info(f"Remove room {room.room_id} after game end")
+            rooms.remove(room)
+            close_room(room=room.room_id,namespace='/')
+        except Exception as e:
+            logger.error("May remove in other way. Remove room error due to {0}".format(str(e)), exc_info=True)
 
 # @socketio.event
 # def sendMessage(data):
@@ -411,43 +425,45 @@ def roomOver(game:GameTable, room:RoomManager, userid:int):
 #     logger.info(f"receive message: {data} ")
 #     emit('message', "接受成功", to=request.sid)
 
-@app.route('/api/game/surrender', methods=['POST'])
-def requestSurrender():
+@socketio.event
+def requestSurrender(data):
     """
     接收玩家投降请求的数据。
     Args:
         userid: 用户id          int 
     """
-    global rooms
+    global rooms,sessions
     params = {'userid': int}
     try:
-        userid = getParams(params,request.form)
+        userid = getParams(params,data)
     except:
-        return "{message: 'parameter error'}",PARAM_ERROR
+        emit('processWrong',{'status':PARAM_ERROR},to=request.sid)
+        return
 
     # 先判断用户是否在房间中
     room_id = inWhitchRoom(userid, rooms)
     if room_id is None:
-        return "{message: 'user not in room'}", NOT_IN_ROOM
-
-    game: GameTable = fetchRoomByRoomID(room_id, rooms).game_table
+        emit('processWrong',{'status':NOT_IN_ROOM},to=request.sid)
+        return
+    room = fetchRoomByRoomID(room_id, rooms)
+    game: GameTable = room.game_table
     if game is None:
-        return "{message: 'user not join game'}", NOT_JOIN_GAME
+        emit('processWrong',{'status':NOT_JOIN_GAME},to=request.sid)
+        return
 
     try:
         # 玩家投降
-        game.surrender(userid)
+        status = game.surrender(userid)
 
         # 通知所有玩家有玩家投降
-        return jsonify({'userid': userid}),SUCCESS
+        emit('surrenderSuccess',{'userid':userid,'username':sessions[userid],'game_info':game.getGameInfo()},to=room_id)
         # 判断游戏是否结束
-        # if game.checkGameEnd():
-        #     # 通知所有玩家游戏结束
-        #     emit('gameEnd', {'status': GAME_END}, to=room_id)
-        # return
-
+        if status == GAME_END:
+            roomOver(game=game, room=room, userid=game.winner_id)
+        
     except Exception as e:
-        return "{message: 'other error'}", OTHER_ERROR
+        logger.error("Request surrender error due to {0}".format(str(e)), exc_info=True)
+        emit('processWrong',{'status':OTHER_ERROR},to=request.sid)
 
 
 @socketio.event
@@ -529,6 +545,41 @@ def respondDraw(data):
         emit('processWrong',{'status':OTHER_ERROR},to=request.sid)
         return 
 
+def cycleMatch(app):
+    """
+    匹配模式下，定时检查的守护进程，检查是否有玩家加入匹配队列，若有则创建房间
+    """
+    global rooms, match_queue, sessions
+    with app.app_context():
+        while True:
+            if match_queue.qsize() >= 3:
+                user0,user1,user2 = match_queue.get(),match_queue.get(),match_queue.get()
+                try:
+                    # 开始游戏
+                    room = RoomManager([UserDict(userid=user0,username=sessions[user0]),UserDict(userid=user1,username=sessions[user1]),UserDict(userid=user2,username=sessions[user2])],RoomType.matched)
+                    rooms.append(room)
+                    
+                    room.game_table = GameTable([user['userid'] for user in room.users])
+
+                    for user in room.users:
+                        join_room(room=room.room_id,sid=uid2sid(user['userid']),namespace='/')
+
+                    logger.info(f"Create room : {room.room_id} and game: {room.game_table.game_id}")
+                    # 通知房间所有人匹配到了
+                    emit('startMatchSuccess',{'game_id':room.game_table.game_id,
+                                            'room_info':room.getRoomInfo()},
+                                            to=room.room_id,namespace='/')
+                except Exception as e:
+                    logger.error("Create match_game error due to {0}".format(str(e)), exc_info=True)
+                    for user in [user0,user1,user2]:
+                        if user and user in sessions:
+                            match_queue.put(user)
+                    if room and room in rooms:
+                        rooms.remove(room)
+                    
+            time.sleep(1)
+
+
 @socketio.event
 def startMatch(data):
     """
@@ -536,7 +587,7 @@ def startMatch(data):
     Args:
         userid: 用户id      int 
     """
-    global rooms, match_queue
+    global match_queue
     params = {'userid':int}
     try:
         userid = getParams(params,data)
@@ -546,21 +597,6 @@ def startMatch(data):
     sid2uid[request.sid] = userid # 维护sid2uid映射
     match_queue.put(userid)
     logger.info(f"User {userid} join match queue: sid {request.sid}")
-    if (match_queue.qsize() >= 3):
-        user0,user1,user2 = match_queue.get(),match_queue.get(),match_queue.get()
-        # 开始游戏
-        room = RoomManager([UserDict(userid=user0,username=sessions[user0]),UserDict(userid=user1,username=sessions[user1]),UserDict(userid=user2,username=sessions[user2])],RoomType.matched)
-        rooms.append(room)
-        print(room.users)
-        room.game_table = GameTable([user['userid'] for user in room.users])
-        for user in room.users:
-            print(uid2sid(user['userid']))
-            join_room(room=room.room_id,sid=uid2sid(user['userid']))
-        logger.info(f"Create room : {room.room_id} and game: {room.game_table.game_id}")
-        # 通知房间所有人匹配到了
-        emit('startMatchSuccess',{'game_id':room.game_table.game_id,
-                                  'room_info':room.getRoomInfo()},
-                                  to=room.room_id,namespace='/')
         
 
 @socketio.event
@@ -584,8 +620,8 @@ def viewGameRecords(data):
         emit('processWrong',{'status':OTHER_ERROR},to=request.sid)
         return 
 
-# TODO::重新连接
 
 if __name__ == "__main__":
+    threading.Thread(target=cycleMatch,args=[app] ,daemon=True, name='cycleMatch').start()
     socketio.run(app,debug=True,host='0.0.0.0',port=8888,allow_unsafe_werkzeug=True)
     print("Good bye!")

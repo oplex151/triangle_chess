@@ -8,6 +8,7 @@ global sid2uid
 global match_queue
 
 def uid2sid(uid:int)->str:
+    global sid2uid
     for sid, u in sid2uid.items():
         if u == uid:
             return sid

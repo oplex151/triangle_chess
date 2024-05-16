@@ -76,7 +76,10 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   //在不需要连接的页面，断开连接
   if (!to.meta.connection) {
-    socket.value = ""
+    if (socket.value) {
+      socket.value.io.disconnect()
+    }
+    socket.value = null
     Cookies.remove('room_id')
     Cookies.remove('room_info')
   }

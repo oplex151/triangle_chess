@@ -213,6 +213,7 @@ onUnmounted(Destory);
 defineExpose({
   moveSuccess,
   initMap,
+  camp,
 })
 </script>
 <template>

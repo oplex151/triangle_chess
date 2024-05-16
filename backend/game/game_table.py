@@ -38,6 +38,7 @@ class GameTable:
         self.turn = 0 # 目前轮到谁
         self.game_state = EnumGameState.ongoing # 游戏状态：ongoing（进行中）、win（胜利）、draw（平局）
         self.winner = -1 # 无胜者为-1
+        self.winner_id = -1
         self.step_count = 0
 
         self.draw_requester = None  # 发起求和请求的玩家
@@ -153,12 +154,7 @@ class GameTable:
                         if self.checkGameEnd():
                             return GAME_END
 
-                         # 切换到下一个用户
-                        self.turn = (self.turn+1)%3
-                        
-                        # 轮到下一个用户，但该用户阵亡，直接下一个人
-                        if not self.lives[self.turn]:
-                            self.turn = (self.turn+1)%3
+                        self.turnChange() # 切换到下一个玩家
 
                         return SUCCESS
             else:
@@ -191,6 +187,15 @@ class GameTable:
         else:
             return None
     
+    def turnChange(self):
+        index = 0
+        self.turn = (self.turn+1)%3
+        while not self.lives[self.turn]:
+            self.turn = (self.turn+1)%3
+            index += 1
+            if index > 3:
+                return
+
     def getAlivePlayers(self):
         '''
         Description: 返回存活玩家的 user_id 列表。
@@ -214,7 +219,7 @@ class GameTable:
         # 返回存活玩家的 user_id 列表
         return alive_players
 
-    def surrender(self, userid:int):
+    def surrender(self, userid:int)->int:
         '''
         Description: 处理投降请求
         '''
@@ -222,6 +227,13 @@ class GameTable:
         for item in [self.user1, self.user2, self.user3]:
             if item['user_id'] == userid:
                 self.lives[item['index']] = False
+                if self.turn == self._getUserIndex(userid):
+                    # 投降玩家，切换到下一个玩家
+                    self.turnChange()
+        if self.checkGameEnd():
+            return GAME_END
+        else:   
+            return SUCCESS
 
     def requestDraw(self, userid:int):
         '''
@@ -278,10 +290,11 @@ class GameTable:
     def checkVictory(self):
         # 实现判断胜利条件的逻辑
         # 计算存活的 Leader 的数量
-        living_leaders = [user_z for user_z in range(3) if self.Pieces[user_z][0].live]
-        if len(living_leaders) == 1:
+        live_users = [i for i, live in enumerate(self.lives) if live]
+        if len(live_users) == 1:
             # 只有一个 Leader 存活，游戏结束
-            self.winner = living_leaders[0]
+            self.winner =live_users[0]
+            self.winner_id = self.user1['user_id'] if self.winner == 0 else self.user2['user_id'] if self.winner == 1 else self.user3['user_id'] if self.winner == 2 else -1
             return True
         
         return False

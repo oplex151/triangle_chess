@@ -11,6 +11,7 @@ import {ElMessage,ElMessageBox} from "element-plus";
 import { onMounted, ref ,onUnmounted,computed,getCurrentInstance,onBeforeUnmount} from 'vue';
 import Board from '@/views/Game/board.vue'
 import axios from "axios";
+import { lives } from '@/chesses/Live';
 
 let my_camp = Cookies.get('camp')
 const userid =  Cookies.get('userid')
@@ -107,6 +108,8 @@ const sockets_methods={
       Cookies.remove('game_id')
       Cookies.remove('camp')
       removeSockets(sockets_methods,socket.value,proxy);
+      socket.value.io.disconnect()
+      socket.value = null
       router.replace('/')
       return
     }
@@ -119,11 +122,19 @@ const sockets_methods={
       return
     }
   },
-
-  // playerSurrender(data){
-  //   ElMessage.info("用户"+data.userid+"投降！");
-  // },
-
+  surrenderSuccess(data){
+    for (let i=0;i<3;i++){
+      if (data.userid == Cookies.get('user'+i))
+        lives[i] = false
+        board.value.camp = data.game_info.turn
+    }
+    if (data.userid == Cookies.get('userid')){
+      ElMessage.info('你投降了')
+    }
+    else{
+      ElMessage.info('用户'+data.username+'投降')
+    }
+  },
   processWrong(data){
     let status1 = data.status
     ElMessage.error("Error due to "+status1)
@@ -131,23 +142,9 @@ const sockets_methods={
 }
 
 function requestSurrender(){
-  axios.post(main.url + '/api/game/surrender',{
-        'userid': Cookies.get('userid')
-      },{
-    headers: {'Content-Type':'application/x-www-form-urlencoded'},
-  }
-  ).then(res => {
-    if(res.status==200) {
-      ElMessage.info("用户"+res.data.userid+"投降！");
-    }
-    else{
-      ElMessage.error('投降失败')
-      return
-    }
-  }).catch(error => {
-    console.log(error)
+  socket.value.io.emit('requestSurrender',{
+    'userid': Cookies.get('userid')
   })
-
 }
 
 
