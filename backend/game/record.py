@@ -104,3 +104,18 @@ def viewUserGameRecords(user_id):
         # db.rollback()
         logger.error("Failed to view user {0} game records: due to\n{1}".format(user_id, str(e)))
         return None,OTHER_ERROR
+    
+def viewGameMoveRecords(record_id):
+    try:
+        # 查询特定用户参与的游戏记录
+        select_query = "SELECT DISTINCT * FROM {0} WHERE recordId = %s ORDER BY moveId ASC;".format(GAME_MOVE_TABLE)
+        cursor.execute(select_query, (record_id))
+        records = cursor.fetchall()
+        for record in records:
+            # 查询每个记录的走棋记录
+            record['timestamp'] = record['timestamp'].strftime("%Y-%m-%dT%H:%M:%S")
+        return records,SUCCESS
+    except Exception as e:
+        # db.rollback()
+        logger.error("Failed to view user {0} game records: due to\n{1}".format(user_id, str(e)))
+        return None,OTHER_ERROR

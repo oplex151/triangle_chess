@@ -134,7 +134,7 @@ const initMap = (game_info) => {
     camp.value = game_info.turn
     // 设置活着的玩家
     changeLives(game_info.lives)
-    
+    console.log("111111111111")
     initChess(game_info)
     for (const [k, camp] of Object.entries(camps)) {
         camp.get().forEach((chess) => {
@@ -266,7 +266,8 @@ defineExpose({
 
 
 <style scoped lang="scss">
-
+// 样式说明：挂载的时候，如果这个元素挂载到0,0处，那么left 540px, top 400px对应棋盘中央
+// 换句话说棋盘大小是1080*800 px
 .camp {
   position: absolute;
   top: 0;

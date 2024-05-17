@@ -622,6 +622,29 @@ def viewGameRecords(data):
         logger.error(e)
         return 
 
+@socketio.event
+def viewMoveRecords(data):
+    """
+    接收玩家查看对局移动记录请求
+    Args:
+        record_id: 对局id      int 
+    """
+    params = {'record_id':int}
+    try:
+        record_id = getParams(params,data)
+    except:
+        emit('processWrong',{'status':PARAM_ERROR},to=request.sid)
+        return
+    try:
+        # 查询游戏记录
+        records = viewGameMoveRecords(record_id)
+        logger.info(records)
+        emit('gameMoveRecord', {'record': records}, to=request.sid)
+    except Exception as e:
+        emit('processWrong',{'status':OTHER_ERROR},to=request.sid)
+        logger.error(e)
+        return
+
 
 if __name__ == "__main__":
     threading.Thread(target=cycleMatch,args=[app] ,daemon=True, name='cycleMatch').start()
