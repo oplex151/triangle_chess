@@ -95,14 +95,14 @@ def disconnect():
         try:
             room_id = inWhitchRoom(userid,rooms)
             if room_id is not None:
-                room = fetchRoomByRoomID(room_id,rooms)
-                if room is None:
+                room:RoomManager = fetchRoomByRoomID(room_id,rooms)
+                if room is not None:
                     room.removeUser(userid)
-                    leave_room(room.room_id)
+                    leave_room(room_id)
                     logger.info(f"User {userid} leave room {room_id}"+f"this room's users: {room.users}")
                     if len(room.users) == 0:
                         rooms.remove(room)
-                        close_room(room=room.room_id,namespace='/')
+                        close_room(room=room_id,namespace='/')
                         logger.info(f"Room {room_id} is empty, remove it")
                 else:
                     emit('leaveRoomSuccess',{'userid':userid,'username':sessions[userid],'room_info':room.getRoomInfo()},to=room.room_id,namespace='/')
