@@ -12,7 +12,7 @@ print("Project root set to:", os.environ['PROJECT_ROOT']) # 设置项目根目�
 import flask
 from flask_socketio import SocketIO,join_room,leave_room,emit,close_room
 from flask_cors import CORS
-from flask import request,current_app
+from flask import request
 from backend.global_var import *
 from backend.tools import setupLogger, getParams
 from backend.user_manage import *
@@ -74,6 +74,68 @@ def logoutApi():
     except:
         return "{message: 'parameter error'}",PARAM_ERROR
     return logout(userid)
+
+@app.route('/api/getUserInfo', methods=['POST'])
+def getUserInfoApi():
+    '''
+    Args:
+        userid: 用户id
+    Returns:
+        用户信息 详见数据库user表
+    '''
+    params = {'userid':int}
+    try:
+        userid = getParams(params,request.form)
+    except:
+        return "{message: 'parameter error'}",PARAM_ERROR
+    return getUserInfo(userid)
+
+@app.route('/api/addFriend', methods=['POST'])
+def addFriendApi():
+    '''
+    Args:
+        userid: 用户id
+        friend_id: 好友id
+    Returns:
+        添加好友成功200
+    '''
+    params = {'userid':int, 'friend_id':int}
+    try:
+        userid,friend_id = getParams(params,request.form)
+    except:
+        return "{message: 'parameter error'}",PARAM_ERROR
+    return addFriend(userid, friend_id)
+
+@app.route('/api/getFriends', methods=['POST'])
+def getFriendsApi():
+    '''
+    Args:
+        userid: 用户id
+    Returns:
+        好友列表 详见数据库friend表
+    '''
+    params = {'userid':int}
+    try:
+        userid = getParams(params,request.form)
+    except:
+        return "{message: 'parameter error'}",PARAM_ERROR
+    return getFriendsInfo(userid)
+
+@app.route('/api/deleteFriend',methods=['POST'])
+def deleteFriendApi():
+    '''
+    Args:
+        userid: 用户id
+        friend_id: 好友id
+    Returns:
+        删除好友成功200
+    '''
+    params = {'userid':int, 'friend_id':int}
+    try:
+        userid,friend_id = getParams(params,request.form)
+    except:
+        return "{message: 'parameter error'}",PARAM_ERROR
+    return deleteFriend(userid, friend_id)
 
 @socketio.on('connect')
 def connect():
@@ -765,5 +827,6 @@ def viewMoveRecords(data):
 
 if __name__ == "__main__":
     threading.Thread(target=cycleMatch,args=[app] ,daemon=True, name='cycleMatch').start()
+    threading.Thread(target=cycleRank,args=[app] ,daemon=True, name='cycleRank').start()
     socketio.run(app,debug=True,host='0.0.0.0',port=8888,allow_unsafe_werkzeug=True)
     print("Good bye!")

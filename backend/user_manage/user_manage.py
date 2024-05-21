@@ -84,8 +84,30 @@ def viewUserRank(userid:int):
         result = cursor.fetchone()
         if result is None:
             logger.error("User {0} not exists".format(userid))
-            return None,OTHER_ERROR
-        return result,SUCCESS
+            return None
+        return result
     except Exception as e:
         logger.error("User {0} failed to view rank due to\n{1}".format(userid,str(e)))
+        return None
+    
+def getUserInfo(userid:int):
+    try:
+        # 首先就检查用户名是否已经存在
+        select_query = "SELECT * FROM {0} WHERE userId = {1};".format(USER_TABLE, userid)
+        cursor.execute(select_query)
+        data = cursor.fetchone()
+        if data is None:
+            logger.error("User {0} not exists".format(userid))
+            return None,USER_NOT_EXIST
+        dic = {}
+        dic["userId"] = data[0]
+        dic["userName"] = data[1]
+        dic['rank'] = data[3]
+        dic['score'] = data[4]
+        dic['gender'] = data[5]
+        dic['phoneNum'] = data[6]
+        dic['email'] = data[7]
+        return jsonify(dic),SUCCESS
+    except Exception as e:
+        logger.error("User {0} failed to get user info due to\n{1}".format(userid,str(e)),exc_info=True)
         return None,OTHER_ERROR

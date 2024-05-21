@@ -13,11 +13,11 @@ app.use(ElementPlus)
 
 app.mount('#app')
 
-var backend_url = "http://127.0.0.1:8888" //后端地址
-if (navigator.platform.indexOf('Linux') != -1){
-    backend_url = "http://124.70.208.148" //后端地址
-}
+// var backend_url = "http://127.0.0.1:8888" //后端地址
+// if (navigator.platform.indexOf('Linux') != -1){
+//     backend_url = "http://124.70.208.148" //后端地址
+// }
 
 export default{ //后端地址
-    url: backend_url
+    url: "http://127.0.0.1:8888"
 }
