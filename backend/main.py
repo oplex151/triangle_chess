@@ -87,7 +87,7 @@ def disconnect():
     '''
     断开socket连接
     '''
-    global rooms,sid2uid,sessions,match_queue
+    global rooms,sid2uid,sessions,match_queue,rank_queue
     if request.sid in sid2uid:
         # 断开连接时,判断用户是否在房间中,如果在房间中,则退出房间
         userid = sid2uid[request.sid]
@@ -112,6 +112,11 @@ def disconnect():
         if match_queue.is_have(userid):
             logger.info(f"User {userid} leave match queue")
             match_queue.remove(userid)
+
+        # 断开连接时,判断用户是否在排位队列中,如果在排位队列中,则移除
+        if rank_queue.is_have(userid):
+            logger.info(f"User {userid} leave rank queue")
+            rank_queue.remove(userid)
         
     logger.info("User {0} disconnect".format(request.sid))
 
@@ -366,8 +371,12 @@ def movePiece(data):
 
 def roomOver(game:GameTable, room:RoomManager, userid:int):
     global rooms,sessions
-    # 获取当前的房间类型0是匹配，1是创建房间
-    room_type = 0 if room.room_type == RoomType.matched else 1
+    # 获取当前的房间类型0是创建房间，1是匹配，2是排位   
+    room_type = 0
+    if room.room_type == RoomType.matched:
+        room_type = 1
+    elif room.room_type == RoomType.ranked: 
+        room_type = 2
     # 游戏结束，判断胜利者或平局
     if game.game_state == EnumGameState.win:
         # 记录结束时间
@@ -591,6 +600,77 @@ def cycleMatch(app):
                     
             time.sleep(1)
 
+def cycleRank(app):
+    """
+    排位模式下，定时检查的守护进程，检查是否有玩家加入排位队列，若有则创建房间
+    """
+    global rooms, rank_queue, sessions
+    with app.app_context():
+        while True:
+            def is_eligible(user1, user2):
+                rank_diff = abs(user1[1] - user2[1])
+                points_diff = abs(user1[2] - user2[2])
+                return rank_diff <= 1 and points_diff <= 100  # 假设允许的最大段位差和积分差
+
+            if rank_queue.qsize() >= 3:
+                user_list = []
+                for _ in range(rank_queue.qsize()):
+                    user_list.append(rank_queue.get())
+
+                eligible_users = []
+                # 将段位符合的[user1，user2]组加入到eligible_users中
+                for i, user1 in enumerate(user_list):
+                    for j, user2 in enumerate(user_list[i+1:], start=i+1):
+                        if user1 != user2 and is_eligible(user1, user2):
+                            eligible_users.append([user1, user2])
+
+                # 再遍历user_list，将各个user与eligible_users中的各组中的两个user分别进行比对
+                # 第一组段位符合的 3 个玩家进行匹配
+                matched_users = None
+                for [user1, user2] in eligible_users:
+                    for user in user_list:
+                        if user != user1 and user != user2 and is_eligible(user, user1) and is_eligible(user, user2):
+                            matched_users = (user1, user2, user)
+                            break
+                    if matched_users is not None:
+                        break
+                if matched_users is not None:
+                    user0, user1, user2 = matched_users
+                    # 将除此 3 人外所有用户放回队列
+                    for user in user_list:
+                        if user and user != user0 and user != user1 and user != user2 and user in sessions:
+                            rank_queue.put(user)
+                    try:
+                        # 开始游戏
+                        room = RoomManager([UserDict(userid=user0[0], username=sessions[user0[0]]),
+                                            UserDict(userid=user1[0], username=sessions[user1[0]]),
+                                            UserDict(userid=user2[0], username=sessions[user2[0]])], room_type='ranked')
+                        rooms.append(room)
+                        room.game_table = GameTable([user['userid'] for user in room.users])
+                        for user in room.users:
+                            join_room(room=room.room_id, sid=uid2sid(user['userid']))
+                        logger.info(f"Create room : {room.room_id} and game: {room.game_table.game_id}")
+                        # 通知房间所有人匹配到了
+                        emit('startRankSuccess', {'room_id': room.room_id, 'game_id': room.game_table.game_id,
+                                                            'users': [room.users[0].userid, room.users[1].userid, room.users[2].userid],
+                                                            'usernames': [room.users[0].username, room.users[1].username, room.users[2].username],
+                                                            'ranks': [user0[1], user1[1], user2[1]],
+                                                            'points': [user0[2], user1[2], user2[2]]},
+                                to=room.room_id, namespace='/')
+                    except Exception as e:
+                        logger.error("Create rank_game error due to {0}".format(str(e)), exc_info=True)
+                        for user in [user0,user1,user2]:
+                            if user and user in sessions:
+                                rank_queue.put(user)
+                        if room and room in rooms:
+                            rooms.remove(room)
+                else:
+                    # 重新将所有用户放回队列
+                    for user in user_list:
+                        if user and user in sessions:
+                            rank_queue.put(user)
+
+            time.sleep(1)
 
 @socketio.event
 def startMatch(data):
@@ -609,7 +689,32 @@ def startMatch(data):
     sid2uid[request.sid] = userid # 维护sid2uid映射
     match_queue.put(userid)
     logger.info(f"User {userid} join match queue: sid {request.sid}")
-        
+
+@socketio.event
+def startRankedMatch(data):
+    """
+    接收玩家开始排位匹配请求
+    Args:
+        userid: 用户id      int 
+    """
+    global rooms, rank_queue
+    params = {'userid': int}
+    try:
+        userid = getParams(params, data)
+    except:
+        emit('processWrong', {'status': PARAM_ERROR}, to=request.sid)
+        return
+
+    # 获取玩家的段位和积分
+    result = viewUserRank(userid)
+    if not result:
+        emit('processWrong', {'status': OTHER_ERROR}, to=request.sid)
+        return
+    
+    user_rank, user_points = result
+    sid2uid[request.sid] = userid # 维护sid2uid映射
+    rank_queue.put((userid, user_rank, user_points))
+    logger.info(f"User {userid} join rank queue: sid {request.sid}")
 
 @socketio.event
 def viewGameRecords(data):

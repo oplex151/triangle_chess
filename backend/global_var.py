@@ -6,6 +6,7 @@ global rooms
 global sessions
 global sid2uid
 global match_queue
+global rank_queue
 
 def uid2sid(uid:int)->str:
     global sid2uid
@@ -50,7 +51,7 @@ rooms:list[RoomManager] = []
 sessions:dict[int, str] = {}
 match_queue:UniqueQueue = UniqueQueue()
 sid2uid:dict[str, int] = {}
-
+rank_queue:UniqueQueue = UniqueQueue()
 
 if __name__ == '__main__':
     q = UniqueQueue()
