@@ -117,5 +117,5 @@ def viewGameMoveRecords(record_id):
         return records,SUCCESS
     except Exception as e:
         # db.rollback()
-        logger.error("Failed to view user {0} game records: due to\n{1}".format(user_id, str(e)))
+        logger.error("Failed to view game records {0} moves: due to\n{1}".format(record_id, str(e)))
         return None,OTHER_ERROR

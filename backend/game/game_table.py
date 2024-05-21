@@ -338,7 +338,8 @@ class GameTable:
 
 class RoomType(Enum):
     created = 'created'
-    matched ='matched'
+    matched = 'matched'
+    ranked  = 'ranked'
 
 class RoomManager:
     def __init__(self, users: Union[list[UserDict], UserDict], room_type: RoomType=RoomType.created):
