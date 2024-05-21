@@ -87,7 +87,7 @@ def disconnect():
     '''
     断开socket连接
     '''
-    global rooms,sid2uid,sessions,match_queue
+    global rooms,sid2uid,sessions,match_queue,rank_queue
     if request.sid in sid2uid:
         # 断开连接时,判断用户是否在房间中,如果在房间中,则退出房间
         userid = sid2uid[request.sid]
@@ -95,24 +95,28 @@ def disconnect():
         try:
             room_id = inWhitchRoom(userid,rooms)
             if room_id is not None:
-                room = fetchRoomByRoomID(room_id,rooms)
-                if room is None:
+                room:RoomManager = fetchRoomByRoomID(room_id,rooms)
+                if room is not None:
                     room.removeUser(userid)
-                    leave_room(room.room_id)
-                    logger.info(f"User {userid} leave room {room_id}"+f"this room's users: {room.users}")
+                    leave_room(room_id)
                     if len(room.users) == 0:
                         rooms.remove(room)
-                        close_room(room=room.room_id,namespace='/')
+                        close_room(room=room_id,namespace='/')
                         logger.info(f"Room {room_id} is empty, remove it")
-                else:
-                    emit('leaveRoomSuccess',{'userid':userid,'username':sessions[userid],'room_info':room.getRoomInfo()},to=room.room_id,namespace='/')
+                    else:
+                        emit('leaveRoomSuccess',{'userid':userid,'username':sessions[userid],'room_info':room.getRoomInfo()},to=room.room_id,namespace='/')
         except:
             logger.error("User {0} disconnect, ".format(userid), exc_info=True)
 
-        # 断开连接时,判断用户是否在匹配队列中,如果在匹配队列中,则移除
+        # 断开连接时,判断用户是否在匹配队列中,如果在匹配队列中,则移除 
         if match_queue.is_have(userid):
             logger.info(f"User {userid} leave match queue")
             match_queue.remove(userid)
+
+        # 断开连接时,判断用户是否在排位队列中,如果在排位队列中,则移除
+        if rank_queue.is_have(userid):
+            logger.info(f"User {userid} leave rank queue")
+            rank_queue.remove(userid)
         
     logger.info("User {0} disconnect".format(request.sid))
 
@@ -181,7 +185,8 @@ def joinRoom(data):
         logger.info(f"User {userid} leave room {tmp_id}"+
                     f"this room's users: {fetchRoomByRoomID(tmp_id,rooms).users}")
         room = fetchRoomByRoomID(tmp_id,rooms)
-        room.removeUser(userid)
+        room.removeUser(userid, force=True)
+        emit('leaveRoomSuccess',{'userid':userid,'username':sessions[userid],'room_info':room.getRoomInfo()},to=tmp_id)
         leave_room(tmp_id)
         room = fetchRoomByRoomID(room_id,rooms)
     # 已经在这个房间中, 不可以重复加入
@@ -266,12 +271,8 @@ def createGameApi():
         if len(room.users) < 3:
             emit('processWrong',{'status':ROOM_NOT_ENOUGH},to=uid2sid(userid),namespace='/')
             return "{message: '房间人数不足！'}",ROOM_NOT_ENOUGH
-        for user in room.users[:3]:
-            if user['userid'] < 0:
-                emit('processWrong',{'status':ROOM_NOT_ENOUGH},to=uid2sid(userid),namespace='/')
-                return "{message: '房间人数不足！'}",ROOM_NOT_ENOUGH
 
-        game:GameTable = GameTable([user['userid'] for user in room.users[:3]])
+        game:GameTable = GameTable(room.users[:3], room.users[3:] if len(room.users) > 3 else [])
         
         room.addGameTable(game)
         
@@ -302,8 +303,9 @@ def initGame():
         return "{message: 'parameter error'}",PARAM_ERROR
 
     room:RoomManager = fetchRoomByRoomID(room_id,rooms)
-    if room is None:
-        return "{message: 'room not exist'}",ROOM_NOT_EXIST
+
+    if room is None: return "{message: 'room not exist'}",ROOM_NOT_EXIST
+
     game:GameTable = room.game_table
  
     return jsonify({'game_info':game.getGameInfo()}),SUCCESS
@@ -369,8 +371,12 @@ def movePiece(data):
 
 def roomOver(game:GameTable, room:RoomManager, userid:int):
     global rooms,sessions
-    # 获取当前的房间类型0是匹配，1是创建房间
-    room_type = 0 if room.room_type == RoomType.matched else 1
+    # 获取当前的房间类型0是创建房间，1是匹配，2是排位   
+    room_type = 0
+    if room.room_type == RoomType.matched:
+        room_type = 1
+    elif room.room_type == RoomType.ranked: 
+        room_type = 2
     # 游戏结束，判断胜利者或平局
     if game.game_state == EnumGameState.win:
         # 记录结束时间
@@ -404,26 +410,41 @@ def roomOver(game:GameTable, room:RoomManager, userid:int):
         except Exception as e:
             logger.error("May remove in other way. Remove room error due to {0}".format(str(e)), exc_info=True)
 
-# @socketio.event
-# def sendMessage(data):
-#     '''
-#     接收用户发送的消息
-#     Args:
-#         room_id: 房间id str
-#         userid: 用户id int
-#         message: 消息 str
-#     '''
-#     params = {'room_id':str, 'userid':int,'message':str}
-#     try: 
-#         room_id,userid,message = getParams(params,data)
-#     except:
-#         logger.error("Send message error", exc_info=True)
-#     emit('sendMessageSuccess',{'message':message,'userid':userid,'username':sessions[userid]},to=request.sid)
-
-# @socketio.event
-# def receiveMessage(data):
-#     logger.info(f"receive message: {data} ")
-#     emit('message', "接受成功", to=request.sid)
+@socketio.event
+def watchGame(data):
+    """
+    请求观战，前提是游戏已经开始
+    Args:
+        userid: 用户id          int
+        room_id: 房间id        str
+    """
+    global rooms
+    params = {'userid':int,  'room_id':str}
+    try:
+        userid,room_id = getParams(params,data)
+    except:
+        emit('processWrong',{'status':PARAM_ERROR},to=request.sid)
+        return
+    # 注意要将sid2uid映射到userid
+    sid2uid[request.sid] = userid
+    try:
+        room = fetchRoomByRoomID(room_id,rooms)
+        if room is None or room.game_table is None:
+            emit('processWrong',{'status':ROOM_NOT_EXIST},to=request.sid)
+            return
+        user = UserDict(userid=userid,username=sessions[userid])
+        if room.game_table.addViewer(user):
+            room.addUser(user) 
+            join_room(room_id)
+            logger.info(f"User {userid} watch game {room.game_table.game_id} and join room {room_id}")
+            # 需要前端根据自己的身份来决定是成功加入观战，还是某某进入观战
+            emit('watchGameSuccess',{'room_id':room_id,'game_info':room.game_table.getGameInfo()},to=room_id,namespace='/')
+        else:
+            emit('processWrong',{'status':NOT_JOIN_GAME},to=request.sid)
+    except Exception as e:
+        logger.error("Watch game error due to {0}".format(str(e)), exc_info=True)
+        emit('processWrong',{'status':OTHER_ERROR},to=request.sid)
+        return 
 
 @socketio.event
 def requestSurrender(data):
@@ -559,7 +580,7 @@ def cycleMatch(app):
                     room = RoomManager([UserDict(userid=user0,username=sessions[user0]),UserDict(userid=user1,username=sessions[user1]),UserDict(userid=user2,username=sessions[user2])],RoomType.matched)
                     rooms.append(room)
                     
-                    room.game_table = GameTable([user['userid'] for user in room.users])
+                    room.game_table = GameTable(room.users)
 
                     for user in room.users:
                         join_room(room=room.room_id,sid=uid2sid(user['userid']),namespace='/')
@@ -579,6 +600,77 @@ def cycleMatch(app):
                     
             time.sleep(1)
 
+def cycleRank(app):
+    """
+    排位模式下，定时检查的守护进程，检查是否有玩家加入排位队列，若有则创建房间
+    """
+    global rooms, rank_queue, sessions
+    with app.app_context():
+        while True:
+            def is_eligible(user1, user2):
+                rank_diff = abs(user1[1] - user2[1])
+                points_diff = abs(user1[2] - user2[2])
+                return rank_diff <= 1 and points_diff <= 100  # 假设允许的最大段位差和积分差
+
+            if rank_queue.qsize() >= 3:
+                user_list = []
+                for _ in range(rank_queue.qsize()):
+                    user_list.append(rank_queue.get())
+
+                eligible_users = []
+                # 将段位符合的[user1，user2]组加入到eligible_users中
+                for i, user1 in enumerate(user_list):
+                    for j, user2 in enumerate(user_list[i+1:], start=i+1):
+                        if user1 != user2 and is_eligible(user1, user2):
+                            eligible_users.append([user1, user2])
+
+                # 再遍历user_list，将各个user与eligible_users中的各组中的两个user分别进行比对
+                # 第一组段位符合的 3 个玩家进行匹配
+                matched_users = None
+                for [user1, user2] in eligible_users:
+                    for user in user_list:
+                        if user != user1 and user != user2 and is_eligible(user, user1) and is_eligible(user, user2):
+                            matched_users = (user1, user2, user)
+                            break
+                    if matched_users is not None:
+                        break
+                if matched_users is not None:
+                    user0, user1, user2 = matched_users
+                    # 将除此 3 人外所有用户放回队列
+                    for user in user_list:
+                        if user and user != user0 and user != user1 and user != user2 and user in sessions:
+                            rank_queue.put(user)
+                    try:
+                        # 开始游戏
+                        room = RoomManager([UserDict(userid=user0[0], username=sessions[user0[0]]),
+                                            UserDict(userid=user1[0], username=sessions[user1[0]]),
+                                            UserDict(userid=user2[0], username=sessions[user2[0]])], room_type='ranked')
+                        rooms.append(room)
+                        room.game_table = GameTable([user['userid'] for user in room.users])
+                        for user in room.users:
+                            join_room(room=room.room_id, sid=uid2sid(user['userid']))
+                        logger.info(f"Create room : {room.room_id} and game: {room.game_table.game_id}")
+                        # 通知房间所有人匹配到了
+                        emit('startRankSuccess', {'room_id': room.room_id, 'game_id': room.game_table.game_id,
+                                                            'users': [room.users[0].userid, room.users[1].userid, room.users[2].userid],
+                                                            'usernames': [room.users[0].username, room.users[1].username, room.users[2].username],
+                                                            'ranks': [user0[1], user1[1], user2[1]],
+                                                            'points': [user0[2], user1[2], user2[2]]},
+                                to=room.room_id, namespace='/')
+                    except Exception as e:
+                        logger.error("Create rank_game error due to {0}".format(str(e)), exc_info=True)
+                        for user in [user0,user1,user2]:
+                            if user and user in sessions:
+                                rank_queue.put(user)
+                        if room and room in rooms:
+                            rooms.remove(room)
+                else:
+                    # 重新将所有用户放回队列
+                    for user in user_list:
+                        if user and user in sessions:
+                            rank_queue.put(user)
+
+            time.sleep(1)
 
 @socketio.event
 def startMatch(data):
@@ -597,7 +689,32 @@ def startMatch(data):
     sid2uid[request.sid] = userid # 维护sid2uid映射
     match_queue.put(userid)
     logger.info(f"User {userid} join match queue: sid {request.sid}")
-        
+
+@socketio.event
+def startRankedMatch(data):
+    """
+    接收玩家开始排位匹配请求
+    Args:
+        userid: 用户id      int 
+    """
+    global rooms, rank_queue
+    params = {'userid': int}
+    try:
+        userid = getParams(params, data)
+    except:
+        emit('processWrong', {'status': PARAM_ERROR}, to=request.sid)
+        return
+
+    # 获取玩家的段位和积分
+    result = viewUserRank(userid)
+    if not result:
+        emit('processWrong', {'status': OTHER_ERROR}, to=request.sid)
+        return
+    
+    user_rank, user_points = result
+    sid2uid[request.sid] = userid # 维护sid2uid映射
+    rank_queue.put((userid, user_rank, user_points))
+    logger.info(f"User {userid} join rank queue: sid {request.sid}")
 
 @socketio.event
 def viewGameRecords(data):

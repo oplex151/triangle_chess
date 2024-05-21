@@ -75,3 +75,17 @@ def logout(userid:int):
     else:
         logger.error("User {0} not logged in".format(userid))
         return "{}",USER_NOT_LOGIN
+    
+def viewUserRank(userid:int):
+    try:
+        # 首先就检查用户名是否已经存在
+        select_query = "SELECT rank, score FROM {0} WHERE user_id = {1};".format(USER_TABLE, userid)
+        cursor.execute(select_query)
+        result = cursor.fetchone()
+        if result is None:
+            logger.error("User {0} not exists".format(userid))
+            return None,OTHER_ERROR
+        return result,SUCCESS
+    except Exception as e:
+        logger.error("User {0} failed to view rank due to\n{1}".format(userid,str(e)))
+        return None,OTHER_ERROR
