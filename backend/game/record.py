@@ -42,11 +42,11 @@ def initRecord(p1, p2, p3, start_time=None, end_time=None, winner=None, like_num
         # 获取刚插入的记录的 recordId
         select_query = "SELECT LAST_INSERT_ID()"
         cursor.execute(select_query)
-        record_id = cursor.fetchone()[0]
+        record_id = cursor.fetchone()['LAST_INSERT_ID()']
         return record_id
     except Exception as e:
         db.rollback()
-        logger.error("Failed to insert new record due to\n{0}".format(str(e)))
+        logger.error("Failed to insert new record due to\n{0}".format(str(e)),exc_info=True)
         return None
 
 class GameRecord:
