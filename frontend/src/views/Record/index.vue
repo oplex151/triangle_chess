@@ -6,7 +6,7 @@ import Cookies from 'js-cookie'
 import VueSocketIO from 'vue-socket.io'
 import SocketIO from 'socket.io-client'
 import main from '@/main'
-import { User, HomeFilled } from '@element-plus/icons-vue'
+import { User, HomeFilled, Share } from '@element-plus/icons-vue'
 import { registerSockets, socket, removeSockets } from '@/sockets'
 import Board from '@/views/Game/board.vue'
 import game_info from '@/assets/jsons/game_info.json'
@@ -133,6 +133,11 @@ const Next = ()=>{
                 <HomeFilled />
             </el-icon>
         </button>
+    <button class="button-share">
+        <el-icon style="vertical-align: middle" size="30px">
+                <Share />
+            </el-icon>
+    </button>
     <div v-if="start">
         <button @click="EndGo" class="end_button">结束回放</button>
         <div class="brd">
@@ -245,6 +250,18 @@ const Next = ()=>{
     .el-select-dropdown__item:hover{
         background-color: beige;
     }
+}
+.button-share{
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background-color: #ecb920;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 40px;
+    font-size: 18px;
+    cursor: pointer;
+    z-index: 9999;
 }
 
 </style>

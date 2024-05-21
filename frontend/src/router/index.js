@@ -11,6 +11,7 @@ import Logout from '@/views/Logout/index.vue'
 import Room from '@/views/Room/index.vue'
 import Record from '@/views/Record/index.vue'
 import Match from '@/views/Match/index.vue'
+import Profile from '@/views/Profile/index.vue'
 import { socket } from '@/sockets';
 
 
@@ -75,6 +76,11 @@ const router = createRouter({
     {
       path: '/record',
       component: Record,
+      meta: {isAuth: true,connection: false},
+    },
+    {
+      path:'/profile',
+      component: Profile,
       meta: {isAuth: true,connection: false},
     },
   ]
