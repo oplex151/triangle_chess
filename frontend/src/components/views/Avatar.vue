@@ -35,7 +35,7 @@ const reportUser = () => {
         </p>
         </div>
         <p>
-        <el-button v-if="props.userid!= props.my_userid" class="login-button" style="background-color: bisque;" size="small" @click="reportUser">
+        <el-button v-if="props.userid!= props.my_userid" class="login-button" style="background-color: bisque;" size="" @click="reportUser">
             举报
         </el-button>
 
@@ -58,11 +58,10 @@ const reportUser = () => {
     font-size: 15px;
 }
 .el-popover {
-    background-color: #f6bb4e5d!important;
+    background-color: #f6bb4ed1!important;
     text-align: center;
 }
 .el-avatar {
-
     border:2px solid #895e0f;
 }
 </style>

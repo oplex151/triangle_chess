@@ -12,7 +12,7 @@ print("Project root set to:", os.environ['PROJECT_ROOT']) # 设置项目根目�
 import flask
 from flask_socketio import SocketIO,join_room,leave_room,emit,close_room
 from flask_cors import CORS
-from flask import request,current_app
+from flask import request
 from backend.global_var import *
 from backend.tools import setupLogger, getParams
 from backend.user_manage import *
@@ -74,6 +74,68 @@ def logoutApi():
     except:
         return "{message: 'parameter error'}",PARAM_ERROR
     return logout(userid)
+
+@app.route('/api/getUserInfo', methods=['POST'])
+def getUserInfoApi():
+    '''
+    Args:
+        userid: 用户id
+    Returns:
+        用户信息 详见数据库user表
+    '''
+    params = {'userid':int}
+    try:
+        userid = getParams(params,request.form)
+    except:
+        return "{message: 'parameter error'}",PARAM_ERROR
+    return getUserInfo(userid)
+
+@app.route('/api/addFriend', methods=['POST'])
+def addFriendApi():
+    '''
+    Args:
+        userid: 用户id
+        friend_id: 好友id
+    Returns:
+        添加好友成功200
+    '''
+    params = {'userid':int, 'friend_id':int}
+    try:
+        userid,friend_id = getParams(params,request.form)
+    except:
+        return "{message: 'parameter error'}",PARAM_ERROR
+    return addFriend(userid, friend_id)
+
+@app.route('/api/getFriends', methods=['POST'])
+def getFriendsApi():
+    '''
+    Args:
+        userid: 用户id
+    Returns:
+        好友列表 详见数据库friend表
+    '''
+    params = {'userid':int}
+    try:
+        userid = getParams(params,request.form)
+    except:
+        return "{message: 'parameter error'}",PARAM_ERROR
+    return getFriendsInfo(userid)
+
+@app.route('/api/deleteFriend',methods=['POST'])
+def deleteFriendApi():
+    '''
+    Args:
+        userid: 用户id
+        friend_id: 好友id
+    Returns:
+        删除好友成功200
+    '''
+    params = {'userid':int, 'friend_id':int}
+    try:
+        userid,friend_id = getParams(params,request.form)
+    except:
+        return "{message: 'parameter error'}",PARAM_ERROR
+    return deleteFriend(userid, friend_id)
 
 @socketio.on('connect')
 def connect():
@@ -595,8 +657,8 @@ def cycleMatch(app):
                     for user in [user0,user1,user2]:
                         if user and user in sessions:
                             match_queue.put(user)
-                    if room and room in rooms:
-                        rooms.remove(room)
+                    # if room and room in rooms:
+                    #     rooms.remove(room)
                     
             time.sleep(1)
 
@@ -641,29 +703,25 @@ def cycleRank(app):
                         if user and user != user0 and user != user1 and user != user2 and user in sessions:
                             rank_queue.put(user)
                     try:
-                        # 开始游戏
                         room = RoomManager([UserDict(userid=user0[0], username=sessions[user0[0]]),
                                             UserDict(userid=user1[0], username=sessions[user1[0]]),
-                                            UserDict(userid=user2[0], username=sessions[user2[0]])], room_type='ranked')
+                                            UserDict(userid=user2[0], username=sessions[user2[0]])], 
+                                            RoomType.ranked)
                         rooms.append(room)
-                        room.game_table = GameTable([user['userid'] for user in room.users])
+                        room.game_table = GameTable(room.users)
                         for user in room.users:
-                            join_room(room=room.room_id, sid=uid2sid(user['userid']))
+                            join_room(room=room.room_id, sid=uid2sid(user['userid']),namespace='/')
                         logger.info(f"Create room : {room.room_id} and game: {room.game_table.game_id}")
                         # 通知房间所有人匹配到了
-                        emit('startRankSuccess', {'room_id': room.room_id, 'game_id': room.game_table.game_id,
-                                                            'users': [room.users[0].userid, room.users[1].userid, room.users[2].userid],
-                                                            'usernames': [room.users[0].username, room.users[1].username, room.users[2].username],
-                                                            'ranks': [user0[1], user1[1], user2[1]],
-                                                            'points': [user0[2], user1[2], user2[2]]},
-                                to=room.room_id, namespace='/')
+                        emit('startRankSuccess',{'game_id':room.game_table.game_id,
+                                            'room_info':room.getRoomInfo()},
+                                            to=room.room_id,namespace='/')
                     except Exception as e:
                         logger.error("Create rank_game error due to {0}".format(str(e)), exc_info=True)
                         for user in [user0,user1,user2]:
                             if user and user in sessions:
                                 rank_queue.put(user)
-                        if room and room in rooms:
-                            rooms.remove(room)
+
                 else:
                     # 重新将所有用户放回队列
                     for user in user_list:
@@ -765,5 +823,6 @@ def viewMoveRecords(data):
 
 if __name__ == "__main__":
     threading.Thread(target=cycleMatch,args=[app] ,daemon=True, name='cycleMatch').start()
+    threading.Thread(target=cycleRank,args=[app] ,daemon=True, name='cycleRank').start()
     socketio.run(app,debug=True,host='0.0.0.0',port=8888,allow_unsafe_werkzeug=True)
     print("Good bye!")

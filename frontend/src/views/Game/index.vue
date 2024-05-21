@@ -8,7 +8,7 @@ import { registerSockets, socket, registerSocketsForce, removeSockets } from '@/
 import router from '@/router';
 import { ElMessage, ElMessageBox } from "element-plus";
 
-import { onMounted, ref, onUnmounted, computed, getCurrentInstance, onBeforeUnmount, watch } from 'vue';
+import { onMounted, ref, onUnmounted, computed, getCurrentInstance, onBeforeMount, watch } from 'vue';
 import Board from '@/views/Game/board.vue'
 import axios from "axios";
 import { lives } from '@/chesses/Live';
@@ -22,8 +22,11 @@ const board = ref(null)
 const winner_name = ref(null)
 const step_count = ref(null)
 const match_duration = ref(null)
+
 const vis = ref(false)
-const room_info = Cookies.get('room_info')
+const to_report_id = ref(-1)
+const room_info = JSON.parse(Cookies.get('room_info'))
+
 onMounted(() => {
   if (!Cookies.get('camp')) {
     router.replace('/room')
@@ -38,6 +41,7 @@ onMounted(() => {
     socket.value.io.emit('joinRoom', { 'userid': userid, 'room_id': Cookies.get('room_id') })
   }
   registerSocketsForce(sockets_methods, socket.value, proxy);
+
   axios.post(main.url + '/api/game/init', {
     'room_id': Cookies.get('room_id')
   },
@@ -124,13 +128,24 @@ const sockets_methods = {
     )
 
     // 匹配模式退回主页面
-    if (data.room_type == 0) {
+    console.log(data.room_type)
+    if (data.room_type == 1) {
       Cookies.remove('game_id')
       Cookies.remove('camp')
       removeSockets(sockets_methods, socket.value, proxy);
       socket.value.io.disconnect()
       socket.value = null
       router.replace('/')
+      return
+    }
+    // 天梯模式
+    else if (data.room_type == 2) {
+      Cookies.remove('game_id')
+      Cookies.remove('camp')
+      removeSockets(sockets_methods, socket.value, proxy);
+      socket.value.io.disconnect()
+      socket.value = null
+      router.replace('/rank')
       return
     }
     // 创房间模式
@@ -156,7 +171,7 @@ const sockets_methods = {
     }
   },
   processWrong(data) {
-    status1 = data.status
+    let status1 = data.status
     ElMessage.error("Error due to " + status1)
   },
 }
@@ -173,17 +188,21 @@ const Move = (data) => {
   socket.value.io.emit('movePiece', data)
 }
 
-const handleReportEnd = () => {
+const handleReportEnd = (id) => {
+
   vis.value = false;
 }
 const handleReport = () => {
+  console.log(id);
+  to_report_id.value = id;
+  console.log(to_report_id.value);
   vis.value = true;
 }
 const camp_1_style = computed(() => {
-  if (my_camp.value == 1) {
+  if (my_camp == 1) {
     return 'board'
   }
-  else if (my_camp.value == 0) {
+  else if (my_camp == 0) {
     return 'board-tilt-right'
   }
   else {
@@ -191,10 +210,10 @@ const camp_1_style = computed(() => {
   }
 });
 const camp_2_style = computed(() => {
-  if (my_camp.value == 1) {
+  if (my_camp == 1) {
     return 'board-tilt-right'
   }
-  else if (my_camp.value == 0) {
+  else if (my_camp == 0) {
     return 'board-tilt-left'
   }
   else {
@@ -202,10 +221,10 @@ const camp_2_style = computed(() => {
   }
 });
 const camp_0_style = computed(() => {
-  if (my_camp.value == 1) {
+  if (my_camp == 1) {
     return 'board-tilt-left'
   }
-  else if (my_camp.value == 0) {
+  else if (my_camp == 0) {
     return 'board'
   }
   else {
@@ -219,8 +238,8 @@ const camp_0_style = computed(() => {
   <div>
     <button class="surrender-button" @click="requestSurrender">投降</button>
   </div>
-  <div>
-    <Avatar :my_camp="my_camp" :userid=room_info.users[0].userid @reportUser="handleReport" class="camp_0_style">
+    <div  :class="camp_0_style">
+    <Avatar :my_userid=userid :userid=room_info.users[0].userid @reportUser="handleReport">
       <template #name>
         <p>{{room_info.users[0].username}}</p>
       </template>
@@ -228,8 +247,10 @@ const camp_0_style = computed(() => {
         {{ room_info.users[0].username }}
       </template>
     </Avatar>
+  </div>
     <!---------1号位---------->
-    <Avatar :my_camp="my_camp" :userid=room_info.users[1].userid @reportUser="handleReport" class="camp_1_style">
+    <div  :class="camp_1_style">
+    <Avatar :my_userid=userid :userid=room_info.users[1].userid @reportUser="handleReport">
       <template #name>
         <p>{{room_info.users[1].username}}</p>
       </template>
@@ -237,8 +258,10 @@ const camp_0_style = computed(() => {
         {{ room_info.users[1].username }}
       </template>
     </Avatar>
+    </div>
     <!---------2号位---------->
-    <Avatar :my_camp="my_camp" :userid=room_info.users[2].userid @reportUser="handleReport" class="camp_2_style">
+    <div  :class="camp_2_style">
+    <Avatar :my_userid=userid :userid=room_info.users[2].userid @reportUser="handleReport">
       <template #name>
         <p>{{room_info.users[2].username}}</p>
       </template>
@@ -246,9 +269,9 @@ const camp_0_style = computed(() => {
         {{ room_info.users[2].username }}
       </template>
     </Avatar>
-    <Board ref="board" @requireMove="Move" />
-    <Report :name=name :dialogFormVisible=vis @reportEnd="handleReportEnd" />
-  </div>
+    </div>
+    <Board ref="board" :my_camp ="my_camp" @requireMove="Move" />
+    <Report :toreportid=to_report_id :myuserid="userid" :dialogFormVisible=vis @reportEnd="handleReportEnd" />
 
 
 
@@ -266,23 +289,23 @@ const camp_0_style = computed(() => {
   background-size: cover;
   z-index: -1;
 }
-.camp_0_style{
+.board{
   position: absolute;
-  top: 50%;
-  left: 0;
-  transform: rotate(180deg);
+  top: 700px;
+  left: 950px;
+
 }
-.camp_1_style{
+.board-tilt-right{
   position: absolute;
-  top: 0;
-  left: 50%;
-  transform: rotate(-60deg);
+  top: 100px;
+  left: 950px;
+
 }
-.camp_2_style{
+.board-tilt-left{
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: rotate(60deg);
+  top: 100px;
+  left: 250px;
+
 }
 .surrender-button {
   background-color: #ecb920;

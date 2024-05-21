@@ -12,6 +12,7 @@ import Room from '@/views/Room/index.vue'
 import Record from '@/views/Record/index.vue'
 import Match from '@/views/Match/index.vue'
 import Rank from '@/views/Rank/index.vue'
+import Profile from '@/views/Profile/index.vue'
 import { socket } from '@/sockets';
 
 
@@ -88,6 +89,11 @@ const router = createRouter({
     //   component: Backend,
     //   meta: {isAuth: true,connection: false},
     // }
+    {
+      path:'/profile',
+      component: Profile,
+      meta: {isAuth: true,connection: false},
+    },
   ]
 })
 

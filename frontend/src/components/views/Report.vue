@@ -116,6 +116,6 @@ const resetForm = (ruleFormRef : FormInstance |undefined) => {
 }
 const handleClose = (done: () => void) => {
     resetForm(ruleFormRef.value)  
-    emit('reportStop')
+    emit('reportEnd')
 }
 </script>
