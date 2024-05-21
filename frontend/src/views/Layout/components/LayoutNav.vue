@@ -18,24 +18,30 @@ const categoryList = ref([
   },
   {
     id:3,
+    name:"个人中心",
+    url:'/profile',
+    picture:""
+  },
+  {
+    id:4,
     name:"战绩查看",
     url:"/record",
     picture:""
   },
   {
-    id:4,
+    id:5,
     name:"帮助中心",
     url:"/",
     picture:""
   },
   {
-    id:5,
+    id:6,
     name:"关于我们",
     url:"/",
     picture:""
   },
   {
-    id:6,
+    id:7,
     name:"登出",
     url:"/logout",
     picture:""
