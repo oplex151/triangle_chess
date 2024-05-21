@@ -17,6 +17,12 @@ const categoryList = ref([
     picture:""
   },
   {
+    id:10,
+    name:"排位模式",
+    url:"/rank",
+    picture:""
+  },
+  {
     id:3,
     name:"战绩查看",
     url:"/record",
