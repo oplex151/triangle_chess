@@ -69,12 +69,32 @@ export class Warhosre extends Chess {
 
                     p3 = (2 - (getRow(this.position) - (ROW - ROWBOT))) * COL + 1 + COL - getCol(this.position) + 1 + ROWMID * COL;
                     p4 = (2 - (getRow(this.position) - (ROW - ROWBOT))) * COL - 1 + COL - getCol(this.position) + 1 + ROWMID * COL;
-                    // 如果行数是第一行 把p2传进来
-                    if (getCol(this.position) === 1) p.push(p2,p4);
-                    // 如果行数是第九行 把p1传进来
-                    else if (getCol(this.position) === COL) p.push(p1,p3);
-                    // 否则返回p1 p2
-                    else p.push(p1, p2,p3,p4);
+                    if(getRow(this.position) == 1 + ROW - ROWBOT){
+                        if(!this.haveChess((2 - (getRow(this.position) - (ROW - ROWBOT))) * COL - getCol(this.position) + 1 + ROWBOT * COL)){
+                            if(getCol(this.position) !== 1){
+                                p.push(p1);
+                            }
+                            if (getCol(this.position) !== COL){
+                                p.push(p2);
+                            }
+                        }
+                        if (!this.haveChess((2 - (getRow(this.position) - (ROW - ROWBOT))) * COL - getCol(this.position) + 1 + ROWMID * COL)){
+                            if(getCol(this.position) !== 1){
+                                p.push(p3);
+                            }
+                            if (getCol(this.position) !== COL){
+                                p.push(p4);
+                            }
+                        }
+                    }
+                    else{
+                        if(getCol(this.position) !== 1){
+                            p.push(p1,p3);
+                        }
+                        if (getCol(this.position) !== COL){
+                            p.push(p2,p4);
+                        }
+                    }
                     break;
                 case ROWMID:
                     p1 = (2 - (getRow(this.position) - (ROW - ROWBOT))) * COL + 1 + COL - getCol(this.position) + 1 ;
@@ -82,12 +102,32 @@ export class Warhosre extends Chess {
 
                     p3 = (2 - (getRow(this.position) - (ROW - ROWBOT))) * COL + 1 + COL - getCol(this.position) + 1 + ROWMID * COL;
                     p4 = (2 - (getRow(this.position) - (ROW - ROWBOT))) * COL - 1 + COL - getCol(this.position) + 1 + ROWMID * COL;
-                    // 如果行数是第一行 把p2传进来
-                    if (getCol(this.position) === 1) p.push(p2,p4);
-                    // 如果行数是第九行 把p1传进来
-                    else if (getCol(this.position) === COL) p.push(p1,p3);
-                    // 否则返回p1 p2
-                    else p.push(p1, p2,p3,p4);
+                    if(getRow(this.position) == 1 + ROW - ROWBOT){
+                        if(!this.haveChess((2 - (getRow(this.position) - (ROW - ROWBOT))) * COL - getCol(this.position) + 1)){
+                            if(getCol(this.position) !== 1){
+                                p.push(p1);
+                            }
+                            if (getCol(this.position) !== COL){
+                                p.push(p2);
+                            }
+                        }
+                        if (!this.haveChess((2 - (getRow(this.position) - (ROW - ROWBOT))) * COL - getCol(this.position) + 1 + ROWMID * COL)){
+                            if(getCol(this.position) !== 1){
+                                p.push(p3);
+                            }
+                            if (getCol(this.position) !== COL){
+                                p.push(p4);
+                            }
+                        }
+                    }
+                    else{
+                        if(getCol(this.position) !== 1){
+                            p.push(p1,p3);
+                        }
+                        if (getCol(this.position) !== COL){
+                            p.push(p2,p4);
+                        }
+                    }
                     break;
                 case ROWTOP:
                     p1 = (2 - (getRow(this.position) - (ROW - ROWBOT))) * COL + 1 + COL - getCol(this.position) + 1 + ROWBOT * COL;
@@ -95,12 +135,32 @@ export class Warhosre extends Chess {
 
                     p3 = (2 - (getRow(this.position) - (ROW - ROWBOT))) * COL + 1 + COL - getCol(this.position) + 1 ;
                     p4 = (2 - (getRow(this.position) - (ROW - ROWBOT))) * COL - 1 + COL - getCol(this.position) + 1 ;
-                    // 如果行数是第一行 把p2传进来
-                    if (getCol(this.position) === 1) p.push(p2,p4);
-                    // 如果行数是第九行 把p1传进来
-                    else if (getCol(this.position) === COL) p.push(p1,p3);
-                    // 否则返回p1 p2
-                    else p.push(p1, p2,p3,p4);
+                    if(getRow(this.position) == 1 + ROW - ROWBOT){
+                        if(!this.haveChess((2 - (getRow(this.position) - (ROW - ROWBOT))) * COL - getCol(this.position) + 1 + ROWBOT * COL)){
+                            if(getCol(this.position) !== 1){
+                                p.push(p1);
+                            }
+                            if (getCol(this.position) !== COL){
+                                p.push(p2);
+                            }
+                        }
+                        if (!this.haveChess((2 - (getRow(this.position) - (ROW - ROWBOT))) * COL + 1 + COL - getCol(this.position) + 1)){
+                            if(getCol(this.position) !== 1){
+                                p.push(p3);
+                            }
+                            if (getCol(this.position) !== COL){
+                                p.push(p4);
+                            }
+                        }
+                    }
+                    else{
+                        if(getCol(this.position) !== 1){
+                            p.push(p1,p3);
+                        }
+                        if (getCol(this.position) !== COL){
+                            p.push(p2,p4);
+                        }
+                    }
                     break;
             }
         }
