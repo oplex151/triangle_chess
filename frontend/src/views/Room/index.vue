@@ -131,7 +131,7 @@ const sockets_methods = {
     if (camp>=-1){
       Cookies.set('camp',camp)
       console.log(Cookies.get('camp'))
-      ElMessage.success('游戏开始,你是'+camp>0?(camp>1?'金方玩家':'黑方玩家'):(camp==0?'红方玩家':'观战者'))
+      ElMessage.success('游戏开始,你是'+(camp>0?(camp>1?'金方玩家':'黑方玩家'):(camp==0?'红方玩家':'观战者')))
     }
     removeSockets(sockets_methods, socket.value, proxy)
     router.replace('/game')
