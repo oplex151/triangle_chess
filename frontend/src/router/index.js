@@ -11,6 +11,7 @@ import Logout from '@/views/Logout/index.vue'
 import Room from '@/views/Room/index.vue'
 import Record from '@/views/Record/index.vue'
 import Match from '@/views/Match/index.vue'
+import Rank from '@/views/Rank/index.vue'
 import Profile from '@/views/Profile/index.vue'
 import { socket } from '@/sockets';
 
@@ -78,6 +79,16 @@ const router = createRouter({
       component: Record,
       meta: {isAuth: true,connection: false},
     },
+    {
+      path: '/rank',
+      component: Rank,
+      meta: {isAuth: true,connection: true},
+    },
+    // {
+    //   path: '/backend',
+    //   component: Backend,
+    //   meta: {isAuth: true,connection: false},
+    // }
     {
       path:'/profile',
       component: Profile,

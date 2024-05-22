@@ -1,94 +1,100 @@
-<script setup >
+<script setup>
 import VueSocketIO from 'vue-socket.io'
 import SocketIO from 'socket.io-client'
 import main from '@/main'
 
 import Cookies from 'js-cookie';
-import { registerSockets, socket, registerSocketsForce,removeSockets} from '@/sockets'
+import { registerSockets, socket, registerSocketsForce, removeSockets } from '@/sockets'
 import router from '@/router';
-import {ElMessage,ElMessageBox} from "element-plus";
+import { ElMessage, ElMessageBox } from "element-plus";
 
-import { onMounted, ref ,onUnmounted,computed,getCurrentInstance,onBeforeUnmount, watch} from 'vue';
+import { onMounted, ref, onUnmounted, computed, getCurrentInstance, onBeforeMount, watch } from 'vue';
 import Board from '@/views/Game/board.vue'
 import axios from "axios";
 import { lives } from '@/chesses/Live';
 
+import Report from '@/components/views/Report.vue'
+import Avatar from '@/components/views/Avatar.vue'
 let my_camp = Cookies.get('camp')
-const userid =  Cookies.get('userid')
-const {proxy} = getCurrentInstance()
+const userid = Cookies.get('userid')
+const { proxy } = getCurrentInstance()
 const board = ref(null)
 const winner_name = ref(null)
 const step_count = ref(null)
 const match_duration = ref(null)
 
+const vis = ref(false)
+const to_report_id = ref(-1)
+const room_info = JSON.parse(Cookies.get('room_info'))
 
-onMounted(()=>{
-  if (!Cookies.get('camp')){
+onMounted(() => {
+  if (!Cookies.get('camp')) {
     router.replace('/room')
     return
   }
-  if (!socket.value){
+  if (!socket.value) {
     socket.value = new VueSocketIO({
       debug: true,
       connection: SocketIO(main.url),
     })
     // 重新加入房间
-    socket.value.io.emit('joinRoom',{'userid':userid,'room_id':Cookies.get('room_id')})
+    socket.value.io.emit('joinRoom', { 'userid': userid, 'room_id': Cookies.get('room_id') })
   }
-  registerSocketsForce(sockets_methods,socket.value,proxy);
-  axios.post(main.url + '/api/game/init',{
-        'room_id': Cookies.get('room_id')
-    },
+  registerSocketsForce(sockets_methods, socket.value, proxy);
+
+  axios.post(main.url + '/api/game/init', {
+    'room_id': Cookies.get('room_id')
+  },
     {
-        headers: {'Content-Type':'application/x-www-form-urlencoded'},
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     }
-    ).then(res => {
-        if(res.status==200){
-          console.log(res.data)
-          board.value.initMap(res.data.game_info)
-        }
-        else{
-            ElMessage.error('获取房间信息失败')
-            return
-        }
-    }).catch(error => {
-        console.log(error)
-    })
+  ).then(res => {
+    if (res.status == 200) {
+      console.log(res.data)
+      board.value.initMap(res.data.game_info)
+    }
+    else {
+      ElMessage.error('获取房间信息失败')
+      return
+    }
+  }).catch(error => {
+    console.log(error)
+  })
   console.log(socket.value)
 });
 
-const sockets_methods={
-  movePieceSuccess(data){
-    if(userid == data.userid){
+const sockets_methods = {
+  movePieceSuccess(data) {
+    if (userid == data.userid) {
       ElMessage.info('移动成功')
     }
     else {
-      ElMessage.info('玩家'+data.username+'移动成功')
+      ElMessage.info('玩家' + data.username + '移动成功')
     }
     // 移动棋子_切换阵营
     board.value.moveSuccess(data);
   },
-  joinRoomSuccess(data){
-    if (data.userid == Cookies.get('userid')){
-      Cookies.set('room_id',data.room_id)
+  joinRoomSuccess(data) {
+    if (data.userid == Cookies.get('userid')) {
+      Cookies.set('room_id', data.room_id)
       ElMessage.success('加入房间成功')
     }
-    else{
-      ElMessage.success('玩家'+data.username+'加入房间')
+    else {
+      ElMessage.success('玩家' + data.username + '加入房间')
     }
   },
-  leaveRoomSuccess(data){
-    if (data.userid == Cookies.get('userid')){
+  leaveRoomSuccess(data) {
+    if (data.userid == Cookies.get('userid')) {
       Cookies.remove('room_id')
       Cookies.remove('room_info')
       ElMessage.success('离开房间成功')
     }
-    else{
-      ElMessage.success('玩家'+data.username+'离开房间')
+    else {
+      ElMessage.success('玩家' + data.username + '离开房间')
     }
   },
-  gameEnd(data){
-    ElMessage.info('游戏结束'+"获胜者为"+data.winner_name)
+  gameEnd(data) {
+    ElMessage.info('游戏结束' + "获胜者为" + data.winner_name)
 
     // 模态框位置(待加入)
     step_count.value = data.step_count;
@@ -108,59 +114,70 @@ const sockets_methods={
     let formattedMatchDuration = matchDurationDate.toISOString().substr(11, 8); // 格式化为 HH:mm:ss
 
     ElMessageBox.alert(
-        `游戏总步数：${data.step_count} 游戏赢家：${data.winner_name} 游戏时长：${formattedMatchDuration} `,
-        '游戏结算',
-        {
-          confirmButtonText: 'OK',
-          callback: (action) => {
-            ElMessage({
-              type: 'info',
-              message: `action: ${action}`,
-            })
-          },
-        }
+      `游戏总步数：${data.step_count} 游戏赢家：${data.winner_name} 游戏时长：${formattedMatchDuration} `,
+      '游戏结算',
+      {
+        confirmButtonText: 'OK',
+        callback: (action) => {
+          ElMessage({
+            type: 'info',
+            message: `action: ${action}`,
+          })
+        },
+      }
     )
 
     // 匹配模式退回主页面
-    if(data.room_type == 0){
+    console.log(data.room_type)
+    if (data.room_type == 1) {
       Cookies.remove('game_id')
       Cookies.remove('camp')
-      removeSockets(sockets_methods,socket.value,proxy);
+      removeSockets(sockets_methods, socket.value, proxy);
       socket.value.io.disconnect()
       socket.value = null
       router.replace('/')
+      return
+    }
+    // 天梯模式
+    else if (data.room_type == 2) {
+      Cookies.remove('game_id')
+      Cookies.remove('camp')
+      removeSockets(sockets_methods, socket.value, proxy);
+      socket.value.io.disconnect()
+      socket.value = null
+      router.replace('/rank')
       return
     }
     // 创房间模式
     else {
       Cookies.remove('game_id')
       Cookies.remove('camp')
-      removeSockets(sockets_methods,socket.value,proxy);
+      removeSockets(sockets_methods, socket.value, proxy);
       router.replace('/room')
       return
     }
   },
-  surrenderSuccess(data){
-    for (let i=0;i<3;i++){
-      if (data.userid == Cookies.get('user'+i))
+  surrenderSuccess(data) {
+    for (let i = 0; i < 3; i++) {
+      if (data.userid == Cookies.get('user' + i))
         lives[i] = false
-        board.value.camp = data.game_info.turn
+      board.value.camp = data.game_info.turn
     }
-    if (data.userid == Cookies.get('userid')){
+    if (data.userid == Cookies.get('userid')) {
       ElMessage.info('你投降了')
     }
-    else{
-      ElMessage.info('用户'+data.username+'投降')
+    else {
+      ElMessage.info('用户' + data.username + '投降')
     }
   },
-  processWrong(data){
-    status1 = data.status
-    ElMessage.error("Error due to "+status1)
+  processWrong(data) {
+    let status1 = data.status
+    ElMessage.error("Error due to " + status1)
   },
 }
 
-function requestSurrender(){
-  socket.value.io.emit('requestSurrender',{
+function requestSurrender() {
+  socket.value.io.emit('requestSurrender', {
     'userid': Cookies.get('userid')
   })
 }
@@ -168,8 +185,52 @@ function requestSurrender(){
 
 const Move = (data) => {
   data.userid = userid
-  socket.value.io.emit('movePiece',data) 
+  socket.value.io.emit('movePiece', data)
 }
+
+const handleReportEnd = (id) => {
+
+  vis.value = false;
+}
+const handleReport = () => {
+  console.log(id);
+  to_report_id.value = id;
+  console.log(to_report_id.value);
+  vis.value = true;
+}
+const camp_1_style = computed(() => {
+  if (my_camp == 1) {
+    return 'board'
+  }
+  else if (my_camp == 0) {
+    return 'board-tilt-right'
+  }
+  else {
+    return 'board-tilt-left'
+  }
+});
+const camp_2_style = computed(() => {
+  if (my_camp == 1) {
+    return 'board-tilt-right'
+  }
+  else if (my_camp == 0) {
+    return 'board-tilt-left'
+  }
+  else {
+    return 'board'
+  }
+});
+const camp_0_style = computed(() => {
+  if (my_camp == 1) {
+    return 'board-tilt-left'
+  }
+  else if (my_camp == 0) {
+    return 'board'
+  }
+  else {
+    return 'board-tilt-right'
+  }
+});
 </script>
 
 <template>
@@ -177,7 +238,43 @@ const Move = (data) => {
   <div>
     <button class="surrender-button" @click="requestSurrender">投降</button>
   </div>
-  <Board  :my_camp="my_camp"  ref="board" @requireMove="Move"/>
+    <div  :class="camp_0_style">
+    <Avatar :my_userid=userid :userid=room_info.users[0].userid @reportUser="handleReport">
+      <template #name>
+        <p>{{room_info.users[0].username}}</p>
+      </template>
+      <template #avatar>
+        {{ room_info.users[0].username }}
+      </template>
+    </Avatar>
+  </div>
+    <!---------1号位---------->
+    <div  :class="camp_1_style">
+    <Avatar :my_userid=userid :userid=room_info.users[1].userid @reportUser="handleReport">
+      <template #name>
+        <p>{{room_info.users[1].username}}</p>
+      </template>
+      <template #avatar>
+        {{ room_info.users[1].username }}
+      </template>
+    </Avatar>
+    </div>
+    <!---------2号位---------->
+    <div  :class="camp_2_style">
+    <Avatar :my_userid=userid :userid=room_info.users[2].userid @reportUser="handleReport">
+      <template #name>
+        <p>{{room_info.users[2].username}}</p>
+      </template>
+      <template #avatar>
+        {{ room_info.users[2].username }}
+      </template>
+    </Avatar>
+    </div>
+    <Board ref="board" :my_camp ="my_camp" @requireMove="Move" />
+    <Report :toreportid=to_report_id :myuserid="userid" :dialogFormVisible=vis @reportEnd="handleReportEnd" />
+
+
+
 </template>
 
 
@@ -192,8 +289,25 @@ const Move = (data) => {
   background-size: cover;
   z-index: -1;
 }
+.board{
+  position: absolute;
+  top: 700px;
+  left: 950px;
 
-.surrender-button{
+}
+.board-tilt-right{
+  position: absolute;
+  top: 100px;
+  left: 950px;
+
+}
+.board-tilt-left{
+  position: absolute;
+  top: 100px;
+  left: 250px;
+
+}
+.surrender-button {
   background-color: #ecb920;
   border: none;
   color: white;
@@ -206,13 +320,14 @@ const Move = (data) => {
   transition-duration: 0.4s;
   cursor: pointer;
   border-radius: 8px;
-  box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19); /* Add shadows */
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+  /* Add shadows */
 }
 
-.surrender-button:hover{
+.surrender-button:hover {
   background-color: #b48d17;
   color: white;
-  box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2), 0 12px 40px 0 rgba(0,0,0,0.19); /* Add more shadows */
+  box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2), 0 12px 40px 0 rgba(0, 0, 0, 0.19);
+  /* Add more shadows */
 }
-
 </style>

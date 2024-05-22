@@ -657,8 +657,8 @@ def cycleMatch(app):
                     for user in [user0,user1,user2]:
                         if user and user in sessions:
                             match_queue.put(user)
-                    if room and room in rooms:
-                        rooms.remove(room)
+                    # if room and room in rooms:
+                    #     rooms.remove(room)
                     
             time.sleep(1)
 
@@ -703,29 +703,25 @@ def cycleRank(app):
                         if user and user != user0 and user != user1 and user != user2 and user in sessions:
                             rank_queue.put(user)
                     try:
-                        # 开始游戏
                         room = RoomManager([UserDict(userid=user0[0], username=sessions[user0[0]]),
                                             UserDict(userid=user1[0], username=sessions[user1[0]]),
-                                            UserDict(userid=user2[0], username=sessions[user2[0]])], room_type='ranked')
+                                            UserDict(userid=user2[0], username=sessions[user2[0]])], 
+                                            RoomType.ranked)
                         rooms.append(room)
-                        room.game_table = GameTable([user['userid'] for user in room.users])
+                        room.game_table = GameTable(room.users)
                         for user in room.users:
-                            join_room(room=room.room_id, sid=uid2sid(user['userid']))
+                            join_room(room=room.room_id, sid=uid2sid(user['userid']),namespace='/')
                         logger.info(f"Create room : {room.room_id} and game: {room.game_table.game_id}")
                         # 通知房间所有人匹配到了
-                        emit('startRankSuccess', {'room_id': room.room_id, 'game_id': room.game_table.game_id,
-                                                            'users': [room.users[0].userid, room.users[1].userid, room.users[2].userid],
-                                                            'usernames': [room.users[0].username, room.users[1].username, room.users[2].username],
-                                                            'ranks': [user0[1], user1[1], user2[1]],
-                                                            'points': [user0[2], user1[2], user2[2]]},
-                                to=room.room_id, namespace='/')
+                        emit('startRankSuccess',{'game_id':room.game_table.game_id,
+                                            'room_info':room.getRoomInfo()},
+                                            to=room.room_id,namespace='/')
                     except Exception as e:
                         logger.error("Create rank_game error due to {0}".format(str(e)), exc_info=True)
                         for user in [user0,user1,user2]:
                             if user and user in sessions:
                                 rank_queue.put(user)
-                        if room and room in rooms:
-                            rooms.remove(room)
+
                 else:
                     # 重新将所有用户放回队列
                     for user in user_list:

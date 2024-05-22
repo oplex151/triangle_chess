@@ -79,7 +79,7 @@ def logout(userid:int):
 def viewUserRank(userid:int):
     try:
         # 首先就检查用户名是否已经存在
-        select_query = "SELECT rank, score FROM {0} WHERE user_id = {1};".format(USER_TABLE, userid)
+        select_query = "SELECT `rank`, score FROM {0} WHERE userId = {1};".format(USER_TABLE, userid)
         cursor.execute(select_query)
         result = cursor.fetchone()
         if result is None:

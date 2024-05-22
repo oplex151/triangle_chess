@@ -1,15 +1,15 @@
-<script setup >
+<script setup>
 import main from '@/main'
-import { camps,initChess } from '@/lib/game';
+import { camps, initChess } from '@/lib/game';
 import { GEBI } from '@/utils/utils';
 import Cookies from 'js-cookie';
-import { registerSockets, socket} from '@/sockets'
-import {XYZToPosition, PositionToXYZ} from '@/lib/convert'
+import { registerSockets, socket } from '@/sockets'
+import { XYZToPosition, PositionToXYZ } from '@/lib/convert'
 import router from '@/router';
-import {ElMessage} from "element-plus";
+import { ElMessage } from "element-plus";
 import { lives, changeLives } from '@/chesses/Live';
-import { onMounted, ref ,onUnmounted,computed,getCurrentInstance} from 'vue';
-import {COL, ROWTOP, ROWMID, AREABOT, ROWBOT} from '@/config/config';
+import { onMounted, ref, onUnmounted, computed, getCurrentInstance } from 'vue';
+import { COL, ROWTOP, ROWMID, AREABOT, ROWBOT } from '@/config/config';
 
 
 const map = new Map();
@@ -20,60 +20,60 @@ let hoverChess;
 const isPocus = ref(false);
 const focusChess = ref();
 const hoverposition = ref();
-const hover_xyz = ref([0,0,0])
-const xyz = ref([0,0,0])
-const xyzn = ref([0,0,0])
-const my_camp_str = ['红方','黑方','金方']
+const hover_xyz = ref([0, 0, 0])
+const xyz = ref([0, 0, 0])
+const xyzn = ref([0, 0, 0])
+const my_camp_str = ['红方', '黑方', '金方']
 
 const props = defineProps(['my_camp'])
 const emit = defineEmits(['requireMove'])
 
 // 定义父组件可以调用的函数（这里只有defineExpose）
 function moveSuccess(data) {
-  let position_start = XYZToPosition(data.x1,data.y1,data.z1)
-  let position_end = XYZToPosition(data.x2,data.y2,data.z2)
+  let position_start = XYZToPosition(data.x1, data.y1, data.z1)
+  let position_end = XYZToPosition(data.x2, data.y2, data.z2)
 
   focusChess.value = map.get(position_start);
   // 移动棋子
-  moveChess(focusChess.value,position_end);
+  moveChess(focusChess.value, position_end);
 
   // 切换到下一个阵营
-  camp.value = (camp.value + 1)%3;
-  while(lives[camp.value]==false){
-    camp.value = (camp.value + 1)%3;
+  camp.value = (camp.value + 1) % 3;
+  while (lives[camp.value] == false) {
+    camp.value = (camp.value + 1) % 3;
   }
 }
 
 const camp_1_style = computed(() => {
-  if (props.my_camp==1){
+  if (props.my_camp == 1) {
     return 'board'
   }
-  else if(props.my_camp==0){
+  else if (props.my_camp == 0) {
     return 'board-tilt-right'
   }
-  else{
+  else {
     return 'board-tilt-left'
   }
 });
 const camp_2_style = computed(() => {
-  if(props.my_camp==1){
+  if (props.my_camp == 1) {
     return 'board-tilt-right'
   }
-  else if(props.my_camp==0){
+  else if (props.my_camp == 0) {
     return 'board-tilt-left'
   }
-  else{
+  else {
     return 'board'
   }
 });
 const camp_0_style = computed(() => {
-  if (props.my_camp==1){
+  if (props.my_camp == 1) {
     return 'board-tilt-left'
   }
-  else if(props.my_camp==0){
+  else if (props.my_camp == 0) {
     return 'board'
   }
-  else{
+  else {
     return 'board-tilt-right'
   }
 });
@@ -84,7 +84,7 @@ const action = (position) => {
 
     if (hoverChess.camp !== camp.value) return;
     // 如果不是你走，不能选中
-    if (camp.value != props.my_camp && props.my_camp>=0){
+    if (camp.value != props.my_camp && props.my_camp >= 0) {
       return;
     }
     isPocus.value = true;
@@ -96,24 +96,25 @@ const action = (position) => {
     isPocus.value = false;
     GEBI(`${focusChess.value.position}`).classList.remove('chess_on');
     if (
-        focusChess.value.canMove().includes(position)
-        // 暂时不启用, 阻止自己的棋子吃掉自己的棋子
-        && map.get(position)?.camp !== camp.value
+      focusChess.value.canMove().includes(position)
+      // 暂时不启用, 阻止自己的棋子吃掉自己的棋子
+      && map.get(position)?.camp !== camp.value
     ) {
       xyz.value = PositionToXYZ(position)
       xyzn.value = PositionToXYZ(focusChess.value.position)
       // 发送移动消息
-      emit('requireMove',{
-        'x1':xyzn.value[0], 'y1':xyzn.value[1], 'z1':xyzn.value[2],
-        'x2':xyz.value[0], 'y2':xyz.value[1], 'z2':xyz.value[2]})
+      emit('requireMove', {
+        'x1': xyzn.value[0], 'y1': xyzn.value[1], 'z1': xyzn.value[2],
+        'x2': xyz.value[0], 'y2': xyz.value[1], 'z2': xyz.value[2]
+      })
     }
 
     // 暂时不启用，重新选择棋子
-    else{
+    else {
       if (!hoverChess) return;
       if (hoverChess.camp !== camp.value) return;
       // 如果不是你走，不能选中
-      if (camp.value != props.my_camp && props.my_camp>=0){
+      if (camp.value != props.my_camp && props.my_camp >= 0) {
         return;
       }
       isPocus.value = true;
@@ -130,48 +131,48 @@ const moveChess = (chess, to) => {
   return true;
 };
 const initMap = (game_info) => {
-    // 设置轮到谁走
-    camp.value = game_info.turn
-    // 设置活着的玩家
-    changeLives(game_info.lives)
-    console.log("111111111111")
-    initChess(game_info)
-    for (const [k, camp] of Object.entries(camps)) {
-        camp.get().forEach((chess) => {
-            GEBI(`${chess.position}`).innerText = chess.name;
-            
-            switch (chess.camp){
-                case 0:
-                GEBI(`${chess.position}`).classList.add('camp0');
-                break;
-                case 1:
-                GEBI(`${chess.position}`).classList.add('camp1');
-                break;
-                case 2:
-                GEBI(`${chess.position}`).classList.add('camp2');
-                break;
-            }
-            map.set(chess.position, chess);
-        });
-    }
+  // 设置轮到谁走
+  camp.value = game_info.turn
+  // 设置活着的玩家
+  changeLives(game_info.lives)
+  console.log("111111111111")
+  initChess(game_info)
+  for (const [k, camp] of Object.entries(camps)) {
+    camp.get().forEach((chess) => {
+      GEBI(`${chess.position}`).innerText = chess.name;
+
+      switch (chess.camp) {
+        case 0:
+          GEBI(`${chess.position}`).classList.add('camp0');
+          break;
+        case 1:
+          GEBI(`${chess.position}`).classList.add('camp1');
+          break;
+        case 2:
+          GEBI(`${chess.position}`).classList.add('camp2');
+          break;
+      }
+      map.set(chess.position, chess);
+    });
+  }
 };
 
 const hover = (position) => {
-    hoverposition.value = position;
+  hoverposition.value = position;
 
-    if (hoverChess)
-        GEBI(`${hoverChess.position}`).classList.remove('chess_hover');
+  if (hoverChess)
+    GEBI(`${hoverChess.position}`).classList.remove('chess_hover');
 
-    if (!map.has(position)) return;
+  if (!map.has(position)) return;
 
-    hoverChess = map.get(position);
+  hoverChess = map.get(position);
 
-    if (hoverChess.camp != props.my_camp) return;
+  if (hoverChess.camp != props.my_camp) return;
 
-    GEBI(`${hoverChess.position}`).classList.add('chess_hover');
-    hoverChess.canMove().forEach((posi) => {
-        GEBI(`${posi}`).classList.add('moviable');
-    });
+  GEBI(`${hoverChess.position}`).classList.add('chess_hover');
+  hoverChess.canMove().forEach((posi) => {
+    GEBI(`${posi}`).classList.add('moviable');
+  });
 };
 
 const out = (position) => {
@@ -184,8 +185,8 @@ const out = (position) => {
 const Destory = () => {
 };
 
-onMounted(()=>{
-    // initMap(); // 初始化棋盘，改成相应后端消息来哦初始化棋盘
+onMounted(() => {
+  // initMap(); // 初始化棋盘，改成相应后端消息来哦初始化棋盘
 });
 
 onUnmounted(Destory);
@@ -199,65 +200,41 @@ defineExpose({
 <template>
   <div class="Game">
     <div class="camp">
-      目前行动:{{camp == 1 ?'黑方':(camp == 0 ? '红方':'金方')}}
-      我的阵营:{{props.my_camp>=0?my_camp_str[props.my_camp]:'未知'}}
+      目前行动:{{ camp == 1 ? '黑方' : (camp == 0 ? '红方' : '金方') }}
+      我的阵营:{{ props.my_camp >= 0 ? my_camp_str[props.my_camp] : '未知' }}
     </div>
     <!--2号-->
+
     <div :class="camp_2_style">
       <!-- 遍历成棋盘 -->
       <!-- 渲染所要的行数 -->
-      <div v-for="(row, index) in ROWTOP"
-           :key="row"
-           class="row"
-      >
+
+      <div v-for="(row, index) in ROWTOP" :key="row" class="row">
         <!-- 渲染所要的列数 -->
-        <div class="block chess"
-             :id="getid(index, i) + ''"
-             v-for="(col, i) in COL"
-             :key="col"
-             @mouseover="hover(getid(index, i))"
-             @mouseout="out(getid(index, i))"
-             @click="action(getid(index, i))"
-             v-if="index <= 4"
-        >
+        <div class="block chess" :id="getid(index, i) + ''" v-for="(col, i) in COL" :key="col"
+          @mouseover="hover(getid(index, i))" @mouseout="out(getid(index, i))" @click="action(getid(index, i))"
+          v-if="index <= 4">
         </div>
       </div>
     </div>
 
     <div :class="camp_1_style">
-      <div v-for="(row, index) in ROWTOP"
-           :key="row"
-           class="row"
-      >
+      <div v-for="(row, index) in ROWTOP" :key="row" class="row">
         <!-- 渲染所要的列数 -->
-        <div class="block chess"
-             :id="getid(index, i) + ''"
-             v-for="(col, i) in COL"
-             :key="col"
-             @mouseover="hover(getid(index, i))"
-             @mouseout="out(getid(index, i))"
-             @click="action(getid(index, i))"
-             v-if="index > 4 && index <= 9"
-        >
+        <div class="block chess" :id="getid(index, i) + ''" v-for="(col, i) in COL" :key="col"
+          @mouseover="hover(getid(index, i))" @mouseout="out(getid(index, i))" @click="action(getid(index, i))"
+          v-if="index > 4 && index <= 9">
         </div>
       </div>
     </div>
 
     <div :class="camp_0_style">
-      <div v-for="(row, index) in ROWTOP"
-           :key="row"
-           class="row"
-      >
+
+      <div v-for="(row, index) in ROWTOP" :key="row" class="row">
         <!-- 渲染所要的列数 -->
-        <div class="block chess"
-             :id="getid(index, i) + ''"
-             v-for="(col, i) in COL"
-             :key="col"
-             @mouseover="hover(getid(index, i))"
-             @mouseout="out(getid(index, i))"
-             @click="action(getid(index, i))"
-             v-if="index > 9 && index <= 14"
-        >
+        <div class="block chess" :id="getid(index, i) + ''" v-for="(col, i) in COL" :key="col"
+          @mouseover="hover(getid(index, i))" @mouseout="out(getid(index, i))" @click="action(getid(index, i))"
+          v-if="index > 9 && index <= 14">
         </div>
       </div>
     </div>
@@ -275,14 +252,17 @@ defineExpose({
   font-size: 24px;
   color: #e9b526;
 }
+
 // 红方阵营
 .camp0 {
   background-color: #ec7357 !important;
 }
+
 // 黑方阵营
 .camp1 {
   background-color: #383a3f !important;
 }
+
 // 金方阵营
 .camp2 {
   background-color: #999900 !important;
@@ -294,19 +274,23 @@ defineExpose({
   0% {
     background-color: rgba(pink, 0.4);
   }
+
   50% {
     background-color: rgba(pink, 1);
   }
+
   100% {
     background-color: rgba(pink, 0.4);
   }
 }
+
 // 定义一个动画
 .moviable {
   background-color: pink;
   animation: fade 2s;
   animation-iteration-count: infinite;
 }
+
 .chess {
   color: wheat;
   // 文本不可选中
@@ -314,7 +298,7 @@ defineExpose({
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size:20px;
+  font-size: 20px;
   border-radius: 20px;
   box-shadow: #383a3f;
   border-width: 4px;
@@ -339,29 +323,35 @@ defineExpose({
   0% {
     color: rgba(rgb(244, 8, 47), 0.6);
   }
+
   50% {
     color: rgba(rgb(244, 8, 47), 1.2);
   }
+
   100% {
     color: rgba(rgb(244, 8, 47), 0.6);
   }
 }
 
-.chess_on{
+.chess_on {
   animation: vary 2s !important;
   animation-iteration-count: infinite !important;
 }
-.invert{
+
+.invert {
   transform: rotate(180deg);
 }
+
 .block {
   width: 50px;
   height: 50px;
   border: 1px solid skyblue;
+
   &:hover {
     background-color: skyblue;
   }
 }
+
 .row {
   display: flex;
   align-items: center;
@@ -387,12 +377,15 @@ defineExpose({
   display: flex;
   flex-direction: column;
   align-items: center;
+
 }
-.board :deep(.chess){
-  rotate: 180deg;
+
+.board :deep(.chess) {
+  rotate: 180deg !important;
   // 某些浏览器（例如小智双核）不支持 ::v-deep 伪元素选择器，这个我也没办法，只能这样了
   // 御三家firefox,chrome,edge都支持
 }
+
 // = 1
 .board-tilt-left {
   position: absolute;
@@ -419,5 +412,4 @@ defineExpose({
   flex-direction: column;
   align-items: center;
 }
-
 </style>

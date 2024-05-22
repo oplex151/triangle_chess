@@ -11,6 +11,9 @@ import { ElDivider, ElInput, ElMessage } from 'element-plus'
 import * as CONST from '@/lib/const.js'
 import { User, HomeFilled } from '@element-plus/icons-vue'
 
+import Avatar from '@/components/views/Avatar.vue'
+import Report from '@/components/views/Report.vue'
+
 const { proxy } = getCurrentInstance()
 const router = useRouter()
 const room_id = ref(null)
@@ -18,6 +21,9 @@ const new_room_id = ref(null)
 const room_info = ref(null)
 const i_message = ref('')
 const o_message = ref([])
+
+const to_report_id= ref(0)
+const vis = ref(false)
 // 格式提示：
 // room_info:{
 //   room_id:xxx,
@@ -214,6 +220,15 @@ const sendMessage = () => {
     i_message.value = ''
   }
 }
+const handleReportEnd = () => {
+  vis.value = false;
+}
+const handleReport = (id) => {
+  console.log(id);
+  to_report_id.value = id;
+  console.log(to_report_id.value);
+  vis.value = true;
+}
 
 </script>
 
@@ -277,20 +292,14 @@ const sendMessage = () => {
       <div class="room-info">
         <div v-if="room_info">
           <li v-for="user in room_info.users" class="user" @mouseover="get_info"> 
-            <div class="user-show">
-              更建议使用el-popover
-              <div>
-                <button class="litter">举办！（还没写好）</button>              
-              </div>
-              <div>              
-                <button class="litter" v-if="user.userid!=Cookies.get('userid') && i_am_holder">踢出！（还没写好）</button>
-                <div class="litter" v-else/><!-- 占位用的 -->
-              </div>
-              在这里写一些描述，比如头像
-            </div>
-            <el-icon  style="vertical-align: middle" size="40px">
-              <User />
-            </el-icon>
+            <Avatar :my_userid="Cookies.get('userid')" :userid=user.userid @reportUser="handleReport" class="avas">
+              <template #name>
+                <p>{{user.username}}</p>
+              </template>
+              <template #avatar>
+                <User/>
+              </template>
+            </Avatar>   
             <span class="user-name" style="vertical-align: middle">{{ user.username }}</span>            
           </li>
         </div>
@@ -306,7 +315,8 @@ const sendMessage = () => {
           <el-button @click="sendMessage" style="width:60px" type="primary">发送消息</el-button>
       </div>
       </div>
-    </div>
+  </div>
+  <Report :toreportid=to_report_id :myuserid="Cookies.get('userid')" :dialogFormVisible=vis @reportEnd="handleReportEnd" />
 </template>
 
 
@@ -512,7 +522,9 @@ const sendMessage = () => {
   cursor: pointer;
   margin-left: 20px;
 }
-
+.avas{
+  min-width: 400px;
+}
 .button-create-game:hover {
   background-color: #bbe62d;
 }
@@ -539,7 +551,6 @@ const sendMessage = () => {
 
 .user .user-show{
     display: none;
-    width: 300px;
     height: 100px;
     color: #fff;
     background: #ecb920;
@@ -547,7 +558,7 @@ const sendMessage = () => {
     cursor: pointer;
     opacity: 0.8;
     border-radius: 10px;
-    transform: translate(-20px,-100px);
+    transform: translate(-100px);
 }
 .user:hover .user-show{
   position: fixed;
