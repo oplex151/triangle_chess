@@ -1,11 +1,10 @@
 from enum import Enum
-from typing import Dict, Union
+from typing import Dict, Optional, Union
 from dotenv import load_dotenv
 
 load_dotenv()
 import hashlib
 import random
-import datetime
 from .piece import Piece
 from .special_piece import *
 from .record import GameRecord
@@ -23,14 +22,22 @@ class EnumGameState(Enum):
     win = "win"
     draw = "draw"
 
+class RoomType(Enum):
+    created = 'created'
+    matched = 'matched'
+    ranked  = 'ranked'
+
 class GameTable:
     max_row = 9
     max_col = 5
-    def __init__(self,users:list[UserDict], viewers:list[UserDict] = []):
+    def __init__(self,users:list[UserDict], viewers:Optional[list[UserDict]] = None):
         self.game_id = hashlib.md5(str(sum([user['userid'] for user in users])).encode('utf-8')).hexdigest()
-        self.users = users
+        self.users = users.copy()
         self.lives = [True,True,True]
-        self.viewers = viewers
+        if not viewers:
+            self.viewers = []
+        else :
+            self.viewers = viewers.copy()
 
         self.Pieces:list[list[Piece]] = [[],[],[]]
         
@@ -146,10 +153,9 @@ class GameTable:
                         self.step_count += 1
 
                         # 记录这一步
-                        chessType = "piece"
-                        startPos = str(px) + ',' + str(py) + ',' + str(pz)
-                        endPos = str(nx) + ',' + str(ny) + ',' + str(nz)
-                        self.record.recordMove(userid, chessType, startPos, endPos)
+                        startPos = f"{px},{py},{pz}"
+                        endPos = f"{nx},{ny},{nz}"
+                        self.record.recordMove(userid, "piece", startPos, endPos)
 
                         # 判断游戏是否结束
                         if self.checkGameEnd():
@@ -344,11 +350,6 @@ class GameTable:
                 board += '\n'
         print(board)
 
-class RoomType(Enum):
-    created = 'created'
-    matched = 'matched'
-    ranked  = 'ranked'
-
 class RoomManager:
     def __init__(self, users: Union[list[UserDict], UserDict], room_type: RoomType=RoomType.created):
         # 随机生成一串字符串
@@ -357,7 +358,7 @@ class RoomManager:
         self.game_table = None
 
         if isinstance(users, list):
-            self.users = users
+            self.users = users.copy()
         else:
             self.users = [users]
 

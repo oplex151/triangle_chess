@@ -7,6 +7,21 @@
         true,
         true
     ],
+    "viewers": [],
+    "users": [
+        {
+            "userid": 11,
+            "username": "user1"
+        },
+        {
+            "userid": -12,
+            "username": "user2"
+        },
+        {
+            "userid": 13,
+            "username": "user3"
+        }
+    ],
     "pieces": [
         {
             "name": "Leader",
