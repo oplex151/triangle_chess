@@ -16,6 +16,7 @@ from flask import request
 from backend.global_var import *
 from backend.tools import setupLogger, getParams
 from backend.user_manage import *
+from backend.user_manage.rank import *
 from backend.game.exception import *
 from backend.game.record import *
 from message import *
@@ -669,7 +670,7 @@ def cycleRank(app):
     global rooms, rank_queue, sessions
     with app.app_context():
         while True:
-            def is_eligible(user1, user2):
+            def isEligible(user1, user2):
                 rank_diff = abs(user1[1] - user2[1])
                 points_diff = abs(user1[2] - user2[2])
                 return rank_diff <= 1 and points_diff <= 100  # 假设允许的最大段位差和积分差
@@ -683,7 +684,7 @@ def cycleRank(app):
                 # 将段位符合的[user1，user2]组加入到eligible_users中
                 for i, user1 in enumerate(user_list):
                     for j, user2 in enumerate(user_list[i+1:], start=i+1):
-                        if user1 != user2 and is_eligible(user1, user2):
+                        if user1 != user2 and isEligible(user1, user2):
                             eligible_users.append([user1, user2])
 
                 # 再遍历user_list，将各个user与eligible_users中的各组中的两个user分别进行比对
@@ -691,7 +692,7 @@ def cycleRank(app):
                 matched_users = None
                 for [user1, user2] in eligible_users:
                     for user in user_list:
-                        if user != user1 and user != user2 and is_eligible(user, user1) and is_eligible(user, user2):
+                        if user != user1 and user != user2 and isEligible(user, user1) and isEligible(user, user2):
                             matched_users = (user1, user2, user)
                             break
                     if matched_users is not None:
@@ -749,7 +750,7 @@ def startMatch(data):
     logger.info(f"User {userid} join match queue: sid {request.sid}")
 
 @socketio.event
-def startRankedMatch(data):
+def startRank(data):
     """
     接收玩家开始排位匹配请求
     Args:
@@ -768,7 +769,7 @@ def startRankedMatch(data):
     if not result:
         emit('processWrong', {'status': OTHER_ERROR}, to=request.sid)
         return
-    
+
     user_rank, user_points = result
     sid2uid[request.sid] = userid # 维护sid2uid映射
     rank_queue.put((userid, user_rank, user_points))
