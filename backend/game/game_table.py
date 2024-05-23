@@ -51,6 +51,10 @@ class GameTable:
         self.draw_respondents = set()  # 记录回应求和请求的玩家
         self.draw_agree = set()  # 记录对求和请求的回应
 
+        # 表现分相关
+        self.captured_pieces = [[],[],[]] # 玩家捕获的对手棋子
+        self.opponent_captured_pieces = [[],[],[]] # 对手捕获的玩家棋子
+
         self.record = GameRecord(
                 p1=self.users[0]['userid'],
                 p2=self.users[1]['userid'],
@@ -144,6 +148,9 @@ class GameTable:
                             logger.info(f"用户{userid}击杀棋子{kill_piece.name}({nx},{ny},{nz}) by {piece.name}({px},{py},{pz})")
                             # 被杀死的棋子死亡
                             kill_piece.setDead() 
+                            # 记录用作计算表现分
+                            self.captured_pieces[user_z].append(kill_piece)
+                            self.opponent_captured_pieces[kill_piece.user_z].append(kill_piece)
                             # 杀死Leader，该玩家阵亡，请前端自己判断阵亡，后端不发出通知
                             if kill_piece.name == 'Leader':
                                 self.lives[kill_piece.user_z] = False
@@ -155,7 +162,7 @@ class GameTable:
                         # 记录这一步
                         startPos = f"{px},{py},{pz}"
                         endPos = f"{nx},{ny},{nz}"
-                        self.record.recordMove(userid, "piece", startPos, endPos)
+                        self.record.recordMove(userid, piece.name, startPos, endPos)
 
                         # 判断游戏是否结束
                         if self.checkGameEnd():
@@ -314,6 +321,27 @@ class GameTable:
     def checkDraw(self):
         # 实现判断平局条件的逻辑
         pass
+
+    def getUserResult(self, userid):
+        '''
+        Description: 返回玩家的游戏结果。
+        Args:
+            userid: 需要返回的用户id
+        Returns:
+            result: 玩家的游戏结果("win","lose","draw" or "ongoing")
+        '''
+        index = self._getUserIndex(userid)
+        if self.game_state == EnumGameState.ongoing:
+            return "ongoing"
+        else:
+            if self.lives[index] == False:
+                return "lose"
+            else:
+                if self.game_state == EnumGameState.win and self.winner == index:
+                    return "win"
+                elif self.game_state == EnumGameState.draw and self.winner == -1:
+                    return "draw"
+        return None
 
     def getGameInfo(self):
         '''
