@@ -331,11 +331,11 @@ class GameTable:
             result: 玩家的游戏结果("win","lose","draw" or "ongoing")
         '''
         index = self._getUserIndex(userid)
-        if self.game_state == EnumGameState.ongoing:
-            return "ongoing"
+        if self.lives[index] == False:
+            return "lose"
         else:
-            if self.lives[index] == False:
-                return "lose"
+            if self.game_state == EnumGameState.ongoing:
+                return "ongoing"
             else:
                 if self.game_state == EnumGameState.win and self.winner == index:
                     return "win"
