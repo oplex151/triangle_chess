@@ -18,6 +18,9 @@ export class Chess {
         let hoveFinish = false;
 
         point.innerText = '';
+        point.style.backgroundImage = "";
+
+
         point.classList.remove(`camp${this.camp}`);
         beginPosition = this.position;
         this.position = to;
@@ -54,8 +57,24 @@ export class Chess {
         }
 
         point.innerText = this.name;
+        switch (this.camp) {
+            case 0:
+                point.classList.add('camp0');
+                this.image = "src/assets/images/game/chess/realChess/" + this.name + "白.png";
+                break;
 
-        point.classList.add(`camp${this.camp}`);
+            case 1:
+                point.classList.add('camp1');
+                this.image = "src/assets/images/game/chess/realChess/" + this.name + "黑.png";
+                break;
+            case 2:
+                point.classList.add('camp2');
+                this.image = "src/assets/images/game/chess/realChess/" + this.name + "金.png";
+                break;
+        }
+        point.classList.add('chess-background');  // 添加自定义class
+        point.style.background = `url(${this.image}) center center / contain no-repeat`;
+        point.style.backgroundSize = '53px'; // 将背景图片大小设置为 53px，宽度和高度均为 53px
 
         if(this.position <= (COL * ROWBOT)) {
             this.inWhichArea = 0;

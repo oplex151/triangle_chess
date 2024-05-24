@@ -299,6 +299,7 @@ const camp_0_style = computed(() => {
   background-image: url('@/assets/images/game/chessBoard.jpg');
   background-size: cover;
   opacity: 1.0; /* Adjust opacity as needed */
+  z-index: 0;
 }
 
 .board{

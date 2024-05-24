@@ -106,18 +106,18 @@ const camp_1_style = computed(() => {
     return 'board'
   }
   else if (props.my_camp == 0) {
-    return 'board-tilt-left'
+    return 'board-tilt-right'
   }
   else {
-    return 'board-tilt-right'
+    return 'board-tilt-left'
   }
 });
 const camp_2_style = computed(() => {
   if (props.my_camp == 1) {
-    return 'board-tilt-left'
+    return 'board-tilt-right'
   }
   else if (props.my_camp == 0) {
-    return 'board-tilt-right'
+    return 'board-tilt-left'
   }
   else {
     return 'board'
@@ -125,13 +125,13 @@ const camp_2_style = computed(() => {
 });
 const camp_0_style = computed(() => {
   if (props.my_camp == 1) {
-    return 'board-tilt-right'
+    return 'board-tilt-left'
   }
   else if (props.my_camp == 0) {
     return 'board'
   }
   else {
-    return 'board-tilt-left'
+    return 'board-tilt-right'
   }
 });
 const action = (position) => {
@@ -193,30 +193,29 @@ const initMap = (game_info) => {
   camp.value = game_info.turn
   // 设置活着的玩家
   changeLives(game_info.lives)
-  console.log("111111111111")
+  // console.log("111111111111")
   initChess(game_info)
   for (const [k, camp] of Object.entries(camps)) {
     camp.get().forEach((chess) => {
-      const element = GEBI(`${chess.position}`);
-      element.innerText = chess.name;
+      GEBI(`${chess.position}`).innerText = chess.name;
       switch (chess.camp) {
         case 0:
-          element.classList.add('camp0');
-          chess.image = "@/assets/images/game/chess/realChess/" + chess.name + "白.png";
+          GEBI(`${chess.position}`).classList.add('camp0');
+          chess.image = "src/assets/images/game/chess/realChess/" + chess.name + "白.png";
           break;
 
         case 1:
-          element.classList.add('camp1');
-          chess.image = "@/assets/images/game/chess/realChess/" + chess.name + "黑.png";
+          GEBI(`${chess.position}`).classList.add('camp1');
+          chess.image = "src/assets/images/game/chess/realChess/" + chess.name + "黑.png";
           break;
         case 2:
-          element.classList.add('camp2');
-          chess.image = "@/assets/images/game/chess/realChess/" + chess.name + "金.png";
+          GEBI(`${chess.position}`).classList.add('camp2');
+          chess.image = "src/assets/images/game/chess/realChess/" + chess.name + "金.png";
           break;
       }
-
-      element.classList.add('chess-background');  // 添加自定义class
-      element.style.background = `url(${chess.image}) center center / contain no-repeat`;
+      GEBI(`${chess.position}`).classList.add('chess-background');  // 添加自定义class
+      GEBI(`${chess.position}`).style.background = `url(${chess.image}) center center / contain no-repeat`;
+      GEBI(`${chess.position}`).style.backgroundSize = '53px'; // 将背景图片大小设置为 53px，宽度和高度均为 53px
       // element.style.backgroundImage = `url(${chess.image})`;  // 设置背景图片
       console.log(chess.image);
       map.set(chess.position, chess);
@@ -362,7 +361,7 @@ defineExpose({
 .chess {
   //color: wheat;
   color: transparent;
-
+  //background-image: url("@/assets/images/game/chess/realChess/车白.png");
   // 文本不可选中
   user-select: none;
   display: flex;
@@ -417,8 +416,7 @@ defineExpose({
 .block {
   width: 50px;
   height: 50px;
-  border: 1px solid skyblue;
-
+  border: 1px transparent;
   &:hover {
     background-color: skyblue;
   }
