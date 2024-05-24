@@ -40,7 +40,6 @@ export class Warhosre extends Chess {
             // 否则返回p1 p2
             else p.push(p1, p2);
         }
-
         // down 加上蹩马腿判断
         // 本棋盘
         if (getRow(this.position) >= 3 + ROW - ROWBOT && !this.haveChess(this.position - COL)) {
@@ -61,7 +60,6 @@ export class Warhosre extends Chess {
             let p2 = 0;
             let p3 = 0;
             let p4 = 0;
-
             switch (ROW){
                 case ROWBOT:
                     p1 = (2 - (getRow(this.position) - (ROW - ROWBOT))) * COL + 1 + COL - getCol(this.position) + 1 + ROWBOT * COL;
@@ -164,7 +162,6 @@ export class Warhosre extends Chess {
                     break;
             }
         }
-
         // left 加上蹩马腿判断
         if (getCol(this.position) >= 3 && !this.haveChess(this.position - 1)) {
             // 移动
@@ -207,8 +204,6 @@ export class Warhosre extends Chess {
                 }
             }
         }
-
-
         // right 加上蹩马腿判断
         if (getCol(this.position) <= COL - 3 && !this.haveChess(this.position + 1)) {
             // 移动

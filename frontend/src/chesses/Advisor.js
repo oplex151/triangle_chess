@@ -5,7 +5,7 @@ import { Chess } from "./Chess";
 export class Advisor extends Chess {
     constructor(position, camp,inWhichArea) {
         super(position, camp,inWhichArea);
-        this.name = "士";
+        this.name = "仕";
     }
 
     canMove() {

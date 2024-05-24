@@ -11,7 +11,7 @@ import { Advisor } from "@/chesses/Advisor";
 import { Leader } from "@/chesses/Leader";
 
 
-// 保存一些必要的资料 new 棋子(位置,阵营)
+// 保存一些必要的资料 new realChess(位置,阵营)
 export var camps = {}
 // export var camps = {
 //     Acamp: new Camp([

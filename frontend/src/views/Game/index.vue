@@ -16,6 +16,7 @@ import { lives } from '@/chesses/Live';
 import Report from '@/components/views/Report.vue'
 import Avatar from '@/components/views/Avatar.vue'
 let my_camp = Cookies.get('camp')
+
 const userid = Cookies.get('userid')
 const { proxy } = getCurrentInstance()
 const board = ref(null)
@@ -235,6 +236,7 @@ const camp_0_style = computed(() => {
 
 <template>
   <div class="background-image"></div>
+  <div class="chessboard-overlay"></div>
   <div>
     <button class="surrender-button" @click="requestSurrender">投降</button>
   </div>
@@ -273,8 +275,6 @@ const camp_0_style = computed(() => {
     <Board ref="board" :my_camp ="my_camp" @requireMove="Move" />
     <Report :toreportid=to_report_id :myuserid="userid" :dialogFormVisible=vis @reportEnd="handleReportEnd" />
 
-
-
 </template>
 
 
@@ -289,6 +289,18 @@ const camp_0_style = computed(() => {
   background-size: cover;
   z-index: -1;
 }
+
+.chessboard-overlay {
+  position: absolute;
+  top: 35px;
+  left: -42px;
+  width: 1280 * 1.01px;
+  height: 800 * 1.01px;
+  background-image: url('@/assets/images/game/chessBoard.jpg');
+  background-size: cover;
+  opacity: 1.0; /* Adjust opacity as needed */
+}
+
 .board{
   position: absolute;
   top: 700px;

@@ -9,6 +9,7 @@ export class Chess {
         this.position = position;
         this.camp = camp;
         this.inWhichArea = inWhichArea;
+        this.image = "";
     }
 
     move(to) {

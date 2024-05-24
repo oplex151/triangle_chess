@@ -27,6 +27,63 @@ const my_camp_str = ['红方', '黑方', '金方']
 
 const props = defineProps(['my_camp'])
 const emit = defineEmits(['requireMove'])
+const backgroundImageUrls = ref([]);
+
+const chessPoints = [
+  [{ x: 0, y: 0 }, { x: 37, y: 4 }, { x: 77, y: 3 }, { x: 111, y: -1 }, { x: 150, y: -1 }, { x: 183, y: -1 }, { x: 222, y: -1 }, { x: 261, y: 2 }, { x: 299, y: 1 }],
+  [{ x: -13, y: -30 }, { x: 24, y: -35 }, { x: 64, y: -43 }, { x: 108, y: -47 }, { x: 150, y: -55 }, { x: 192, y: -47 }, { x: 235, y: -41 }, { x: 276, y: -34 }, { x: 316, y: -30 }],
+  [{ x: -34, y: -59 }, { x: 12, y: -71 }, { x: 59, y: -83 }, { x: 105, y: -98 }, { x: 150, y: -109 }, { x: 197, y: -97 }, { x: 244, y: -84 }, { x: 288, y: -74 }, { x: 335, y: -59 }],
+  [{ x: -51, y: -89 }, { x: -1, y: -108 }, { x: 50, y: -126 }, { x: 100, y: -146 }, { x: 150, y: -163 }, { x: 201, y: -144 }, { x: 252, y: -127 }, { x: 301, y: -106 }, { x: 351, y: -90 }],
+  [{ x: -68, y: -119 }, { x: -14, y: -143 }, { x: 41, y: -169 }, { x: 96, y: -194 }, { x: 150, y: -218 }, { x: 206, y: -194 }, { x: 263, y: -169 }, { x: 317, y: -144 }, { x: 370, y: -121 }]
+];
+
+function mapChessToPoint(row, col) {
+  // Check if row and col are within bounds
+  if (row >= 1 && row <= chessPoints.length && col >= 1 && col <= chessPoints[0].length) {
+    const x = chessPoints[row - 1][col- 1].x;
+    const y = chessPoints[row- 1][col- 1].y;
+    return { top: y, left: x };
+  } else {
+    // Handle out of bounds error
+    console.error('Row or column out of bounds:', row, col);
+    return { top: 0, left: 0 }; // Return default values or handle error as needed
+  }
+}
+
+// function getChessImage(chess){
+//   let temp = '';
+//   if(!chess){
+//     console.log("格子");
+//     return "";
+//   }
+//   else{
+//     switch (chess.name){
+//       case "红方":
+//         temp = "红";
+//         break;
+//       case "金方":
+//         temp = "金";
+//         break;
+//       case "黑方":
+//         temp = "黑";
+//         break;
+//       default:
+//         break;
+//     }
+//     console.log("棋子为："+chess.name);
+//     return "@/assets/images/game/chess/realChess/"+chess.name+temp+".png";
+//   }
+// }
+
+// function getChessInfo(position) {
+//   console.log("getChessInfo执行开始")
+//   const chess = map.get(position);
+//   if(chess){
+//     console.log("当前棋子的位置是:"+position + ",内容是:" + chess.name);
+//   }
+//   console.log("getChessInfo执行结束")
+//   return chess ? chess : "";
+// }
 
 // 定义父组件可以调用的函数（这里只有defineExpose）
 function moveSuccess(data) {
@@ -49,18 +106,18 @@ const camp_1_style = computed(() => {
     return 'board'
   }
   else if (props.my_camp == 0) {
-    return 'board-tilt-right'
+    return 'board-tilt-left'
   }
   else {
-    return 'board-tilt-left'
+    return 'board-tilt-right'
   }
 });
 const camp_2_style = computed(() => {
   if (props.my_camp == 1) {
-    return 'board-tilt-right'
+    return 'board-tilt-left'
   }
   else if (props.my_camp == 0) {
-    return 'board-tilt-left'
+    return 'board-tilt-right'
   }
   else {
     return 'board'
@@ -68,13 +125,13 @@ const camp_2_style = computed(() => {
 });
 const camp_0_style = computed(() => {
   if (props.my_camp == 1) {
-    return 'board-tilt-left'
+    return 'board-tilt-right'
   }
   else if (props.my_camp == 0) {
     return 'board'
   }
   else {
-    return 'board-tilt-right'
+    return 'board-tilt-left'
   }
 });
 const action = (position) => {
@@ -131,6 +188,7 @@ const moveChess = (chess, to) => {
   return true;
 };
 const initMap = (game_info) => {
+  console.log("initMap执行开始")
   // 设置轮到谁走
   camp.value = game_info.turn
   // 设置活着的玩家
@@ -139,22 +197,33 @@ const initMap = (game_info) => {
   initChess(game_info)
   for (const [k, camp] of Object.entries(camps)) {
     camp.get().forEach((chess) => {
-      GEBI(`${chess.position}`).innerText = chess.name;
-
+      const element = GEBI(`${chess.position}`);
+      element.innerText = chess.name;
       switch (chess.camp) {
         case 0:
-          GEBI(`${chess.position}`).classList.add('camp0');
+          element.classList.add('camp0');
+          chess.image = "@/assets/images/game/chess/realChess/" + chess.name + "白.png";
           break;
+
         case 1:
-          GEBI(`${chess.position}`).classList.add('camp1');
+          element.classList.add('camp1');
+          chess.image = "@/assets/images/game/chess/realChess/" + chess.name + "黑.png";
           break;
         case 2:
-          GEBI(`${chess.position}`).classList.add('camp2');
+          element.classList.add('camp2');
+          chess.image = "@/assets/images/game/chess/realChess/" + chess.name + "金.png";
           break;
       }
+
+      element.classList.add('chess-background');  // 添加自定义class
+      element.style.background = `url(${chess.image}) center center / contain no-repeat`;
+      // element.style.backgroundImage = `url(${chess.image})`;  // 设置背景图片
+      console.log(chess.image);
       map.set(chess.position, chess);
     });
   }
+  console.log("initMap执行结束")
+
 };
 
 const hover = (position) => {
@@ -200,41 +269,33 @@ defineExpose({
 <template>
   <div class="Game">
     <div class="camp">
-      目前行动:{{ camp == 1 ? '黑方' : (camp == 0 ? '红方' : '金方') }}
-      我的阵营:{{ props.my_camp >= 0 ? my_camp_str[props.my_camp] : '未知' }}
+      目前行动: {{ camp == 1 ? '黑方' : (camp == 0 ? '红方' : '金方') }}
+      我的阵营: {{ props.my_camp >= 0 ? my_camp_str[props.my_camp] : '未知' }}
     </div>
     <!--2号-->
-
     <div :class="camp_2_style">
-      <!-- 遍历成棋盘 -->
-      <!-- 渲染所要的行数 -->
-
       <div v-for="(row, index) in ROWTOP" :key="row" class="row">
-        <!-- 渲染所要的列数 -->
         <div class="block chess" :id="getid(index, i) + ''" v-for="(col, i) in COL" :key="col"
-          @mouseover="hover(getid(index, i))" @mouseout="out(getid(index, i))" @click="action(getid(index, i))"
-          v-if="index <= 4">
+             @mouseover="hover(getid(index, i))" @mouseout="out(getid(index, i))" @click="action(getid(index, i))"
+             v-if="index <= 4" :style="{ top: mapChessToPoint(row, col).top + 'px', left: mapChessToPoint(row, col).left + 'px'}">
         </div>
       </div>
     </div>
 
     <div :class="camp_1_style">
       <div v-for="(row, index) in ROWTOP" :key="row" class="row">
-        <!-- 渲染所要的列数 -->
         <div class="block chess" :id="getid(index, i) + ''" v-for="(col, i) in COL" :key="col"
-          @mouseover="hover(getid(index, i))" @mouseout="out(getid(index, i))" @click="action(getid(index, i))"
-          v-if="index > 4 && index <= 9">
+             @mouseover="hover(getid(index, i))" @mouseout="out(getid(index, i))" @click="action(getid(index, i))"
+             v-if="index > 4 && index <= 9" :style="{ top: mapChessToPoint(row - 5, col).top + 'px', left: mapChessToPoint(row - 5, col).left + 'px' }">
         </div>
       </div>
     </div>
 
     <div :class="camp_0_style">
-
       <div v-for="(row, index) in ROWTOP" :key="row" class="row">
-        <!-- 渲染所要的列数 -->
         <div class="block chess" :id="getid(index, i) + ''" v-for="(col, i) in COL" :key="col"
-          @mouseover="hover(getid(index, i))" @mouseout="out(getid(index, i))" @click="action(getid(index, i))"
-          v-if="index > 9 && index <= 14">
+             @mouseover="hover(getid(index, i))" @mouseout="out(getid(index, i))" @click="action(getid(index, i))"
+             v-if="index > 9 && index <= 14" :style="{ top: mapChessToPoint(row - 10 , col).top + 'px', left: mapChessToPoint(row - 10, col).left + 'px'}">
         </div>
       </div>
     </div>
@@ -245,6 +306,13 @@ defineExpose({
 <style scoped lang="scss">
 // 样式说明：挂载的时候，如果这个元素挂载到0,0处，那么left 540px, top 400px对应棋盘中央
 // 换句话说棋盘大小是1080*800 px
+
+.chess-background {
+  opacity: 1.0; /* Adjust opacity as needed */
+  background-size: cover;  // 确保背景图片覆盖整个元素
+  background-repeat: no-repeat;  // 防止背景图片重复
+}
+
 .camp {
   position: absolute;
   top: 0;
@@ -255,17 +323,17 @@ defineExpose({
 
 // 红方阵营
 .camp0 {
-  background-color: #ec7357 !important;
+  //background-color: transparent !important;
 }
 
 // 黑方阵营
 .camp1 {
-  background-color: #383a3f !important;
+  //background-color: transparent !important;
 }
 
 // 金方阵营
 .camp2 {
-  background-color: #999900 !important;
+  //background-color: transparent !important;
 }
 
 
@@ -292,7 +360,9 @@ defineExpose({
 }
 
 .chess {
-  color: wheat;
+  //color: wheat;
+  color: transparent;
+
   // 文本不可选中
   user-select: none;
   display: flex;
@@ -304,6 +374,8 @@ defineExpose({
   border-width: 4px;
   border-color: white;
   border-style: inset;
+  background-size: contain; // Ensure the chess piece image fits within the block
+  background-repeat: no-repeat; // Prevent the image from repeating
 }
 
 .chess_hover {
@@ -350,6 +422,8 @@ defineExpose({
   &:hover {
     background-color: skyblue;
   }
+
+  position: absolute;
 }
 
 .row {
@@ -368,9 +442,9 @@ defineExpose({
 
 .board {
   position: absolute;
-  top: 900px;
-  left: 800px;
-  transform: translate(-50%, -50%) rotate(180deg);
+  top: 685px;
+  left: 466px;
+  transform: translate(-50%, -50%) rotate(0deg);
   transform-origin: top left;
   //width: 100vh; /* 设置宽度为视口高度，确保棋盘在旋转时不会溢出 */
   //height: 100vh; /* 设置高度为视口高度，确保棋盘在旋转时不会溢出 */
@@ -389,9 +463,9 @@ defineExpose({
 // = 1
 .board-tilt-left {
   position: absolute;
-  top: 368px;
-  left: 492px;
-  transform: translate(-50%, -50%) rotate(-60deg);
+  top: 178px;
+  left: 525px;
+  transform: translate(-50%, -50%) rotate(120deg);
   transform-origin: top left;
   //width: 100vh; /* 设置宽度为视口高度，确保棋盘在旋转时不会溢出 */
   //height: 100vh; /* 设置高度为视口高度，确保棋盘在旋转时不会溢出 */
@@ -402,9 +476,9 @@ defineExpose({
 
 .board-tilt-right {
   position: absolute;
-  top: 368px;
-  left: 1105px;
-  transform: translate(-50%, -50%) rotate(60deg);
+  top: 482px;
+  left: 933px;
+  transform: translate(-50%, -50%) rotate(-120deg);
   transform-origin: top left;
   //width: 100vh; /* 设置宽度为视口高度，确保棋盘在旋转时不会溢出 */
   //height: 100vh; /* 设置高度为视口高度，确保棋盘在旋转时不会溢出 */
