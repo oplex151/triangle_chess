@@ -16,7 +16,6 @@ from flask import request
 from backend.global_var import *
 from backend.tools import setupLogger, getParams
 from backend.user_manage import *
-from backend.user_manage.rank import *
 from backend.game.exception import *
 from backend.game.record import *
 from message import *
@@ -441,12 +440,17 @@ def roomOver(game:GameTable, room:RoomManager, userid:int):
     elif room.room_type == RoomType.ranked: 
         room_type = 2
     # 游戏结束，判断胜利者或平局
+    if room_type == 2:
+        endRankGame(game)
     if game.game_state == EnumGameState.win:
         # 记录结束时间
         game.record.end_time = datetime.datetime.now()
         # 通知所有玩家游戏结束并告知胜利者
         logger.info(f"Game {game.game_id} end, winner is {sessions[userid] if userid in sessions else 'None'}")
+        print(game.record.end_time)
+        print(game.record.start_time)
         match_duration = (game.record.end_time - game.record.start_time)
+        print(f"对局时长为：{match_duration}")
         emit('gameEnd', {'status': GAME_END, 'room_type':room_type,"step_count":game.step_count,"match_duration": match_duration.total_seconds(),'winner': userid, 'winner_name': sessions[userid]}, to=room.room_id)
         # 结束记录
         game.record.recordEnd(userid)
@@ -460,10 +464,6 @@ def roomOver(game:GameTable, room:RoomManager, userid:int):
         emit('gameEnd', {'status': GAME_END, 'room_type':room_type,"step_count":game.step_count,"match_duration": match_duration,'winner': -1, 'winner_name': None}, to=room.room_id)
         # 结束记录
         game.record.recordEnd(None)
-
-    # 如果是排位则结算积分
-    if room.room_type == RoomType.ranked: 
-        endRankGame(game)
 
     room.removeGameTable()
     if room.room_type == RoomType.matched:
@@ -671,10 +671,10 @@ def cycleRank(app):
     global rooms, rank_queue, sessions
     with app.app_context():
         while True:
-            # def isEligible(user1, user2):
-            #     rank_diff = abs(user1[1] - user2[1])
-            #     score_diff = abs(user1[2] - user2[2])
-            #     return rank_diff <= 1 and score_diff <= 100  # 假设允许的最大段位差和积分差
+            def is_eligible(user1, user2):
+                rank_diff = abs(user1[1] - user2[1])
+                points_diff = abs(user1[2] - user2[2])
+                return rank_diff <= 1 and points_diff <= 100  # 假设允许的最大段位差和积分差
 
             if rank_queue.qsize() >= 3:
                 user_list = []
@@ -685,7 +685,7 @@ def cycleRank(app):
                 # 将段位符合的[user1，user2]组加入到eligible_users中
                 for i, user1 in enumerate(user_list):
                     for j, user2 in enumerate(user_list[i+1:], start=i+1):
-                        if user1 != user2 and isEligible(user1, user2):
+                        if user1 != user2 and is_eligible(user1, user2):
                             eligible_users.append([user1, user2])
 
                 # 再遍历user_list，将各个user与eligible_users中的各组中的两个user分别进行比对
@@ -693,7 +693,7 @@ def cycleRank(app):
                 matched_users = None
                 for [user1, user2] in eligible_users:
                     for user in user_list:
-                        if user != user1 and user != user2 and isEligible(user, user1) and isEligible(user, user2):
+                        if user != user1 and user != user2 and is_eligible(user, user1) and is_eligible(user, user2):
                             matched_users = (user1, user2, user)
                             break
                     if matched_users is not None:
@@ -714,17 +714,18 @@ def cycleRank(app):
                         for user in room.users:
                             join_room(room=room.room_id, sid=uid2sid(user['userid']),namespace='/')
                         logger.info(f"Create room : {room.room_id} and game: {room.game_table.game_id}")
-                        # 通知房间所有人匹配到了，并展示各玩家段位和积分
+                        # 通知房间所有人匹配到了
                         emit('startRankSuccess',{'game_id':room.game_table.game_id,
-                                            'room_info':room.getRoomInfo(),
-                                            'ranks': [user0[1], user1[1], user2[1]],
-                                            'scores': [user0[2], user1[2], user2[2]]},
+                                            'room_info':room.getRoomInfo()},
                                             to=room.room_id,namespace='/')
                     except Exception as e:
                         logger.error("Create rank_game error due to {0}".format(str(e)), exc_info=True)
                         for user in [user0,user1,user2]:
                             if user and user in sessions:
                                 rank_queue.put(user)
+                        # if room and room in rooms:
+                        #     rooms.remove(room)
+
 
                 else:
                     # 重新将所有用户放回队列
@@ -753,7 +754,7 @@ def startMatch(data):
     logger.info(f"User {userid} join match queue: sid {request.sid}")
 
 @socketio.event
-def startRank(data):
+def startRankedMatch(data):
     """
     接收玩家开始排位匹配请求
     Args:
@@ -772,10 +773,10 @@ def startRank(data):
     if not result:
         emit('processWrong', {'status': OTHER_ERROR}, to=request.sid)
         return
-
-    user_rank, user_score = result
+    
+    user_rank, user_points = result
     sid2uid[request.sid] = userid # 维护sid2uid映射
-    rank_queue.put((userid, user_rank, user_score))
+    rank_queue.put((userid, user_rank, user_points))
     logger.info(f"User {userid} join rank queue: sid {request.sid}")
 
 @socketio.event

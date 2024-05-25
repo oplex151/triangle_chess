@@ -24,7 +24,7 @@ rankscore = 100
 
 def viewUserRank(userid:int):
     try:
-        select_query = "SELECT rank, score FROM {0} WHERE userId = {1};".format(USER_TABLE, userid)
+        select_query = "SELECT `rank`, score FROM {0} WHERE userId = {1};".format(USER_TABLE, userid)
         cursor.execute(select_query)
         result = cursor.fetchone()
         if result is None:
@@ -134,7 +134,7 @@ def calculateNewScore(player_score, opponent_scores, result, player_performance)
 def updateUserRank(userid, rank, score):
     # 实现将新段位积分更新到数据库中
     try:
-        update_query = "UPDATE {0} SET rank = {1}, score = {2} WHERE userid = {3}".format(USER_TABLE, rank, score, userid)
+        update_query = "UPDATE {0} SET `rank` = {1}, score = {2} WHERE userid = {3}".format(USER_TABLE, rank, score, userid)
         cursor.execute(update_query)
         return True
     except Exception as e:
