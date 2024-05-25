@@ -188,9 +188,12 @@ function createGame() {
     })
 }
 function goBackHome(){
-  if (Cookies.get('room_id')){
-    leaveRoom()
-  }
+  // if (Cookies.get('room_id')){
+  //   leaveRoom()
+  // }
+  // 不知道到底需不需要离开房间
+  
+  
   removeSockets(sockets_methods, socket.value, proxy)
   Cookies.remove('room_id')
   Cookies.remove('room_info')
