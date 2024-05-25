@@ -20,7 +20,7 @@ logger = setupLogger()
 def login(username, password):
     global sessions
     try:
-        select_query = "SELECT userPassword, userId FROM {0} WHERE UserName = {1};".format(USER_TABLE,"'"+username+"'")
+        select_query = "SELECT userPassword, userId FROM {0} WHERE userName = {1};".format(USER_TABLE,"'"+username+"'")
         cursor.execute(select_query)
         result = cursor.fetchone()
         if result is not None and result[0] == password:

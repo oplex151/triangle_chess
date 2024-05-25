@@ -70,7 +70,7 @@ def getFriendsInfo(user_id):
             return "{}",NO_FRIENDS
         friends_info = []
         for friend_id in firends:
-            sql =(f"SELECT username FROM {USER_TABLE} WHERE userId = {friend_id}") # sql可以优化
+            sql =(f"SELECT userName FROM {USER_TABLE} WHERE userId = {friend_id}") # sql可以优化
             cursor.execute(sql)
             result = cursor.fetchone()
             if result:

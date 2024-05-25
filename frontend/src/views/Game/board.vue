@@ -29,6 +29,7 @@ const props = defineProps(['my_camp'])
 const emit = defineEmits(['requireMove'])
 const backgroundImageUrls = ref([]);
 
+//核心财产
 const chessPoints = [
   [{ x: 0, y: 0 }, { x: 37, y: 4 }, { x: 77, y: 3 }, { x: 111, y: -1 }, { x: 150, y: -1 }, { x: 183, y: -1 }, { x: 222, y: -1 }, { x: 261, y: 2 }, { x: 299, y: 1 }],
   [{ x: -13, y: -30 }, { x: 24, y: -35 }, { x: 64, y: -43 }, { x: 108, y: -47 }, { x: 150, y: -55 }, { x: 192, y: -47 }, { x: 235, y: -41 }, { x: 276, y: -34 }, { x: 316, y: -30 }],
@@ -49,41 +50,6 @@ function mapChessToPoint(row, col) {
     return { top: 0, left: 0 }; // Return default values or handle error as needed
   }
 }
-
-// function getChessImage(chess){
-//   let temp = '';
-//   if(!chess){
-//     console.log("格子");
-//     return "";
-//   }
-//   else{
-//     switch (chess.name){
-//       case "红方":
-//         temp = "红";
-//         break;
-//       case "金方":
-//         temp = "金";
-//         break;
-//       case "黑方":
-//         temp = "黑";
-//         break;
-//       default:
-//         break;
-//     }
-//     console.log("棋子为："+chess.name);
-//     return "@/assets/images/game/chess/realChess/"+chess.name+temp+".png";
-//   }
-// }
-
-// function getChessInfo(position) {
-//   console.log("getChessInfo执行开始")
-//   const chess = map.get(position);
-//   if(chess){
-//     console.log("当前棋子的位置是:"+position + ",内容是:" + chess.name);
-//   }
-//   console.log("getChessInfo执行结束")
-//   return chess ? chess : "";
-// }
 
 // 定义父组件可以调用的函数（这里只有defineExpose）
 function moveSuccess(data) {
