@@ -30,15 +30,17 @@ const map_state = ref(game_info)
 
 let status1 = ''
 
-const usernames = computed(() => {
+const userids = computed(() => {
     let names = []
     for (let i = 0; i < 3; i++) {
-        names.push(options.value[value.value]['p' + (i + 1)])
+        names.push(value.value['p' + (i + 1)])
     }
     return names
 
 })
-
+const name = computed(()=>{
+    return userids.value
+})
 const EndGo = () => {
     start.value = false
     moves.value = []
@@ -114,8 +116,9 @@ onUnmounted(() => {
 });
 const Get = ref(() => {
     console.log(value.value)
-    my_camp.value = getCamp(options.value[value.value])
-    socket.value.io.emit('viewMoveRecords', { 'record_id': value.value })
+    my_camp.value = getCamp(value.value)
+    console.log(value.value['recordId'])
+    socket.value.io.emit('viewMoveRecords', { 'record_id': value.value['recordId'] })
 })
 
 const Move = (data) => {
@@ -203,35 +206,35 @@ const camp_0_style = computed(() => {
     <div v-if="start">
         <button @click="EndGo" class="end_button">结束回放</button>
         <div class="brd">
-            <Board :my_camp="my_camp" ref="board" :usernames="usernames" @requireMove="Move" />
+            <Board :my_camp="my_camp" ref="board" @requireMove="Move" />
             <button @click="Next" class="next_button">下一步</button>
         </div>
         <div class="avatar">
             <!---------0号位---------->
-            <Avatar :my_camp="my_camp" :userid=1 @reportUser="handleReport" class="camp_0_style">
+            <Avatar :my_userid="userid" :userid="userids[0]" @reportUser="handleReport" :class="camp_0_style">
                 <template #name>
-                    <p>{{ name }}</p>
+                    <p>{{ name[0] }}</p>
                 </template>
                 <template #avatar>
-                    {{ name }}
+                    {{ name[0] }}
                 </template>
             </Avatar>
             <!---------1号位---------->
-            <Avatar :my_camp="my_camp" :userid=1 @reportUser="handleReport" class="camp_1_style">
+            <Avatar :my_userid="userid" :userid="userids[1]" @reportUser="handleReport" :class="camp_1_style">
                 <template #name>
-                    <p>{{ name }}</p>
+                    <p>{{ name[1] }}</p>
                 </template>
                 <template #avatar>
-                    {{ name }}
+                    {{ name[1] }}
                 </template>
             </Avatar>
             <!---------2号位---------->
-            <Avatar :my_camp="my_camp" :userid=1 @reportUser="handleReport" class="camp_2_style">
+            <Avatar :my_userid="userid" :userid="userids[2]"  @reportUser="handleReport" :class="camp_2_style">
                 <template #name>
-                    <p>{{ name }}</p>
+                    <p>{{ name[2] }}</p>
                 </template>
                 <template #avatar>
-                    {{ name }}
+                    {{ name[2] }}
                 </template>
             </Avatar>
         </div>
@@ -240,7 +243,7 @@ const camp_0_style = computed(() => {
         <div class="select_btn">
             <el-select v-model="value" filterable placeholder="请输入对局" :loading="loading" popper-class="select_down"
                 style="width: 240px">
-                <el-option v-for="item in options" :label="item.startTime" :key="item.recordId" :value="item.recordId">
+                <el-option v-for="item in options" :label="item.startTime" :key="item.recordId" :value="item">
                 </el-option>
             </el-select>
         </div>

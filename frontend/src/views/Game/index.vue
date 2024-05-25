@@ -15,6 +15,7 @@ import { lives } from '@/chesses/Live';
 
 import Report from '@/components/views/Report.vue'
 import Avatar from '@/components/views/Avatar.vue'
+import Messager from '@/components/views/Messager.vue';
 let my_camp = Cookies.get('camp')
 
 const userid = Cookies.get('userid')
@@ -28,6 +29,27 @@ const vis = ref(false)
 const to_report_id = ref(-1)
 const room_info = JSON.parse(Cookies.get('room_info'))
 
+const o_message = ref([])
+const i_message = ref('')
+const my_name = computed(() => {
+  if (room_info.value) {
+    for (let user of room_info.value.users) {
+      if (user.userid == Cookies.get('userid')) {
+        return user.username
+      }
+    }
+  }
+  return ''
+})
+const sendMessage = (message) => {
+  console.log(message)
+  socket.value.io.emit('sendMessage', {
+    'userid': userid,
+    'message': i_message.value
+  }
+  )
+  o_message.value.push({ 'user': my_name, 'message': i_message.value })
+}
 onMounted(() => {
   if (!Cookies.get('camp')) {
     router.replace('/room')
@@ -83,6 +105,10 @@ const sockets_methods = {
     else {
       ElMessage.success('玩家' + data.username + '加入房间')
     }
+  },
+  receiveMessage(data){
+    if(data.username!=userid)
+      o_message.value.push({ 'user': data.username, 'message': data.message })
   },
   leaveRoomSuccess(data) {
     if (data.userid == Cookies.get('userid')) {
@@ -235,6 +261,8 @@ const camp_0_style = computed(() => {
 </script>
 
 <template>
+  <Messager :o_message="o_message" v-model:i_message="i_message" @sendMessage="sendMessage" class="messager"/>
+
   <div class="background-image"></div>
   <div class="chessboard-overlay"></div>
   <div>
@@ -274,7 +302,6 @@ const camp_0_style = computed(() => {
     </div>
     <Board ref="board" :my_camp ="my_camp" @requireMove="Move" />
     <Report :toreportid=to_report_id :myuserid="userid" :dialogFormVisible=vis @reportEnd="handleReportEnd" />
-
 </template>
 
 
@@ -299,14 +326,14 @@ const camp_0_style = computed(() => {
   background-image: url('@/assets/images/game/chessBoard.jpg');
   background-size: cover;
   opacity: 1.0; /* Adjust opacity as needed */
-  z-index: 0;
+  z-index: -1;
 }
 
 .board{
   position: absolute;
   top: 700px;
   left: 950px;
-
+  z-index: 1;
 }
 .board-tilt-right{
   position: absolute;
@@ -334,6 +361,7 @@ const camp_0_style = computed(() => {
   cursor: pointer;
   border-radius: 8px;
   box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+  z-index: 99;
   /* Add shadows */
 }
 
@@ -342,5 +370,18 @@ const camp_0_style = computed(() => {
   color: white;
   box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2), 0 12px 40px 0 rgba(0, 0, 0, 0.19);
   /* Add more shadows */
+}
+.messager{
+  position:absolute;
+  top:200px;
+  left:1000px;
+  max-width: 18%;
+  z-index: 1;
+  --text-width:190px;
+  --text-padding-right:10px;
+  --message-height:500px;
+  --message-width:10px;
+  --message-margin-bottom: 10px;
+  // 卧槽原来是这么实现的吗，太逆天了
 }
 </style>

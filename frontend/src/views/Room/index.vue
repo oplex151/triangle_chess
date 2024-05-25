@@ -142,7 +142,7 @@ const sockets_methods = {
     removeSockets(sockets_methods, socket.value, proxy)
     router.replace('/game')
   },
-  sendMessageSuccess(data){
+  receiveMessage(data){
     if(data.username!=my_name.value)
       o_message.value.push({ 'user': data.username, 'message': data.message })
   },
@@ -265,14 +265,13 @@ const handleReport = (id) => {
       </button>
     </div>
 
-
-
     <div class="join-room">
       <input 
       class = "input-join"
       v-if="!room_id" 
       v-model="new_room_id" 
-      placeholder="输入房间号"/>
+      placeholder="输入房间号"
+      />
       <button class="button-join" v-if="!room_id"  @click="joinRoom()">
         加入房间
       </button>
@@ -314,7 +313,7 @@ const handleReport = (id) => {
             {{item.user}} - {{ item.message }}
           </li>
         </div>
-          <el-input class="custom-input" v-model="i_message" maxlength=80 show-word-limit placeholder="Please input" />
+          <el-input class="custom-input" v-model="i_message" maxlength=80 show-word-limit @keyup.enter.native="sendMessage" placeholder="Please input" />
           <el-button @click="sendMessage" style="width:60px" type="primary">发送消息</el-button>
       </div>
       </div>

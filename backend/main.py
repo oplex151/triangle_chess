@@ -137,6 +137,22 @@ def deleteFriendApi():
         return "{message: 'parameter error'}",PARAM_ERROR
     return deleteFriend(userid, friend_id)
 
+@app.route('/api/getRankScore',methods=['POST'])
+def getRankScoreApi():
+    '''
+    Args:
+        userid: 用户id
+    Returns:
+        用户的段位和积分
+    '''
+    params = {'userid':int}
+    try:
+        userid = getParams(params,request.form)
+    except:
+        return "{message: 'parameter error'}",PARAM_ERROR
+    return getRankScore(userid)
+    
+
 @socketio.on('connect')
 def connect():
     '''
@@ -440,6 +456,7 @@ def roomOver(game:GameTable, room:RoomManager, userid:int):
     elif room.room_type == RoomType.ranked: 
         room_type = 2
     # 游戏结束，判断胜利者或平局
+    logger.debug("game end")
     if room_type == 2:
         endRankGame(game)
     if game.game_state == EnumGameState.win:
@@ -825,7 +842,25 @@ def viewMoveRecords(data):
         logger.error(e)
         return
 
+@socketio.event
+def sendMessage(data):
+    """_summary_
 
+    Args:
+        data (_type_): _description_
+    """
+    global sessions
+    params = {'message':str,'userid':int}
+    try:
+        message,userid = getParams(params,data)
+    except:
+        emit('processWrong',{'status':PARAM_ERROR},to=request.sid)
+        return
+    room_id = inWhitchRoom(userid,rooms)
+
+    emit('receiveMessage',{'username':sessions[userid],'message':message,'userid':userid},to=room_id,
+            skip_sid=request.sid)
+    
 if __name__ == "__main__":
     threading.Thread(target=cycleMatch,args=[app] ,daemon=True, name='cycleMatch').start()
     threading.Thread(target=cycleRank,args=[app] ,daemon=True, name='cycleRank').start()
