@@ -1,3 +1,4 @@
+from functools import wraps
 import os
 import pymysql
 from dotenv import load_dotenv
@@ -16,24 +17,38 @@ password = os.getenv("MYSQL_PASSWORD")
 db = pymysql.connect(host="127.0.0.1",user="root",password=password,database=DATA_BASE)
 cursor = db.cursor()
 
+def connectDatabase(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        global db, cursor
+        db = pymysql.connect(host="127.0.0.1",user="root",password=password,database=DATA_BASE)
+        cursor = db.cursor()
+        return func(*args, **kwargs)
+    return wrapper
+
 logger = setupLogger()
 
 #100积分晋升一个段位
 #初步设定，假设每个段位相同积分晋升
 rankscore = 100
 
+@connectDatabase
 def viewUserRank(userid:int):
+    result = None
     try:
+        db.begin()
         select_query = "SELECT `rank`, score FROM {0} WHERE userId = {1};".format(USER_TABLE, userid)
         cursor.execute(select_query)
         result = cursor.fetchone()
         if result is None:
             logger.error("User {0} not exists".format(userid))
-            return None
-        return result
     except Exception as e:
         logger.error("User {0} failed to view rank due to\n{1}".format(userid,str(e)))
-        return None
+        result = None
+    finally:
+        cursor.close()
+        db.close()
+    return result
 
 def totalScore(rank, score):
     """
@@ -131,15 +146,25 @@ def calculateNewScore(player_score, opponent_scores, result, player_performance)
     
     return round(new_score)
 
+@connectDatabase
 def updateUserRank(userid, rank, score):
     # 实现将新段位积分更新到数据库中
+    result = False
     try:
+        db.begin()
         update_query = "UPDATE {0} SET `rank` = {1}, score = {2} WHERE userid = {3}".format(USER_TABLE, rank, score, userid)
         cursor.execute(update_query)
-        return True
+        result = True
     except Exception as e:
+        db.rollback()
         print("User {0} Error updating rank due to\n{1}".format(userid,str(e)))
-        return False
+        result = False
+    else:
+        db.commit()
+    finally:
+        cursor.close()
+        db.close()
+    return result
 
 def endRankGame(game:GameTable):
     """
