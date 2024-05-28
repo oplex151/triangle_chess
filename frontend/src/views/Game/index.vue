@@ -12,11 +12,17 @@ import { onMounted, ref, onUnmounted, computed, getCurrentInstance, onBeforeMoun
 import Board from '@/views/Game/board.vue'
 import axios from "axios";
 import { lives } from '@/chesses/Live';
-
+import * as CONST from '@/lib/const.js'
 import Report from '@/components/views/Report.vue'
 import Avatar from '@/components/views/Avatar.vue'
 import Messager from '@/components/views/Messager.vue';
+
+import useClipboard from 'vue-clipboard3';
+
 let my_camp = Cookies.get('camp')
+const { toClipboard } = useClipboard()
+
+
 
 const userid = Cookies.get('userid')
 const { proxy } = getCurrentInstance()
@@ -24,7 +30,7 @@ const board = ref(null)
 const winner_name = ref(null)
 const step_count = ref(null)
 const match_duration = ref(null)
-
+const record_id = ref(null)
 const vis = ref(false)
 const to_report_id = ref(-1)
 const room_info = JSON.parse(Cookies.get('room_info'))
@@ -41,6 +47,26 @@ const my_name = computed(() => {
   }
   return ''
 })
+// const names = computed(() => {
+//   if (room_info.value) {
+//     let names = []
+//     for (let user of room_info.value.users) {
+//       names.push(user.username)
+//     }
+//     return names
+//   }
+//   return []
+// })
+
+const copy = async (anything) => {
+  try {
+    await toClipboard(anything)
+    console.log('Copied to clipboard')
+  } catch (e) {
+    console.error(e)
+  }
+}
+
 const sendMessage = (message) => {
   console.log(message)
   socket.value.io.emit('sendMessage', {
@@ -127,7 +153,7 @@ const sockets_methods = {
     step_count.value = data.step_count;
     winner_name.value = data.winner_name;
     match_duration.value = data.match_duration;
-
+    record_id.value = data.record_id;
     // 从后端接收到了比赛持续时间的整数值
     let matchDurationSeconds = data.match_duration;
 
@@ -140,20 +166,34 @@ const sockets_methods = {
     // 将日期时间格式化为您需要的格式
     let formattedMatchDuration = matchDurationDate.toISOString().substr(11, 8); // 格式化为 HH:mm:ss
 
-    ElMessageBox.alert(
+    ElMessageBox.confirm(
       `游戏总步数：${data.step_count} 游戏赢家：${data.winner_name} 游戏时长：${formattedMatchDuration} `,
       '游戏结算',
       {
-        confirmButtonText: 'OK',
-        callback: (action) => {
-          ElMessage({
-            type: 'info',
-            message: `action: ${action}`,
-          })
-        },
+        cancelButtonText: 'OK',
+        confirmButtonText: 'share'
       }
     )
+    .then((action) => {
+      if (action === 'confirm') {
+          
+          copy(main.self_url + '/publicShare?recordId=' + record_id.value)
+          ElMessage({
+            type: 'info',
+            message: "分享连接已经复制到剪贴板！",
+          })
+        }
+    })
+    .catch((action) => {
+        if (action === 'cancel') {
+            ElMessage({
+              type: 'info',
+              message: `action: ${action}`,
+            })
+          }
 
+        }
+      )
     // 匹配模式退回主页面
     console.log(data.room_type)
     if (data.room_type == 1) {
@@ -200,13 +240,32 @@ const sockets_methods = {
   processWrong(data) {
     let status1 = data.status
     ElMessage.error("Error due to " + status1)
-  },
+    if (status1 == CONST.ROOM_NOT_EXIST) {
+      router.replace('/room')
+    }
+    else if (status1 == CONST.NOT_IN_ROOM) {
+      ElMessage.error('你不在房间中')
+      router.replace('/room')
+    }
+    else if (status1 == CONST.USER_NOT_LOGIN) {
+      ElMessage.error('用户未登录')
+      router.replace('/login')
+    }
+  }
 }
 
 function requestSurrender() {
-  socket.value.io.emit('requestSurrender', {
-    'userid': Cookies.get('userid')
-  })
+  if(Cookies.get('userid') >= 0)
+    if(lives[my_camp])
+      socket.value.io.emit('requestSurrender', {
+        'userid': Cookies.get('userid')
+      })
+    else{
+      ElMessage.error('你已经输了，不能投降')
+    }
+  else{
+    ElMessage.error('你不是本游戏的玩家，不能投降')
+  }
 }
 
 

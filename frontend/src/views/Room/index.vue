@@ -84,12 +84,17 @@ const sockets_methods = {
         break
       case CONST.ROOM_NOT_EXIST:
         ElMessage.error('不存在此房间')
-        if(data.message){
-          ElMessage.error(data.message)
-        }
+        Cookies.remove('room_id')
+        Cookies.remove('room_info')
+        room_id.value = null
+        room_info.value = null
         break
       case CONST.NOT_IN_ROOM:
         ElMessage.error('不在房间中')
+        Cookies.remove('room_id')
+        Cookies.remove('room_info')
+        room_id.value = null
+        room_info.value = null
         break
       case CONST.ROOM_NOT_ENOUGH:
         ElMessage.error('房间人数不足')
@@ -97,7 +102,12 @@ const sockets_methods = {
       case CONST.GAME_CREATE_FAILED:
         ElMessage.error('游戏创建失败:未知错误')
         break
+      case CONST.USER_NOT_LOGIN:
+        ElMessage.error('用户未登录')
+        router.push('/login')
+        break
       default:
+        console.error(data.status)
         ElMessage.error('未知错误')
     }
   },
@@ -171,6 +181,10 @@ function createRoom() {
   socket.value.io.emit('createRoom', { 'userid': Cookies.get('userid') })
 }
 function joinRoom() {
+  if (!new_room_id.value) {
+    ElMessage.error('请输入房间号')
+    return
+  }
   socket.value.io.emit('joinRoom', { 'room_id': new_room_id.value, 'userid': Cookies.get('userid') })
   new_room_id.value = null
 }

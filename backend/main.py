@@ -468,9 +468,9 @@ def roomOver(game:GameTable, room:RoomManager, userid:int):
         print(game.record.start_time)
         match_duration = (game.record.end_time - game.record.start_time)
         print(f"对局时长为：{match_duration}")
-        emit('gameEnd', {'status': GAME_END, 'room_type':room_type,"step_count":game.step_count,"match_duration": match_duration.total_seconds(),'winner': userid, 'winner_name': sessions[userid]}, to=room.room_id)
         # 结束记录
-        game.record.recordEnd(userid)
+        state,record_id = game.record.recordEnd(userid)
+        emit('gameEnd', {'status': GAME_END, 'record_id':record_id, 'room_type':room_type,"step_count":game.step_count,"match_duration": match_duration.total_seconds(),'winner': userid, 'winner_name': sessions[userid]}, to=room.room_id)
 
     elif game.game_state == EnumGameState.draw:
         # 记录结束时间
@@ -478,9 +478,9 @@ def roomOver(game:GameTable, room:RoomManager, userid:int):
         # 通知所有玩家游戏结束为平局
         logger.info(f"Game {game.game_id} end, winner is {sessions[userid] if userid in sessions else 'None'}")
         match_duration = (game.record.end_time - game.record.start_time)
-        emit('gameEnd', {'status': GAME_END, 'room_type':room_type,"step_count":game.step_count,"match_duration": match_duration,'winner': -1, 'winner_name': None}, to=room.room_id)
         # 结束记录
-        game.record.recordEnd(None)
+        state,recordId=game.record.recordEnd(None)
+        emit('gameEnd', {'status': GAME_END, 'recordId':recordId,'room_type':room_type,"step_count":game.step_count,"match_duration": match_duration,'winner': -1, 'winner_name': None}, to=room.room_id)
 
     room.removeGameTable()
     if room.room_type == RoomType.matched:

@@ -235,7 +235,7 @@ defineExpose({
   <div class="Game">
     <div class="camp">
       目前行动: {{ camp == 1 ? '黑方' : (camp == 0 ? '红方' : '金方') }}
-      我的阵营: {{ props.my_camp >= 0 ? my_camp_str[props.my_camp] : '未知' }}
+      我的阵营: {{ props.my_camp >= 0 ? my_camp_str[props.my_camp] : '观战者' }}
     </div>
     <!--2号-->
     <div :class="camp_2_style">
@@ -327,7 +327,7 @@ defineExpose({
 .chess {
   //color: wheat;
   color: transparent;
-  //background-image: url("@/assets/images/game/chess/realChess/车白.png");
+  // background-image: url("@/assets/images/game/chess/realChess/车白.png");
   // 文本不可选中
   user-select: none;
   display: flex;
