@@ -16,6 +16,7 @@ from flask import request
 from backend.global_var import *
 from backend.tools import setupLogger, getParams
 from backend.user_manage import *
+from backend.user_manage.appeal import *
 from backend.game.exception import *
 from backend.game.record import *
 from message import *

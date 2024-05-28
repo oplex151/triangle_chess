@@ -15,12 +15,8 @@ password = os.getenv("MYSQL_PASSWORD")
 
 logger = setupLogger()
 
-# 连接数据库
-db = pymysql.connect(host="127.0.0.1", user="root", password="your_password", database="your_database")
-cursor = db.cursor()
-
 def addAppeals(userid, appeal_type, content):
-    db = pymysql.connect(host="127.0.0.1", user="root", password="your_password", database="your_database")
+    db = pymysql.connect(host="127.0.0.1",user="root",password=password,database=DATA_BASE)
     cursor = db.cursor()
     # 插入申诉信息到数据库
     try:
@@ -88,7 +84,7 @@ def getAppealsInfo(userid, adminid):
         status = SUCCESS
     except Exception as e:
         logger.error(e)
-        stauts = OTHER_ERROR
+        status = OTHER_ERROR
     finally:
         cursor.close()
         db.close()
