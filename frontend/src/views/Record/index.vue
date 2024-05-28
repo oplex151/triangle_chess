@@ -25,7 +25,9 @@ const my_camp = ref(-1)
 const step = ref(0)
 const board = ref(null)
 const map_state = ref(game_info)
+import useClipboard from 'vue-clipboard3';
 
+const { toClipboard } = useClipboard()
 
 
 let status1 = ''
@@ -193,6 +195,21 @@ const camp_0_style = computed(() => {
         return 'board-tilt-right'
     }
 });
+const copy = async (anything) => {
+  try {
+    await toClipboard(anything)
+    console.log('Copied to clipboard')
+  } catch (e) {
+    console.error(e)
+  }
+}
+const share = () => {
+    if(value.value){
+        copy(main.self_url+'/publicShare?recordId='+value.value)
+        ElMessage.success('链接已复制到剪贴板')
+    }
+
+}
 </script>
 <template>
     <Report :toreportid="to_report_id" :myuserid="userid" :dialogFormVisible=vis @reportEnd="handleReportEnd" />
@@ -203,7 +220,7 @@ const camp_0_style = computed(() => {
                 <HomeFilled />
             </el-icon>
         </button>
-    <button class="button-share">
+    <button class="button-share" @click="share">
         <el-icon style="vertical-align: middle" size="30px">
                 <Share />
             </el-icon>
@@ -325,24 +342,6 @@ const camp_0_style = computed(() => {
     margin-top: 10%;
 
     transform: translate(-50%, -50%);
-
-}
-.board{
-    position: absolute;
-    top: 700px;
-    left: 950px;
-    z-index: 1;
-}
-.board-tilt-right{
-    position: absolute;
-    top: 100px;
-    left: 950px;
-
-}
-.board-tilt-left{
-    position: absolute;
-    top: 100px;
-    left: 250px;
 
 }
 .button-home {

@@ -191,7 +191,7 @@ function goBackHome() {
                 {{totalscore}} 分
             </h3>
         </p>
-        <button class="button-match" @click="startRankedMatch">开始排位</button>
+        <button class="button-match" @click="startRank">开始排位</button>
 
         <div v-if="matching" class="loading">
             <div class="spinner">
