@@ -41,6 +41,7 @@ onBeforeMount(() =>{
             })
             Cookies.remove('userid');
             Cookies.remove('room_id');
+            Cookies.remove('username');
             router.push('/');
         }
         else {

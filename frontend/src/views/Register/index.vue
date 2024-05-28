@@ -308,10 +308,11 @@ watch(errorMessage, (oldValue, newValue) => {
     /* 让 form-label 和 form-input 上下对齐 */
     display: flex;
     flex-direction: row;
+    width: 400px;
 }
 
 .form-label {
-    width: 70px;
+    width: 100px;
     font-weight: bold;
     font-size: 15px;
     /* 增加字体大小 */

@@ -1,6 +1,4 @@
 <script lang="ts" setup>
-import VueSocketIO from 'vue-socket.io'
-import SocketIO from 'socket.io-client'
 //import main from '@/main'
 import { onMounted, ref, getCurrentInstance ,computed} from 'vue'
 //import { registerSockets, socket, registerSocketsForce, removeSockets } from '@/sockets'
@@ -10,27 +8,23 @@ import { useRouter } from 'vue-router';
 import { ElDivider, ElInput, ElMessage } from 'element-plus'
 //import * as CONST from '@/lib/const.js'
 import { User, HomeFilled } from '@element-plus/icons-vue'
-
 import { Menu as IconMenu, Message, Setting } from '@element-plus/icons-vue'
-import PersonalProfile from 'components/PersonalProfile.vue'
+import UserInfo from './UserInfo.vue'
 
 
 const router = useRouter()
 const item = {
-  date: '2016-05-02',
-  name: 'Tom',
-  address: 'No. 189, Grove St, Los Angeles',
+  //获取当前时间
+  date:  new Date().toLocaleString(),
+  name: Cookies.get('username'),
 }
 const tableData = ref(Array.from({ length: 20 }).fill(item))
 
-
-
 function goBackHome(){
-
     router.push('/')
 }
 
-
+const CurrentView = UserInfo
 
 </script>
 
@@ -43,70 +37,43 @@ function goBackHome(){
         <HomeFilled />
       </el-icon>
     </button>
-    <el-container class="layout-container-demo" style="height: 800px">
-        <el-header style="text-align: right; font-size: 12px">
-          <div class="toolbar">
-            <!-- <el-dropdown>
-              <el-icon style="margin-right: 8px; margin-top: 1px">
-                <setting />
-              </el-icon>
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item>View</el-dropdown-item>
-                  <el-dropdown-item>Add</el-dropdown-item>
-                  <el-dropdown-item>Delete</el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown> -->
-            <span>Tom</span>
-          </div>
-        </el-header>
-
-
-  
-      <el-container>
-        <el-aside width="200px">
-        <el-scrollbar>
-          <el-menu 
-          :default-openeds="['1', '3']"
-          @select="handleMenuSelect"
-          >
-            <el-sub-menu index="1">
-              <template #title>
-                <el-icon><user /></el-icon>个人信息
-              </template>
-                <el-menu-item index="1-1">Option 1</el-menu-item>
-                <el-menu-item index="1-2">Option 2</el-menu-item>
-                <el-menu-item index="1-3">Option 3</el-menu-item>
-
-            </el-sub-menu>
-            <el-sub-menu index="2">
-              <template #title>
-                <el-icon><icon-menu /></el-icon>对局历史
-              </template>
-                <el-menu-item index="2-1">Option 1</el-menu-item>
-                <el-menu-item index="2-2">Option 2</el-menu-item>
-                <el-menu-item index="2-3">Option 3</el-menu-item>
-
-            </el-sub-menu>
-            <el-sub-menu index="3">
-              <template #title>
-                <el-icon><setting /></el-icon>设置
-              </template>
-                <el-menu-item index="3-1">Option 1</el-menu-item>
-                <el-menu-item index="3-2">Option 2</el-menu-item>
-                <el-menu-item index="3-3">Option 3</el-menu-item>
-            </el-sub-menu>
-          </el-menu>
-        </el-scrollbar>
-      </el-aside>
-
-  
-        <el-main>
-          <component :is="currentComponent"></component>
+    <el-container class="layout-container">
+      <el-header class="header">
+        <div class="toolbar">
+          <span>{{Cookies.get('username')}}</span>
+        </div>
+      </el-header>
+      <el-container class="menu-container">
+        <el-aside width="150px"  class="aside">
+          <el-scrollbar rounded>
+            <el-menu class="el-menu" active-text-color="#000">
+              <el-menu-item index="1" class="el-menu-item"
+              @click="CurrentView = UserInfo">
+                  <el-icon><user /></el-icon>个人信息
+              </el-menu-item>
+              <el-menu-item index="2">
+                <template #title>
+                  <el-icon><icon-menu /></el-icon>对局历史
+                </template>
+              </el-menu-item>
+              <el-sub-menu index="3">
+                <template #title>
+                  <el-icon><setting /></el-icon>设置
+                </template>
+                  <el-menu-item index="3-1">Option 1</el-menu-item>
+                  <el-menu-item index="3-2">Option 2</el-menu-item>
+                  <el-menu-item index="3-3">Option 3</el-menu-item>
+              </el-sub-menu>
+            </el-menu>
+          </el-scrollbar>
+        </el-aside>
+        <el-main class="main">
+          <component class="main-content" :is="CurrentView"></component>
+         
         </el-main>
       </el-container>
     </el-container>
+    
   </template>
 
 
@@ -122,35 +89,75 @@ function goBackHome(){
   font-size: 18px;
   cursor: pointer;
 }
-.layout-container-demo .el-header {
+
+.layout-container {
   position: relative;
-  background-color: #ecb920;
-  color: var(--el-text-color-primary);
+  top : -10px;
 }
-.layout-container-demo .el-aside {
-  color: var(--el-text-color-primary);
-  background: #ffe7b0;
-  opacity: 0.9;
+
+.header {
+  height: 60px;
+  line-height: 60px;
+  background-color: #d79e03;
+  color: #fff;  
+  border-radius: 10px;
+  margin-left: 70px;
+  
+}
+
+   
+.aside {
+  margin-top: 10px;
   border-radius: 5px;
-  font-size: 18px;
-  cursor: pointer;
+  width: 150px;
+
 }
-.layout-container-demo .el-menu {
-  border-right: none;
-  background: #ecb920;
+
+.el-menu{
+  background-color :#ecb920;
+  color : #000000;
 }
-.layout-container-demo .el-main {
-    
-  padding: 0;
+
+.el-menu-item{
+  background-color :#ecb920;
 }
-.layout-container-demo .toolbar {
+
+.el-menu-item:hover{
+  background-color :#d79e03;
+  color : #000000 !important;
+}
+
+.el-menu-item.is-active{
+  background-color :#d79e03;
+  color : #000000 !important;
+}
+
+
+
+.toolbar {
   display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  align-items: right;
+  justify-content: right;
+  background-color: #d79e03;
   height: 100%;
   right: 20px;
+  width: 100%;
 }
-.layout-container-demo .el-menu-item{
-    background-color: #ffe7b0;
+
+.main-content {
+  margin-top: 10px;
+  margin-left: 10px;
+  border-radius: 5px;
+  background-color: #fdeec4;
+  min-height: 500px;
 }
+
+.main {
+  text-align: center;
+  margin-top: 10px;
+  margin-left: 10px;
+  border-radius: 5px;
+  background-color: #fdeec4;
+}
+
 </style>
