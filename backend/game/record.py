@@ -83,11 +83,11 @@ class GameRecord:
             db.commit()
             
             logger.info("Record {0} ended. Winner: {1}".format(self.record_id, winnerid))
-            return SUCCESS
+            return SUCCESS,self.record_id
         except Exception as e:
             db.rollback()
             logger.error("Failed to end record {0} due to\n{1}".format(self.record_id, str(e)))
-            return OTHER_ERROR
+            return OTHER_ERROR,self.record_id
 
 def viewUserGameRecords(user_id):
     try:

@@ -181,6 +181,22 @@ def deleteFriendApi():
         return "{message: 'parameter error'}",PARAM_ERROR
     return deleteFriend(userid, friend_id)
 
+@app.route('/api/getRankScore',methods=['POST'])
+def getRankScoreApi():
+    '''
+    Args:
+        userid: 用户id
+    Returns:
+        用户的段位和积分
+    '''
+    params = {'userid':int}
+    try:
+        userid = getParams(params,request.form)
+    except:
+        return "{message: 'parameter error'}",PARAM_ERROR
+    return getRankScore(userid)
+    
+
 @app.route('/api/addAppeals', methods=['POST'])
 def addAppealsApi():
     '''
@@ -518,6 +534,7 @@ def roomOver(game:GameTable, room:RoomManager, userid:int):
         room_type = 2
     logger.info(f"EndRankGame")
     # 游戏结束，判断胜利者或平局
+    logger.debug("game end")
     if room_type == 2:
         endRankGame(game)
     if game.game_state == EnumGameState.win:
@@ -529,9 +546,9 @@ def roomOver(game:GameTable, room:RoomManager, userid:int):
         print(game.record.start_time)
         match_duration = (game.record.end_time - game.record.start_time)
         print(f"对局时长为：{match_duration}")
-        emit('gameEnd', {'status': GAME_END, 'room_type':room_type,"step_count":game.step_count,"match_duration": match_duration.total_seconds(),'winner': userid, 'winner_name': sessions[userid]}, to=room.room_id)
         # 结束记录
-        game.record.recordEnd(userid)
+        state,record_id = game.record.recordEnd(userid)
+        emit('gameEnd', {'status': GAME_END, 'record_id':record_id, 'room_type':room_type,"step_count":game.step_count,"match_duration": match_duration.total_seconds(),'winner': userid, 'winner_name': sessions[userid]}, to=room.room_id)
 
     elif game.game_state == EnumGameState.draw:
         # 记录结束时间
@@ -539,9 +556,9 @@ def roomOver(game:GameTable, room:RoomManager, userid:int):
         # 通知所有玩家游戏结束为平局
         logger.info(f"Game {game.game_id} end, winner is {sessions[userid] if userid in sessions else 'None'}")
         match_duration = (game.record.end_time - game.record.start_time)
-        emit('gameEnd', {'status': GAME_END, 'room_type':room_type,"step_count":game.step_count,"match_duration": match_duration,'winner': -1, 'winner_name': None}, to=room.room_id)
         # 结束记录
-        game.record.recordEnd(None)
+        state,recordId=game.record.recordEnd(None)
+        emit('gameEnd', {'status': GAME_END, 'recordId':recordId,'room_type':room_type,"step_count":game.step_count,"match_duration": match_duration,'winner': -1, 'winner_name': None}, to=room.room_id)
 
     room.removeGameTable()
     if room.room_type == RoomType.matched:
@@ -908,7 +925,25 @@ def viewMoveRecords(data):
         logger.error(e)
         return
 
+@socketio.event
+def sendMessage(data):
+    """_summary_
 
+    Args:
+        data (_type_): _description_
+    """
+    global sessions
+    params = {'message':str,'userid':int}
+    try:
+        message,userid = getParams(params,data)
+    except:
+        emit('processWrong',{'status':PARAM_ERROR},to=request.sid)
+        return
+    room_id = inWhitchRoom(userid,rooms)
+
+    emit('receiveMessage',{'username':sessions[userid],'message':message,'userid':userid},to=room_id,
+            skip_sid=request.sid)
+    
 if __name__ == "__main__":
     threading.Thread(target=cycleMatch,args=[app] ,daemon=True, name='cycleMatch').start()
     threading.Thread(target=cycleRank,args=[app] ,daemon=True, name='cycleRank').start()

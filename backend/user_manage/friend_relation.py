@@ -43,8 +43,10 @@ def addFriend(user_id, friend_id):
         # 首先检查是否已经是好友关系
         db.begin()
         cursor.connection.ping(reconnect=True) 
-        if user_id in getFriends(friend_id):
-            return "{}",ALLREADY_FRIEND
+        friends = getFriends(friend_id)
+        if friends!=None:
+            if user_id in friends:
+                return "{}",ALLREADY_FRIEND
         sql = f"INSERT INTO {FRIEND_TABLE} (userId, friendId) VALUES ({user_id}, {friend_id})"
         sql2 = f"INSERT INTO {FRIEND_TABLE} (userId, friendId) VALUES ({friend_id}, {user_id})"
         cursor.execute(sql)
@@ -68,7 +70,10 @@ def deleteFriend(user_id, friend_id):
     try:
         # 首先检查是否已经是好友关系
         cursor.connection.ping(reconnect=True) 
-        if user_id not in getFriends(friend_id):
+        friends = getFriends(friend_id)
+        if friends==None:
+            return "{}",NOT_FRIEND
+        if user_id not in friends:
             return "{}",NOT_FRIEND
         sql = f"DELETE FROM {FRIEND_TABLE} WHERE userId = {user_id} AND friendId = {friend_id}"
         sql2 = f"DELETE FROM {FRIEND_TABLE} WHERE userId = {friend_id} AND friendId = {user_id}"

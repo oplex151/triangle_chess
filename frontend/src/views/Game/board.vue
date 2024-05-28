@@ -166,16 +166,16 @@ const initMap = (game_info) => {
       GEBI(`${chess.position}`).innerText = chess.name;
       switch (chess.camp) {
         case 0:
-          GEBI(`${chess.position}`).classList.add('camp0');
+          // GEBI(`${chess.position}`).classList.add('camp0');
           chess.image = "src/assets/images/game/chess/realChess/" + chess.name + "白.png";
           break;
 
         case 1:
-          GEBI(`${chess.position}`).classList.add('camp1');
+          // GEBI(`${chess.position}`).classList.add('camp1');
           chess.image = "src/assets/images/game/chess/realChess/" + chess.name + "黑.png";
           break;
         case 2:
-          GEBI(`${chess.position}`).classList.add('camp2');
+          // GEBI(`${chess.position}`).classList.add('camp2');
           chess.image = "src/assets/images/game/chess/realChess/" + chess.name + "金.png";
           break;
       }
@@ -235,7 +235,7 @@ defineExpose({
   <div class="Game">
     <div class="camp">
       目前行动: {{ camp == 1 ? '黑方' : (camp == 0 ? '红方' : '金方') }}
-      我的阵营: {{ props.my_camp >= 0 ? my_camp_str[props.my_camp] : '未知' }}
+      我的阵营: {{ props.my_camp >= 0 ? my_camp_str[props.my_camp] : '观战者' }}
     </div>
     <!--2号-->
     <div :class="camp_2_style">
@@ -287,19 +287,19 @@ defineExpose({
 }
 
 // 红方阵营
-.camp0 {
-  //background-color: transparent !important;
-}
+// .camp0 {
+//   //background-color: transparent !important;
+// }
 
-// 黑方阵营
-.camp1 {
-  //background-color: transparent !important;
-}
+// // 黑方阵营
+// .camp1 {
+//   //background-color: transparent !important;
+// }
 
-// 金方阵营
-.camp2 {
-  //background-color: transparent !important;
-}
+// // 金方阵营
+// .camp2 {
+//   //background-color: transparent !important;
+// }
 
 
 //定义一个动画时间戳
@@ -327,7 +327,7 @@ defineExpose({
 .chess {
   //color: wheat;
   color: transparent;
-  //background-image: url("@/assets/images/game/chess/realChess/车白.png");
+  // background-image: url("@/assets/images/game/chess/realChess/车白.png");
   // 文本不可选中
   user-select: none;
   display: flex;
@@ -344,7 +344,7 @@ defineExpose({
 }
 
 .chess_hover {
-  border-color: #fff !important;
+  border-color: transparent !important;
   border-left-width: -8px !important;
   border-top-width: -8px !important;
   border-left-style: inset !important;
@@ -449,5 +449,17 @@ defineExpose({
   display: flex;
   flex-direction: column;
   align-items: center;
+}
+
+.chessboard-overlay {
+  position: absolute;
+  top: 35px;
+  left: -42px;
+  width: 1280 * 1.01px;
+  height: 800 * 1.01px;
+  background-image: url('@/assets/images/game/chessBoard.jpg');
+  background-size: cover;
+  opacity: 1.0; /* Adjust opacity as needed */
+  z-index: -1;
 }
 </style>

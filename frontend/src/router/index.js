@@ -13,6 +13,7 @@ import Record from '@/views/Record/index.vue'
 import Match from '@/views/Match/index.vue'
 import Rank from '@/views/Rank/index.vue'
 import Profile from '@/views/Profile/index.vue'
+import publicShare from '@/views/publicShare/index.vue'
 import { socket } from '@/sockets';
 
 
@@ -94,6 +95,20 @@ const router = createRouter({
       component: Profile,
       meta: {isAuth: true,connection: false},
     },
+    {
+      path: '/publicShare/:recordId',
+      meta: {isAuth: false,connection: false},
+      redirect: to => {
+        // 方法接收目标路由作为参数
+        // return 重定向的字符串路径/路径对象
+        return { path: '/publicShare', query: { recordId: to.params.recordId } }
+      },
+    },
+    {
+      path: '/publicShare',
+      component: publicShare,
+      meta: {isAuth: false,connection: false},
+    }
   ]
 })
 

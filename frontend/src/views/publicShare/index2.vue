@@ -31,14 +31,9 @@ const map_state = ref(game_info)
 let status1 = ''
 
 const userids = computed(() => {
-    let names = [-1,-1,-1]    
-    for (let item=0 ; item <options.value.length; item++){
-        if(options.value[item]['recordId']==value.value){            
-            names[0] = options.value[item]['p1']
-            names[1] = options.value[item]['p2']
-            names[2] = options.value[item]['p3']
-            break
-        }
+    let names = []
+    for (let i = 0; i < 3; i++) {
+        names.push(value.value['p' + (i + 1)])
     }
     return names
 
@@ -120,10 +115,10 @@ onUnmounted(() => {
 
 });
 const Get = ref(() => {
-    // console.log(value.value)
+    console.log(value.value)
     my_camp.value = getCamp(value.value)
-    // console.log(value.value['recordId'])
-    socket.value.io.emit('viewMoveRecords', { 'record_id': value.value})
+    console.log(value.value['recordId'])
+    socket.value.io.emit('viewMoveRecords', { 'record_id': value.value['recordId'] })
 })
 
 const Move = (data) => {
@@ -196,8 +191,8 @@ const camp_0_style = computed(() => {
 </script>
 <template>
     <Report :toreportid="to_report_id" :myuserid="userid" :dialogFormVisible=vis @reportEnd="handleReportEnd" />
-    <div class="background-image-Record"></div>
-    
+    <!-- <div class="background-image"></div> -->
+
     <button class="button-home" @click="goBackHome()">
             <el-icon style="vertical-align: middle" size="30px">
                 <HomeFilled />
@@ -209,15 +204,14 @@ const camp_0_style = computed(() => {
             </el-icon>
     </button>
     <div v-if="start">
-        <button @click="EndGo" class="end_button">结束回放</button>        
-        <div class="brd1">
-            <div class="chessboard-overlay"></div>
+        <button @click="EndGo" class="end_button">结束回放</button>
+        <div class="brd">
             <Board :my_camp="my_camp" ref="board" @requireMove="Move" />
             <button @click="Next" class="next_button">下一步</button>
-            <div class="avatar">
+        </div>
+        <div class="avatar">
             <!---------0号位---------->
-            <div :class="camp_0_style">
-            <Avatar :my_userid="userid" :userid="userids[0]" @reportUser="handleReport">
+            <Avatar :my_userid="userid" :userid="userids[0]" @reportUser="handleReport" :class="camp_0_style">
                 <template #name>
                     <p>{{ name[0] }}</p>
                 </template>
@@ -225,10 +219,8 @@ const camp_0_style = computed(() => {
                     {{ name[0] }}
                 </template>
             </Avatar>
-            </div>
             <!---------1号位---------->
-            <div :class="camp_1_style">
-            <Avatar :my_userid="userid" :userid="userids[1]" @reportUser="handleReport">
+            <Avatar :my_userid="userid" :userid="userids[1]" @reportUser="handleReport" :class="camp_1_style">
                 <template #name>
                     <p>{{ name[1] }}</p>
                 </template>
@@ -236,10 +228,8 @@ const camp_0_style = computed(() => {
                     {{ name[1] }}
                 </template>
             </Avatar>
-            </div>
             <!---------2号位---------->
-            <div :class="camp_2_style">
-            <Avatar :my_userid="userid" :userid="userids[2]"  @reportUser="handleReport">
+            <Avatar :my_userid="userid" :userid="userids[2]"  @reportUser="handleReport" :class="camp_2_style">
                 <template #name>
                     <p>{{ name[2] }}</p>
                 </template>
@@ -247,16 +237,13 @@ const camp_0_style = computed(() => {
                     {{ name[2] }}
                 </template>
             </Avatar>
-            </div>
-            </div>
         </div>
-
     </div>
     <div v-else>
         <div class="select_btn">
             <el-select v-model="value" filterable placeholder="请输入对局" :loading="loading" popper-class="select_down"
                 style="width: 240px">
-                <el-option v-for="item in options" :label="item.startTime" :key="item.recordId" :value="item.recordId">
+                <el-option v-for="item in options" :label="item.startTime" :key="item.recordId" :value="item">
                 </el-option>
             </el-select>
         </div>
@@ -266,28 +253,18 @@ const camp_0_style = computed(() => {
     </div>
 </template>
 
-<style scoped>
-.background-image-Record {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-image: url('@/assets/images/login/图1.jpg');
-    background-size: cover;
-    z-index: -1;
-}
-
-.chessboard-overlay {
-    position: absolute;
-    top: 35px;
-    left: -42px;
-    width: 1280 * 1.01px;
-    height: 800 * 1.01px;
-    background-image: url('@/assets/images/game/chessBoard.jpg');
-    background-size: cover;
-    opacity: 1.0; /* Adjust opacity as needed */
-    z-index: -1;
+<style>
+.button {
+    display: block;
+    margin: 0 auto;
+    padding: 10px 10px;
+    font-size: 18px;
+    font-weight: bold;
+    color: #fff;
+    background-color: #ecb920;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
 }
 
 .end_button {
@@ -308,7 +285,7 @@ const camp_0_style = computed(() => {
     font-weight: bold;
     padding: 10px 10px;
     top: 400px;
-    left: 100px;
+    left: 540px;
     color: #fff;
     background-color: #ecb920;
     border-radius: 10px;
@@ -327,24 +304,7 @@ const camp_0_style = computed(() => {
     transform: translate(-50%, -50%);
 
 }
-.board{
-    position: absolute;
-    top: 700px;
-    left: 950px;
-    z-index: 1;
-}
-.board-tilt-right{
-    position: absolute;
-    top: 100px;
-    left: 950px;
 
-}
-.board-tilt-left{
-    position: absolute;
-    top: 100px;
-    left: 250px;
-
-}
 .button-home {
     position: absolute;
     top: 20px;
@@ -364,12 +324,11 @@ const camp_0_style = computed(() => {
     background-color: #e0a61b;
 }
 
-.brd1 {
+.brd {
     position: absolute;
-    top: 100px;
-    left: 100px;
+    top: 5%;
+    left: 0%;
     width: 1080px;
-    z-index: 10;
 }
 
 .el-select {

@@ -84,12 +84,17 @@ const sockets_methods = {
         break
       case CONST.ROOM_NOT_EXIST:
         ElMessage.error('不存在此房间')
-        if(data.message){
-          ElMessage.error(data.message)
-        }
+        Cookies.remove('room_id')
+        Cookies.remove('room_info')
+        room_id.value = null
+        room_info.value = null
         break
       case CONST.NOT_IN_ROOM:
         ElMessage.error('不在房间中')
+        Cookies.remove('room_id')
+        Cookies.remove('room_info')
+        room_id.value = null
+        room_info.value = null
         break
       case CONST.ROOM_NOT_ENOUGH:
         ElMessage.error('房间人数不足')
@@ -97,7 +102,12 @@ const sockets_methods = {
       case CONST.GAME_CREATE_FAILED:
         ElMessage.error('游戏创建失败:未知错误')
         break
+      case CONST.USER_NOT_LOGIN:
+        ElMessage.error('用户未登录')
+        router.push('/login')
+        break
       default:
+        console.error(data.status)
         ElMessage.error('未知错误')
     }
   },
@@ -142,7 +152,7 @@ const sockets_methods = {
     removeSockets(sockets_methods, socket.value, proxy)
     router.replace('/game')
   },
-  sendMessageSuccess(data){
+  receiveMessage(data){
     if(data.username!=my_name.value)
       o_message.value.push({ 'user': data.username, 'message': data.message })
   },
@@ -171,6 +181,10 @@ function createRoom() {
   socket.value.io.emit('createRoom', { 'userid': Cookies.get('userid') })
 }
 function joinRoom() {
+  if (!new_room_id.value) {
+    ElMessage.error('请输入房间号')
+    return
+  }
   socket.value.io.emit('joinRoom', { 'room_id': new_room_id.value, 'userid': Cookies.get('userid') })
   new_room_id.value = null
 }
@@ -265,14 +279,13 @@ const handleReport = (id) => {
       </button>
     </div>
 
-
-
     <div class="join-room">
       <input 
       class = "input-join"
       v-if="!room_id" 
       v-model="new_room_id" 
-      placeholder="输入房间号"/>
+      placeholder="输入房间号"
+      />
       <button class="button-join" v-if="!room_id"  @click="joinRoom()">
         加入房间
       </button>
@@ -314,7 +327,7 @@ const handleReport = (id) => {
             {{item.user}} - {{ item.message }}
           </li>
         </div>
-          <el-input class="custom-input" v-model="i_message" maxlength=80 show-word-limit placeholder="Please input" />
+          <el-input class="custom-input" v-model="i_message" maxlength=80 show-word-limit @keyup.enter.native="sendMessage" placeholder="Please input" />
           <el-button @click="sendMessage" style="width:60px" type="primary">发送消息</el-button>
       </div>
       </div>
