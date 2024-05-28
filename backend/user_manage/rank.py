@@ -37,8 +37,8 @@ def viewUserRank(userid:int):
     result = None
     try:
         db.begin()
-        select_query = "SELECT rank, score FROM {0} WHERE userId = {1};".format(USER_TABLE, userid)
-        cursor.execute(select_query)
+        select_query = "SELECT `rank`, score FROM `{0}` WHERE userId = %s;".format(USER_TABLE)
+        cursor.execute(select_query, (userid))
         result = cursor.fetchone()
         if result is None:
             logger.error("User {0} not exists".format(userid))

@@ -473,6 +473,7 @@ def roomOver(game:GameTable, room:RoomManager, userid:int):
         room_type = 1
     elif room.room_type == RoomType.ranked: 
         room_type = 2
+    logger.info(f"EndRankGame")
     # 游戏结束，判断胜利者或平局
     if room_type == 2:
         endRankGame(game)
@@ -714,7 +715,7 @@ def cycleRank(app):
                 user_list = []
                 for _ in range(rank_queue.qsize()):
                     user_list.append(rank_queue.get())
-
+                
                 eligible_users = []
                 # 将段位符合的[user1，user2]组加入到eligible_users中
                 for i, user1 in enumerate(user_list):
@@ -734,6 +735,7 @@ def cycleRank(app):
                         break
                 if matched_users is not None:
                     user0, user1, user2 = matched_users
+
                     # 将除此 3 人外所有用户放回队列
                     for user in user_list:
                         if user and user != user0 and user != user1 and user != user2 and user in sessions:
@@ -756,8 +758,9 @@ def cycleRank(app):
                                             to=room.room_id,namespace='/')
                     except Exception as e:
                         logger.error("Create rank_game error due to {0}".format(str(e)), exc_info=True)
-                        for user in [user0,user1,user2]:
-                            if user and user in sessions:
+                        # 重新将所有用户放回队列
+                        for user in user_list:
+                            if user and user[0] in sessions:
                                 rank_queue.put(user)
                         # if room and room in rooms:
                         #     rooms.remove(room)
@@ -766,7 +769,7 @@ def cycleRank(app):
                 else:
                     # 重新将所有用户放回队列
                     for user in user_list:
-                        if user and user in sessions:
+                        if user and user[0] in sessions:
                             rank_queue.put(user)
 
             time.sleep(1)
