@@ -7,9 +7,11 @@ LOGIN_WRONG_PASSWORD = 502 #"Login failed: Wrong password"
 ALREADY_LOGIN = 506 #"Already login"
 USER_NOT_LOGIN = 507 #"User not login"
 USER_NOT_EXIST = 508 #"User not exist"
+NAME_ALREADY_EXIST = 509 #"Name already exist"
 
 REGISTER_EXIST_USER = 503 #"Register failed: User already exists"
 REGISTER_FAILED = 504 #"Register failed: Internal server error"
+WRONG_OLD_PASSWORD = 513 #"Wrong old password"
 
 PARAM_ERROR = 505 #"Parameter error"
 
