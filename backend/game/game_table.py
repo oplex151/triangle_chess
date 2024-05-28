@@ -196,6 +196,7 @@ class GameTable:
             return False
         else:
             self.viewers.append(user)
+            return True
 
     def isWithPiece(self, px: int, py: int, pz: int) -> Piece:
         '''

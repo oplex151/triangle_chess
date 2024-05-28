@@ -51,19 +51,61 @@ def registerApi():
     Args:
         username: 用户名
         password: 密码
+        email: 邮箱
+        phone_num:手机号
+        gender:性别
     Returns:
         注册成功200
     '''
-    params = {'username':str, 'password':str}
+    params = {'username':str, 'password':str, 'email':str, 'phone_num':str, 'gender':str}
     try:
-        username,password = getParams(params,request.form)
+        username,password,email,phone_num,gender = getParams(params,request.form,['email','phone_num','gender'])
     except:
         return "{message: 'parameter error'}",PARAM_ERROR
-    return register(username, password)
+    return register(username, password, email, phone_num, gender)
+
+@app.route('/api/changeUserInfo', methods=['POST'])
+def changeUserInfoApi():
+    '''
+    Description: 修改用户信息
+    Args:
+        userid: 用户id
+        username: 用户名
+        email: 邮箱
+        phone_num:手机号
+        gender:性别
+    Returns:
+        修改成功200
+    '''
+    params = {'userid':int, 'username':str, 'email':str, 'phone_num':str, 'gender':str}
+    try:
+        userid,username,email,phone_num,gender = getParams(params,request.form,['username','email','phone_num','gender'])
+    except:
+        return "{message: 'parameter error'}",PARAM_ERROR
+    return changeUserInfo(userid, username, email, phone_num, gender)
+
+@app.route('/api/changePassword', methods=['POST'])
+def changePasswordApi():
+    '''
+    Description: 修改密码
+    Args:
+        userid: 用户id
+        old_password: 旧密码
+        new_password: 新密码
+    Returns:
+        修改成功200
+    '''
+    params = {'userid':int, 'old_password':str, 'new_password':str}
+    try:
+        userid,old_password,new_password = getParams(params,request.form)
+    except:
+        return "{message: 'parameter error'}",PARAM_ERROR
+    return changePassword(userid, old_password, new_password)
 
 @app.route('/api/logout', methods=['POST'])
 def logoutApi():
     '''
+    Description: 登出
     Args:
         userid: 用户id
     Returns:
@@ -79,6 +121,7 @@ def logoutApi():
 @app.route('/api/getUserInfo', methods=['POST'])
 def getUserInfoApi():
     '''
+    Description: 获取用户信息
     Args:
         userid: 用户id
     Returns:
@@ -517,7 +560,7 @@ def watchGame(data):
         userid: 用户id          int
         room_id: 房间id        str
     """
-    global rooms
+    global rooms,sessions
     params = {'userid':int,  'room_id':str}
     try:
         userid,room_id = getParams(params,data)
@@ -543,7 +586,7 @@ def watchGame(data):
     except Exception as e:
         logger.error("Watch game error due to {0}".format(str(e)), exc_info=True)
         emit('processWrong',{'status':OTHER_ERROR},to=request.sid)
-        return 
+        
 
 @socketio.event
 def requestSurrender(data):
@@ -657,6 +700,7 @@ def respondDraw(data):
                     return
             for user in game.users:
                 emit('gameEnd', {'status': GAME_END, 'winner': -1}, to=room_id)
+            # TODO:: 通知所有玩家游戏结束
             game.setDraw()
         else:
             emit('wait_for_others', {'status': SUCCESS}, to=user)

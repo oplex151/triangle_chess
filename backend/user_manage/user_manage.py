@@ -60,7 +60,7 @@ def login(username, password):
     return jsonify(res),status
     
 @connectDatabase
-def register(username, password):
+def register(username, password, email, phone_num, gender):
     res,status = {},None
     try:
         # 首先就检查用户名是否已经存在
@@ -72,12 +72,23 @@ def register(username, password):
             logger.error("User {0} already exists".format(username))
             status = REGISTER_EXIST_USER
         else:
-            insert_query = "INSERT INTO {0} (userName, userPassword) VALUES ({1}, {2});".format(USER_TABLE,"'"+username+"'", "'"+password+"'")
+            insert_query =  "".join([f"INSERT INTO {USER_TABLE} (userName, ",
+            f"{'gender, ' if gender else ''}",
+            f"{'phoneNum, ' if phone_num else ''}",
+            f"{'email, ' if email else ''}",
+            f"userPassword) VALUES (",
+            f"'{username}', ",
+            f'\'{gender}\', ' if gender else '' ,
+            f'\'{phone_num}\', ' if phone_num else '',
+            f'\'{email}\', ' if email else '',
+            f"'{password}'",
+            ");"])   # 一个句子写哭我
+            print(insert_query)
             try:
                 cursor.execute(insert_query)
-            except:
+            except Exception as e:
                 db.rollback()
-                logger.error("User {0} failed to register".format(username))
+                logger.error("User {0} failed to register for {1}".format(username,str(e)))
                 status = REGISTER_FAILED
             else:
                 db.commit()
@@ -90,7 +101,82 @@ def register(username, password):
         cursor.close()
         db.close()
     return jsonify(res),status
-    
+
+@connectDatabase
+def changeUserInfo(userid:int, username:str=None, email:str=None, phone_num:str=None, gender:str=None):
+    res,status = {},None
+    try:
+        # 首先就检查用户名是否已经存在
+        db.begin()
+        select_query = "SELECT * FROM {0} WHERE userId = {1};".format(USER_TABLE, userid)
+        cursor.execute(select_query)
+        data = cursor.fetchone()
+        if data is None:
+            logger.error("User {0} not exists".format(userid))
+            return None,USER_NOT_EXIST
+        if username is not None:
+            # 先看看用户名是否已经存在
+            select_query = "SELECT * FROM {0} WHERE userName = {1};".format(USER_TABLE,"'"+username+"'")
+            cursor.execute(select_query)
+            result = cursor.fetchone()
+            if result is not None and result[0] != data[0]:
+                logger.error("UserName {0} already exists".format(username))
+                status = NAME_ALREADY_EXIST
+                raise Exception("UserName already exists")
+            else:
+                update_query = "UPDATE {0} SET userName = {1} WHERE userId = {2};".format(USER_TABLE,"'"+username+"'",userid)
+                cursor.execute(update_query)
+        if email is not None:
+            update_query = "UPDATE {0} SET email = {1} WHERE userId = {2};".format(USER_TABLE,"'"+email+"'",userid)
+            cursor.execute(update_query)
+        if phone_num is not None:
+            update_query = "UPDATE {0} SET phoneNum = {1} WHERE userId = {2};".format(USER_TABLE,"'"+phone_num+"'",userid)
+            cursor.execute(update_query)
+        if gender is not None:
+            update_query = "UPDATE {0} SET gender = {1} WHERE userId = {2};".format(USER_TABLE,"'"+gender+"'",userid)
+            cursor.execute(update_query)
+        db.commit()
+        logger.info("User {0} changed user info successfully".format(userid))
+        status = SUCCESS
+    except Exception as e:
+        logger.error("User {0} failed to change user info due to\n{1}".format(userid,str(e)),exc_info=True)
+        status = OTHER_ERROR if status is None else status
+    finally:
+        cursor.close()
+        db.close()
+    return jsonify(res),status
+
+@connectDatabase
+def changePassword(userid:int, old_password:str, new_password:str):
+    res,status = {},None
+    try:
+        # 首先就检查用户名是否已经存在
+        db.begin()
+        select_query = "SELECT userPassword FROM {0} WHERE userId = {1};".format(USER_TABLE, userid)
+        cursor.execute(select_query)
+        data = cursor.fetchone()
+        if data is None:
+            logger.error("User {0} not exists".format(userid))
+            status = USER_NOT_EXIST
+            raise Exception("User not exists")
+        if data[0] != old_password:
+            logger.error("User {0} failed to change password due to wrong old password".format(userid))
+            status = WRONG_OLD_PASSWORD
+            raise Exception("Wrong old password")
+        else:
+            update_query = "UPDATE {0} SET userPassword = {1} WHERE userId = {2};".format(USER_TABLE,"'"+new_password+"'",userid)
+            cursor.execute(update_query)
+        db.commit()
+        logger.info("User {0} changed password successfully".format(userid))
+        status = SUCCESS
+    except Exception as e:
+        logger.error("User {0} failed to change password due to\n{1}".format(userid,str(e)),exc_info=True)
+        status = OTHER_ERROR if status is None else status
+    finally:
+        cursor.close()
+        db.close()
+    return jsonify(res),status
+
 def logout(userid:int):
     global sessions
     if userid in sessions.keys(): 
