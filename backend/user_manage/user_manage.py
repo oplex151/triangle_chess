@@ -42,7 +42,7 @@ def login(username, password):
                 logger.error("User {0} already logged in".format(username))
                 return "{}",ALREADY_LOGIN
             logger.info("User {0} logged in successfully usring id {1}".format(username,result[1]))
-            res = {"userid":result[1]}
+            res = {"userid":result[1], "username":username}
             sessions[result[1]] = username
             status = SUCCESS
         elif result is not None and result[0] != password:
@@ -199,12 +199,12 @@ def getUserInfo(userid:int):
         if data is None:
             logger.error("User {0} not exists".format(userid))
             return None,USER_NOT_EXIST
-        dic["userId"] = data[0]
-        dic["userName"] = data[1]
+        dic["userid"] = data[0]
+        dic["username"] = data[1]
         dic['rank'] = data[3]
         dic['score'] = data[4]
         dic['gender'] = data[5]
-        dic['phoneNum'] = data[6]
+        dic['phone_num'] = data[6]
         dic['email'] = data[7]
         status = SUCCESS
     except Exception as e:
