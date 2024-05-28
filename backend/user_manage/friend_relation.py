@@ -38,6 +38,7 @@ def getFriends(user_id):
 def addFriend(user_id, friend_id):
     db = pymysql.connect(host="127.0.0.1",user="root",password=password,database=DATA_BASE)
     cursor = db.cursor()
+    status = OTHER_ERROR
     try:
         # 首先检查是否已经是好友关系
         db.begin()
@@ -65,6 +66,7 @@ def addFriend(user_id, friend_id):
 def deleteFriend(user_id, friend_id):
     db = pymysql.connect(host="127.0.0.1",user="root",password=password,database=DATA_BASE)
     cursor = db.cursor()
+    status = OTHER_ERROR
     try:
         # 首先检查是否已经是好友关系
         cursor.connection.ping(reconnect=True) 
@@ -91,7 +93,7 @@ def deleteFriend(user_id, friend_id):
 def getFriendsInfo(user_id):
     db = pymysql.connect(host="127.0.0.1",user="root",password=password,database=DATA_BASE)
     cursor = db.cursor()
-    result = {}
+    result,status = {},OTHER_ERROR
     try:
         # 获取用户的好友列表
         logger.debug(user_id)
@@ -111,7 +113,7 @@ def getFriendsInfo(user_id):
         status = SUCCESS
     except Exception as e:
         logger.error(e)
-        stauts = OTHER_ERROR
+        status = OTHER_ERROR
     finally:
         cursor.close()
         db.close()

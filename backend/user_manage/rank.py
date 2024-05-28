@@ -38,8 +38,8 @@ def viewUserRank(userid:int):
     result = None
     try:
         db.begin()
-        select_query = "SELECT `rank`, score FROM {0} WHERE userId = {1};".format(USER_TABLE, userid)
-        cursor.execute(select_query)
+        select_query = "SELECT `rank`, score FROM `{0}` WHERE userId = %s;".format(USER_TABLE)
+        cursor.execute(select_query, (userid))
         result = cursor.fetchone()
         if result is None:
             logger.error("User {0} not exists".format(userid))
@@ -74,7 +74,7 @@ def rankScore(totalscore):
         rank: 玩家的段位
         score: 玩家的积分
     """
-    rank = math.floor(totalscore / rankscore)
+    rank = round(totalscore / rankscore - 0.5)
     score = totalscore % rankscore
     return rank, score 
 
@@ -127,9 +127,9 @@ def calculateNewScore(player_score, opponent_scores, result, player_performance)
         new_score: 新的排位积分
     """
     rank, score = rankScore(player_score)
-    base_win_score = 25 - rank
-    base_draw_score = 5 - rank
-    base_lose_score = -15 - rank
+    base_win_score = 50 - 3 * rank
+    base_draw_score = 30 - 3 * rank
+    base_lose_score = 10 - 3 * rank
     performance_factor = 0.1
     opponent_factor = 0.05
     
@@ -155,13 +155,13 @@ def updateUserRank(userid, new_score):
     result = False
     try:
         db.begin()
-        update_query = "UPDATE {0} SET `rank` = {1}, score = {2} WHERE userid = {3}".format(USER_TABLE, rank, score, userid)
-        logger.info(update_query)
-        cursor.execute(update_query)
+        logger.info("userid: %s, rank: %s, score: %s", userid, rank, score)
+        update_query = "UPDATE {0} SET `rank` = %s, `score` = %s WHERE `userid` = %s".format(USER_TABLE)
+        cursor.execute(update_query, (rank, score, userid))
         result = True
     except Exception as e:
         db.rollback()
-        print("User {0} Error updating rank due to\n{1}".format(userid,str(e)))
+        logger.error("User {0} Error updating rank due to\n{1}".format(userid,str(e)))
         result = False
     else:
         db.commit()
@@ -178,22 +178,42 @@ def endRankGame(game:GameTable):
         game: 当前对局的 GameTable 对象，包含玩家信息和比赛结果
     """
     try:
+        player_score = []
+        opponent_scores = []
         for user in game.users:
             userid = user['userid']
             user_z = game._getUserIndex(userid)
-            rank, score = viewUserRank(userid)  # 从数据库获取玩家当前积分
-            player_score = totalScore(rank, score)
-            opponent_rs = [viewUserRank(opponent['userid']) for opponent in game.users if opponent['userid'] != userid]
-            opponent_scores = [totalScore(orank, oscore) for orank, oscore in opponent_rs]
-            result = game.getUserResult(userid)  # 获取玩家的比赛结果
-            player_performance = calculatePerformance(game.captured_pieces[user_z], game.opponent_captured_pieces[user_z]) # 获取玩家的表现评分
 
-            new_score = calculateNewScore(player_score, opponent_scores, result, player_performance)
-            logger.debug(new_score)
-            updateUserRank(userid, new_score)  # 将新积分更新到数据库中
-    except Exception as e:
-        logger.error("Error updating rank due to\n{0}".format(str(e)))
+            rank, score = viewUserRank(userid)  # 从数据库获取玩家当前积分
+            logger.info("玩家当前段位和分数: rank=%s, score=%s", rank, score)
+
+            player_score.append(totalScore(rank, score))
+            logger.info("玩家总分: %s", player_score[user_z])
+
+            opponent_rs = [viewUserRank(opponent['userid']) for opponent in game.users if opponent['userid'] != userid]
+            opponent_scores.append([totalScore(orank, oscore) for orank, oscore in opponent_rs])
+            logger.info("对手的段位和分数: %s", [(orank, oscore) for orank, oscore in opponent_rs])
+        #可能还会有错。
+        for user in game.users:
+            userid = user['userid']
+            user_z = game._getUserIndex(userid)
+
+            result = game.getUserResult(userid)  # 获取玩家的比赛结果
+            logger.info("玩家比赛结果: %s", result)
+
+            player_performance = calculatePerformance(game.captured_pieces[user_z], game.opponent_captured_pieces[user_z]) # 获取玩家的表现评分
+            logger.info("玩家表现评分: %s", player_performance)
         
+            new_totalscore = calculateNewScore(player_score[user_z], opponent_scores[user_z], result, player_performance)
+            logger.info("计算新分数: %s", new_totalscore)
+
+            new_rank, new_score = rankScore(new_totalscore)
+            updateUserRank(userid, new_rank, new_score)  # 将新积分更新到数据库中
+
+    except Exception as e:
+        logger.error("Error ending rank game {0} due to\n{1}".format(game.game_id,str(e)))
+        return
+    
 def getRankScore(userid:int):
     """
     获取玩家的排位积分。

@@ -157,9 +157,9 @@ const sockets_methods = {
     },
 }
 
-function startRankedMatch() {
+function startRank() {
     matching.value = true;
-    socket.value.io.emit('startRankedMatch', { userid: Cookies.get('userid') })
+    socket.value.io.emit('startRank', { userid: Cookies.get('userid') })
 }
 
 function goBackHome() {
