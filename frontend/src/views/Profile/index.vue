@@ -12,6 +12,7 @@ import { ElDivider, ElInput, ElMessage } from 'element-plus'
 import { User, HomeFilled } from '@element-plus/icons-vue'
 
 import { Menu as IconMenu, Message, Setting } from '@element-plus/icons-vue'
+import PersonalProfile from 'components/PersonalProfile.vue'
 
 
 const router = useRouter()
@@ -28,6 +29,9 @@ function goBackHome(){
 
     router.push('/')
 }
+
+
+
 </script>
 
 
@@ -63,7 +67,10 @@ function goBackHome(){
       <el-container>
         <el-aside width="200px">
         <el-scrollbar>
-          <el-menu :default-openeds="['1', '3']">
+          <el-menu 
+          :default-openeds="['1', '3']"
+          @select="handleMenuSelect"
+          >
             <el-sub-menu index="1">
               <template #title>
                 <el-icon><user /></el-icon>个人信息
@@ -96,13 +103,7 @@ function goBackHome(){
 
   
         <el-main>
-          <el-scrollbar>
-            <!-- <el-table :data="tableData">
-              <el-table-column prop="date" label="Date" width="140" />
-              <el-table-column prop="name" label="Name" width="120" />
-              <el-table-column prop="address" label="Address" />
-            </el-table> -->
-          </el-scrollbar>
+          <component :is="currentComponent"></component>
         </el-main>
       </el-container>
     </el-container>
