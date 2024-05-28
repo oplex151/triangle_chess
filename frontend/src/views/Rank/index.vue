@@ -59,9 +59,9 @@ const sockets_methods = {
     },
 }
 
-function startRankedMatch() {
+function startRank() {
     matching.value = true;
-    socket.value.io.emit('startRankedMatch', { userid: Cookies.get('userid') })
+    socket.value.io.emit('startRank', { userid: Cookies.get('userid') })
 }
 
 function goBackHome() {
@@ -87,7 +87,7 @@ function goBackHome() {
         <h1 class="title">排位页面</h1>
         </p>
         
-        <button class="button-match" @click="startRankedMatch">开始排位</button>
+        <button class="button-match" @click="startRank">开始排位</button>
         <p>
             <h3 class = "score">你的分数是：{{score}}</h3>
         </p>

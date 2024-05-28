@@ -37,8 +37,8 @@ def viewUserRank(userid:int):
     result = None
     try:
         db.begin()
-        select_query = "SELECT `rank`, score FROM {0} WHERE userId = {1};".format(USER_TABLE, userid)
-        cursor.execute(select_query)
+        select_query = "SELECT `rank`, score FROM `{0}` WHERE userId = %s;".format(USER_TABLE)
+        cursor.execute(select_query, (userid))
         result = cursor.fetchone()
         if result is None:
             logger.error("User {0} not exists".format(userid))
@@ -152,7 +152,7 @@ def updateUserRank(userid, rank, score):
     result = False
     try:
         db.begin()
-        update_query = "UPDATE {0} SET `rank` = {1}, score = {2} WHERE userid = {3}".format(USER_TABLE, rank, score, userid)
+        update_query = "UPDATE {0} SET rank = {1}, score = {2} WHERE userid = {3}".format(USER_TABLE, rank, score, userid)
         cursor.execute(update_query)
         result = True
     except Exception as e:

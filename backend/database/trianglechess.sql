@@ -1,13 +1,13 @@
--- MySQL dump 10.13  Distrib 8.0.35, for Win64 (x86_64)
+-- MySQL dump 10.13  Distrib 8.0.19, for Win64 (x86_64)
 --
 -- Host: localhost    Database: trianglechess
 -- ------------------------------------------------------
--- Server version	8.0.35
+-- Server version	8.3.0
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
 /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!50503 SET NAMES utf8 */;
+/*!50503 SET NAMES utf8mb4 */;
 /*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
 /*!40103 SET TIME_ZONE='+00:00' */;
 /*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
@@ -16,12 +16,32 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Current Database: `trianglechess`
+-- Table structure for table `appeal`
 --
 
-CREATE DATABASE /*!32312 IF NOT EXISTS*/ `trianglechess` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
+DROP TABLE IF EXISTS `appeal`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `appeal` (
+  `appealId` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `userId` bigint unsigned NOT NULL,
+  `type` varchar(50) NOT NULL,
+  `content` text,
+  `timestamp` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`appealId`),
+  KEY `appeal_user_FK` (`userId`),
+  CONSTRAINT `appeal_user_FK` FOREIGN KEY (`userId`) REFERENCES `user` (`userId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 
-USE `trianglechess`;
+--
+-- Dumping data for table `appeal`
+--
+
+LOCK TABLES `appeal` WRITE;
+/*!40000 ALTER TABLE `appeal` DISABLE KEYS */;
+/*!40000 ALTER TABLE `appeal` ENABLE KEYS */;
+UNLOCK TABLES;
 
 --
 -- Table structure for table `comment`
@@ -34,7 +54,7 @@ CREATE TABLE `comment` (
   `commentId` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '评论编号',
   `recordId` bigint unsigned NOT NULL COMMENT '对局Id',
   `userId` bigint unsigned NOT NULL COMMENT '发布用户Id',
-  `content` varchar(100) NOT NULL COMMENT '评论信息',
+  `content` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '评论信息',
   `likeNum` int unsigned DEFAULT '0' COMMENT '点赞数',
   `commentTime` timestamp NOT NULL COMMENT '评论发表时间',
   PRIMARY KEY (`commentId`),
@@ -182,6 +202,10 @@ LOCK TABLES `user` WRITE;
 INSERT INTO `user` VALUES (1,'Xhyntao','12345678',0,0,NULL,NULL,NULL),(2,'Xhyntao1','12345678',0,0,NULL,NULL,NULL),(3,'Xhyntao2','12345678',0,0,NULL,NULL,NULL),(4,'xu','12345678',0,0,NULL,NULL,NULL),(5,'xu2','12345678',0,0,NULL,NULL,NULL),(6,'xu3','12345678',0,0,NULL,NULL,NULL);
 /*!40000 ALTER TABLE `user` ENABLE KEYS */;
 UNLOCK TABLES;
+
+--
+-- Dumping routines for database 'trianglechess'
+--
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -192,4 +216,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2024-05-22  0:08:48
+-- Dump completed on 2024-05-26  0:31:05

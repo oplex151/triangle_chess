@@ -16,6 +16,7 @@ from flask import request
 from backend.global_var import *
 from backend.tools import setupLogger, getParams
 from backend.user_manage import *
+from backend.user_manage.appeal import *
 from backend.game.exception import *
 from backend.game.record import *
 from message import *
@@ -179,6 +180,39 @@ def deleteFriendApi():
     except:
         return "{message: 'parameter error'}",PARAM_ERROR
     return deleteFriend(userid, friend_id)
+
+@app.route('/api/addAppeals', methods=['POST'])
+def addAppealsApi():
+    '''
+    Args:
+        userid: 用户id
+        type: 申诉种类
+        content: 申诉内容
+    Returns:
+        添加申诉成功200
+    '''
+    params = {'userid':int, 'type':str, 'content':str}
+    try:
+        userid, appeal_type, content = getParams(params,request.form)
+    except:
+        return "{message: 'parameter error'}",PARAM_ERROR
+    return addAppeals(userid, appeal_type, content)
+
+@app.route('/api/getAppeals', methods=['POST'])
+def getAppealsApi():
+    '''
+    Args:
+        userid: 用户id
+        adminid: 管理员用户id
+    Returns:
+        申诉列表 详见数据库appeal表
+    '''
+    params = {'userid':int, 'adminid':int}
+    try:
+        userid, adminid = getParams(params,request.form)
+    except:
+        return "{message: 'parameter error'}",PARAM_ERROR
+    return getAppealsInfo(userid, adminid)
 
 @socketio.on('connect')
 def connect():
@@ -482,6 +516,7 @@ def roomOver(game:GameTable, room:RoomManager, userid:int):
         room_type = 1
     elif room.room_type == RoomType.ranked: 
         room_type = 2
+    logger.info(f"EndRankGame")
     # 游戏结束，判断胜利者或平局
     if room_type == 2:
         endRankGame(game)
@@ -715,21 +750,21 @@ def cycleRank(app):
     global rooms, rank_queue, sessions
     with app.app_context():
         while True:
-            def is_eligible(user1, user2):
-                rank_diff = abs(user1[1] - user2[1])
-                points_diff = abs(user1[2] - user2[2])
-                return rank_diff <= 1 and points_diff <= 100  # 假设允许的最大段位差和积分差
+            # def isEligible(user1, user2):
+            #     rank_diff = abs(user1[1] - user2[1])
+            #     score_diff = abs(user1[2] - user2[2])
+            #     return rank_diff <= 1 and score_diff <= 100  # 假设允许的最大段位差和积分
 
             if rank_queue.qsize() >= 3:
                 user_list = []
                 for _ in range(rank_queue.qsize()):
                     user_list.append(rank_queue.get())
-
+                
                 eligible_users = []
                 # 将段位符合的[user1，user2]组加入到eligible_users中
                 for i, user1 in enumerate(user_list):
                     for j, user2 in enumerate(user_list[i+1:], start=i+1):
-                        if user1 != user2 and is_eligible(user1, user2):
+                        if user1 != user2 and isEligible(user1, user2):
                             eligible_users.append([user1, user2])
 
                 # 再遍历user_list，将各个user与eligible_users中的各组中的两个user分别进行比对
@@ -737,13 +772,14 @@ def cycleRank(app):
                 matched_users = None
                 for [user1, user2] in eligible_users:
                     for user in user_list:
-                        if user != user1 and user != user2 and is_eligible(user, user1) and is_eligible(user, user2):
+                        if user != user1 and user != user2 and isEligible(user, user1) and isEligible(user, user2):
                             matched_users = (user1, user2, user)
                             break
                     if matched_users is not None:
                         break
                 if matched_users is not None:
                     user0, user1, user2 = matched_users
+
                     # 将除此 3 人外所有用户放回队列
                     for user in user_list:
                         if user and user != user0 and user != user1 and user != user2 and user in sessions:
@@ -758,14 +794,17 @@ def cycleRank(app):
                         for user in room.users:
                             join_room(room=room.room_id, sid=uid2sid(user['userid']),namespace='/')
                         logger.info(f"Create room : {room.room_id} and game: {room.game_table.game_id}")
-                        # 通知房间所有人匹配到了
+                        # 通知房间所有人匹配到了，并展示各玩家段位和积分
                         emit('startRankSuccess',{'game_id':room.game_table.game_id,
-                                            'room_info':room.getRoomInfo()},
+                                            'room_info':room.getRoomInfo(),
+                                            'ranks': [user0[1], user1[1], user2[1]],
+                                            'scores': [user0[2], user1[2], user2[2]]},
                                             to=room.room_id,namespace='/')
                     except Exception as e:
                         logger.error("Create rank_game error due to {0}".format(str(e)), exc_info=True)
-                        for user in [user0,user1,user2]:
-                            if user and user in sessions:
+                        # 重新将所有用户放回队列
+                        for user in user_list:
+                            if user and user[0] in sessions:
                                 rank_queue.put(user)
                         # if room and room in rooms:
                         #     rooms.remove(room)
@@ -774,7 +813,7 @@ def cycleRank(app):
                 else:
                     # 重新将所有用户放回队列
                     for user in user_list:
-                        if user and user in sessions:
+                        if user and user[0] in sessions:
                             rank_queue.put(user)
 
             time.sleep(1)
@@ -798,7 +837,7 @@ def startMatch(data):
     logger.info(f"User {userid} join match queue: sid {request.sid}")
 
 @socketio.event
-def startRankedMatch(data):
+def startRank(data):
     """
     接收玩家开始排位匹配请求
     Args:
@@ -818,9 +857,9 @@ def startRankedMatch(data):
         emit('processWrong', {'status': OTHER_ERROR}, to=request.sid)
         return
     
-    user_rank, user_points = result
+    user_rank, user_score = result
     sid2uid[request.sid] = userid # 维护sid2uid映射
-    rank_queue.put((userid, user_rank, user_points))
+    rank_queue.put((userid, user_rank, user_score))
     logger.info(f"User {userid} join rank queue: sid {request.sid}")
 
 @socketio.event
