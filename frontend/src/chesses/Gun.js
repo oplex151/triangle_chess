@@ -77,7 +77,7 @@ export class Gun extends Chess {
         // 重置判断是否遇到第二个棋子
         haveSecondChess = false;
         // 向下
-        for(let i = this.position ; i >= (ROW - ROWBOT) * COL ; i -= COL){
+        for(let i = this.position ; i > (ROW - ROWBOT) * COL ; i -= COL){
             if (i == this.position) continue;
 
             const chess = GEBI(i + '');
@@ -101,7 +101,7 @@ export class Gun extends Chess {
         // 未找到第一个棋子
         if(!haveFirstChess){
             // 我不在第一阵营
-            if(MarkFlag[0]){
+            if(MarkFlag[0] && ((ROW == ROWMID && getCol(this.position) <= 5)||(ROW == ROWTOP && getCol(this.position) >= 5))){
                 for(let i = COL - getCol(this.position) + 1 ; i <= AREABOT ; i += COL ){
                     const chess = GEBI(i + '');
                     // 第二个弈子
@@ -126,7 +126,7 @@ export class Gun extends Chess {
             haveSecondChess = false;
 
             // 我不在第二阵营
-            if(MarkFlag[1]){
+            if(MarkFlag[1]&& ((ROW == ROWBOT && getCol(this.position) >= 5)||(ROW == ROWTOP && getCol(this.position) <= 5))){
                 for(let i = AREABOT + COL - getCol(this.position) + 1; i <= AREAMID ; i += COL ){
                     const chess = GEBI(i + '');
                     // 第二个弈子
@@ -151,7 +151,7 @@ export class Gun extends Chess {
             haveSecondChess = false;
 
             // 我不在第二阵营
-            if(MarkFlag[2]){
+            if(MarkFlag[2] && ((ROW == ROWMID && getCol(this.position) >= 5)||(ROW == ROWBOT && getCol(this.position) <= 5))){
                 for(let i = AREAMID + COL - getCol(this.position)+ 1 ; i <= AREATOP ; i += COL ){
                     const chess = GEBI(i + '');
                     // 第二个弈子
@@ -176,7 +176,7 @@ export class Gun extends Chess {
             // 未找到第二个棋子
             if(!haveSecondChess){
                 // 我不在第一阵营
-                if(MarkFlag[0]){
+                if(MarkFlag[0] && ((ROW == ROWMID && getCol(this.position) <= 5)||(ROW == ROWTOP && getCol(this.position) >= 5))){
                     for(let i = COL - getCol(this.position)+ 1 ; i <= AREABOT ; i += COL ){
                         const chess = GEBI(i + '');
                         // 第二个弈子
@@ -190,7 +190,7 @@ export class Gun extends Chess {
                 // 重置判断是否遇到第二个棋子
                 haveSecondChess = false;
                 // 我不在第二阵营
-                if(MarkFlag[1]){
+                if(MarkFlag[1] && ((ROW == ROWBOT && getCol(this.position) >= 5)||(ROW == ROWTOP && getCol(this.position) <= 5))){
                     for(let i = AREABOT + COL - getCol(this.position) + 1; i <= AREAMID ; i += COL ){
                         const chess = GEBI(i + '');
                         // 第二个弈子
@@ -204,7 +204,7 @@ export class Gun extends Chess {
                 // 重置判断是否遇到第二个棋子
                 haveSecondChess = false;
                 // 我不在第二阵营
-                if(MarkFlag[2]){
+                if(MarkFlag[2] && ((ROW == ROWMID && getCol(this.position) >= 5)||(ROW == ROWBOT && getCol(this.position) <= 5))){
                     for(let i = AREAMID + COL - getCol(this.position) + 1; i <= AREATOP ; i += COL ){
                         const chess = GEBI(i + '');
                         // 第二个弈子

@@ -1,0 +1,396 @@
+{
+  "game_state": "ongoing",
+  "lives": [
+    true,
+    true,
+    true
+  ],
+  "pieces": [
+    {
+      "live": true,
+      "name": "Leader",
+      "px": 4,
+      "py": 0,
+      "pz": 0,
+      "user_z": 0
+    },
+    {
+      "live": true,
+      "name": "Advisor",
+      "px": 3,
+      "py": 0,
+      "pz": 0,
+      "user_z": 0
+    },
+    {
+      "live": true,
+      "name": "Advisor",
+      "px": 5,
+      "py": 0,
+      "pz": 0,
+      "user_z": 0
+    },
+    {
+      "live": true,
+      "name": "Bishop",
+      "px": 2,
+      "py": 0,
+      "pz": 0,
+      "user_z": 0
+    },
+    {
+      "live": true,
+      "name": "Bishop",
+      "px": 6,
+      "py": 0,
+      "pz": 0,
+      "user_z": 0
+    },
+    {
+      "live": true,
+      "name": "WarHorse",
+      "px": 1,
+      "py": 0,
+      "pz": 0,
+      "user_z": 0
+    },
+    {
+      "live": true,
+      "name": "WarHorse",
+      "px": 7,
+      "py": 0,
+      "pz": 0,
+      "user_z": 0
+    },
+    {
+      "live": true,
+      "name": "Chariot",
+      "px": 0,
+      "py": 0,
+      "pz": 0,
+      "user_z": 0
+    },
+    {
+      "live": true,
+      "name": "Chariot",
+      "px": 8,
+      "py": 0,
+      "pz": 0,
+      "user_z": 0
+    },
+    {
+      "live": true,
+      "name": "Gun",
+      "px": 1,
+      "py": 2,
+      "pz": 0,
+      "user_z": 0
+    },
+    {
+      "live": true,
+      "name": "Gun",
+      "px": 7,
+      "py": 2,
+      "pz": 0,
+      "user_z": 0
+    },
+    {
+      "live": true,
+      "name": "Soilder",
+      "px": 0,
+      "py": 3,
+      "pz": 0,
+      "user_z": 0
+    },
+    {
+      "live": true,
+      "name": "Soilder",
+      "px": 2,
+      "py": 3,
+      "pz": 0,
+      "user_z": 0
+    },
+    {
+      "live": true,
+      "name": "Soilder",
+      "px": 4,
+      "py": 3,
+      "pz": 0,
+      "user_z": 0
+    },
+    {
+      "live": true,
+      "name": "Soilder",
+      "px": 6,
+      "py": 3,
+      "pz": 0,
+      "user_z": 0
+    },
+    {
+      "live": true,
+      "name": "Soilder",
+      "px": 8,
+      "py": 3,
+      "pz": 0,
+      "user_z": 0
+    },
+    {
+      "live": true,
+      "name": "Leader",
+      "px": 4,
+      "py": 0,
+      "pz": 1,
+      "user_z": 1
+    },
+    {
+      "live": true,
+      "name": "Advisor",
+      "px": 3,
+      "py": 0,
+      "pz": 1,
+      "user_z": 1
+    },
+    {
+      "live": true,
+      "name": "Advisor",
+      "px": 5,
+      "py": 0,
+      "pz": 1,
+      "user_z": 1
+    },
+    {
+      "live": true,
+      "name": "Bishop",
+      "px": 2,
+      "py": 0,
+      "pz": 1,
+      "user_z": 1
+    },
+    {
+      "live": true,
+      "name": "Bishop",
+      "px": 6,
+      "py": 0,
+      "pz": 1,
+      "user_z": 1
+    },
+    {
+      "live": true,
+      "name": "WarHorse",
+      "px": 1,
+      "py": 0,
+      "pz": 1,
+      "user_z": 1
+    },
+    {
+      "live": true,
+      "name": "WarHorse",
+      "px": 7,
+      "py": 0,
+      "pz": 1,
+      "user_z": 1
+    },
+    {
+      "live": true,
+      "name": "Chariot",
+      "px": 0,
+      "py": 0,
+      "pz": 1,
+      "user_z": 1
+    },
+    {
+      "live": true,
+      "name": "Chariot",
+      "px": 8,
+      "py": 0,
+      "pz": 1,
+      "user_z": 1
+    },
+    {
+      "live": true,
+      "name": "Gun",
+      "px": 1,
+      "py": 2,
+      "pz": 1,
+      "user_z": 1
+    },
+    {
+      "live": true,
+      "name": "Gun",
+      "px": 7,
+      "py": 2,
+      "pz": 1,
+      "user_z": 1
+    },
+    {
+      "live": true,
+      "name": "Soilder",
+      "px": 0,
+      "py": 3,
+      "pz": 1,
+      "user_z": 1
+    },
+    {
+      "live": true,
+      "name": "Soilder",
+      "px": 2,
+      "py": 3,
+      "pz": 1,
+      "user_z": 1
+    },
+    {
+      "live": true,
+      "name": "Soilder",
+      "px": 4,
+      "py": 3,
+      "pz": 1,
+      "user_z": 1
+    },
+    {
+      "live": true,
+      "name": "Soilder",
+      "px": 6,
+      "py": 3,
+      "pz": 1,
+      "user_z": 1
+    },
+    {
+      "live": true,
+      "name": "Soilder",
+      "px": 8,
+      "py": 3,
+      "pz": 1,
+      "user_z": 1
+    },
+    {
+      "live": true,
+      "name": "Leader",
+      "px": 4,
+      "py": 0,
+      "pz": 2,
+      "user_z": 2
+    },
+    {
+      "live": true,
+      "name": "Advisor",
+      "px": 3,
+      "py": 0,
+      "pz": 2,
+      "user_z": 2
+    },
+    {
+      "live": true,
+      "name": "Advisor",
+      "px": 5,
+      "py": 0,
+      "pz": 2,
+      "user_z": 2
+    },
+    {
+      "live": true,
+      "name": "Bishop",
+      "px": 2,
+      "py": 0,
+      "pz": 2,
+      "user_z": 2
+    },
+    {
+      "live": true,
+      "name": "Bishop",
+      "px": 6,
+      "py": 0,
+      "pz": 2,
+      "user_z": 2
+    },
+    {
+      "live": true,
+      "name": "WarHorse",
+      "px": 1,
+      "py": 0,
+      "pz": 2,
+      "user_z": 2
+    },
+    {
+      "live": true,
+      "name": "WarHorse",
+      "px": 7,
+      "py": 0,
+      "pz": 2,
+      "user_z": 2
+    },
+    {
+      "live": true,
+      "name": "Chariot",
+      "px": 0,
+      "py": 0,
+      "pz": 2,
+      "user_z": 2
+    },
+    {
+      "live": true,
+      "name": "Chariot",
+      "px": 8,
+      "py": 0,
+      "pz": 2,
+      "user_z": 2
+    },
+    {
+      "live": true,
+      "name": "Gun",
+      "px": 1,
+      "py": 2,
+      "pz": 2,
+      "user_z": 2
+    },
+    {
+      "live": true,
+      "name": "Gun",
+      "px": 7,
+      "py": 2,
+      "pz": 2,
+      "user_z": 2
+    },
+    {
+      "live": true,
+      "name": "Soilder",
+      "px": 0,
+      "py": 3,
+      "pz": 2,
+      "user_z": 2
+    },
+    {
+      "live": true,
+      "name": "Soilder",
+      "px": 2,
+      "py": 3,
+      "pz": 2,
+      "user_z": 2
+    },
+    {
+      "live": true,
+      "name": "Soilder",
+      "px": 4,
+      "py": 3,
+      "pz": 2,
+      "user_z": 2
+    },
+    {
+      "live": true,
+      "name": "Soilder",
+      "px": 6,
+      "py": 3,
+      "pz": 2,
+      "user_z": 2
+    },
+    {
+      "live": true,
+      "name": "Soilder",
+      "px": 8,
+      "py": 3,
+      "pz": 2,
+      "user_z": 2
+      }
+  ],
+  "turn": 0,
+  "winner": -1
+}

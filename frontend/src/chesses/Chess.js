@@ -1,6 +1,7 @@
 import { COL, ROWMID, ROWTOP, ROWBOT } from "@/config/config";
 import { GEBI, getCol, getRow } from "@/utils/utils";
 import { lives } from "./Live";
+import {ElMessage} from "element-plus";
 
 export class Chess {
     constructor(position, camp, inWhichArea) {
@@ -8,6 +9,7 @@ export class Chess {
         this.position = position;
         this.camp = camp;
         this.inWhichArea = inWhichArea;
+        this.image = "";
     }
 
     move(to) {
@@ -16,6 +18,9 @@ export class Chess {
         let hoveFinish = false;
 
         point.innerText = '';
+        point.style.backgroundImage = "";
+
+
         point.classList.remove(`camp${this.camp}`);
         beginPosition = this.position;
         this.position = to;
@@ -31,27 +36,45 @@ export class Chess {
             }
             point.classList.remove(`camp${originalCamp}`);
             if (point?.innerText === '将') {
+                let message = '';
                 switch (originalCamp){
                     case 0:
-                        alert('红方淘汰');
+                        message = '红方淘汰';
                         break;
                     case 1:
-                        alert('黑方淘汰');
+                        message = '黑方淘汰';
                         break;
                     case 2:
-                        alert('金方淘汰');
+                        message = '金方淘汰';
                         break;
                     default:
                         break;
                 }
+                ElMessage.info(message); // 使用ElMessage.info显示消息
                 lives[originalCamp] = false;
                 hoveFinish = true;
             }
         }
 
         point.innerText = this.name;
+        switch (this.camp) {
+            case 0:
+                point.classList.add('camp0');
+                this.image = "src/assets/images/game/chess/realChess/" + this.name + "白.png";
+                break;
 
-        point.classList.add(`camp${this.camp}`);
+            case 1:
+                point.classList.add('camp1');
+                this.image = "src/assets/images/game/chess/realChess/" + this.name + "黑.png";
+                break;
+            case 2:
+                point.classList.add('camp2');
+                this.image = "src/assets/images/game/chess/realChess/" + this.name + "金.png";
+                break;
+        }
+        point.classList.add('chess-background');  // 添加自定义class
+        point.style.background = `url(${this.image}) center center / contain no-repeat`;
+        point.style.backgroundSize = '53px'; // 将背景图片大小设置为 53px，宽度和高度均为 53px
 
         if(this.position <= (COL * ROWBOT)) {
             this.inWhichArea = 0;

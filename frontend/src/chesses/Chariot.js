@@ -50,7 +50,7 @@ export class Chariot extends Chess {
 
         // 向上
         for(let i = this.position ; i <= ROW * COL ; i += COL){
-            if(i ==this.position)continue;
+            if(i ==this.position) continue;
             const chess = GEBI(i + '');
             // 第一个弈子
             if(chess?.innerText !== ''){
@@ -64,8 +64,8 @@ export class Chariot extends Chess {
         // 重置判断是否遇到了第一个棋子
         haveFirstChess = false;
         // 向下
-        for(let i = this.position ; i >= (ROW - ROWBOT) * COL ; i -= COL){
-            if(i ==this.position)continue;
+        for(let i = this.position ; i > (ROW - ROWBOT) * COL ; i -= COL){
+            if(i == this.position) continue;
 
             const chess = GEBI(i + '');
             // 第一个弈子
@@ -80,7 +80,7 @@ export class Chariot extends Chess {
         // 未找到第一个棋子
         if(!haveFirstChess){
             // 我不在第一阵营
-            if(MarkFlag[0]){
+            if(MarkFlag[0] && ((ROW == ROWMID && getCol(this.position) <= 5)||(ROW == ROWTOP && getCol(this.position) >= 5))){
                 for(let i = COL - getCol(this.position) + 1; i <= AREABOT ; i += COL ){
                     const chess = GEBI(i + '');
                     // 第一个弈子
@@ -95,7 +95,7 @@ export class Chariot extends Chess {
             // 重置判断是否遇到了第一个棋子
             haveFirstChess = false;
             // 我不在第二阵营
-            if(MarkFlag[1]){
+            if(MarkFlag[1] && ((ROW == ROWBOT && getCol(this.position) >= 5)||(ROW == ROWTOP && getCol(this.position) <= 5))){
                 for(let i = AREABOT + COL - getCol(this.position) + 1; i <= AREAMID ; i += COL ){
                     const chess = GEBI(i + '');
                     // 第一个弈子
@@ -109,8 +109,8 @@ export class Chariot extends Chess {
             }
             // 重置判断是否遇到了第一个棋子
             haveFirstChess = false;
-            // 我不在第二阵营
-            if(MarkFlag[2]){
+            // 我不在第三阵营
+            if(MarkFlag[2] && ((ROW == ROWMID && getCol(this.position) >= 5)||(ROW == ROWBOT && getCol(this.position) <= 5))){
                 for(let i = AREAMID + COL - getCol(this.position) + 1; i <= AREATOP ; i += COL ){
                     const chess = GEBI(i + '');
                     if(chess?.innerText !== ''){

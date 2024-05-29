@@ -3,7 +3,7 @@ import { ElMessage } from 'element-plus';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
 import main from '@/main';
-import { reactive, ref ,watch} from 'vue'
+import { reactive, ref, watch } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
 
 const formRef = ref<FormInstance>()
@@ -12,11 +12,14 @@ const router = useRouter();
 const errorMessage = ref('')
 const RegisterForm = reactive({
     username: '',
+    email: '',
+    phone_num: '',
     password: '',
-    repassword:''
+    repassword: '',
+    gender: ''
 })
 
-const checkUsername   = (rule: any, value: any, callback: any) => {
+const checkUsername = (rule: any, value: any, callback: any) => {
     if (value === '') {
         callback(new Error('请输入用户名'))
     } else {
@@ -26,16 +29,16 @@ const checkUsername   = (rule: any, value: any, callback: any) => {
 const checkPassword = (rule: any, value: any, callback: any) => {
     if (value === '') {
         callback(new Error('请输入密码'))
-    } 
-    else if(value.length < 8 || value.length > 50) {
+    }
+    else if (value.length < 8 || value.length > 50) {
         callback(new Error('密码长度为8-50位'))
-    }   
-    else if(!/^[ -~]+$/.test(value)) {
+    }
+    else if (!/^[ -~]+$/.test(value)) {
         callback(new Error('密码只能由字符和数字构成'))
     }
-    else if(!/^[^\s]+$/.test(value)) {
+    else if (!/^[^\s]+$/.test(value)) {
         callback(new Error('密码不能含有空格'))
-    } 
+    }
     else {
         callback()
     }
@@ -44,7 +47,7 @@ const checkPassword = (rule: any, value: any, callback: any) => {
 const checkRepassword = (rule: any, value: any, callback: any) => {
     if (value === '') {
         callback(new Error('请重复密码'))
-    } 
+    }
     else if (value !== RegisterForm.password) {
         callback(new Error('两次输入密码不一致'))
     }
@@ -56,17 +59,22 @@ const checkRepassword = (rule: any, value: any, callback: any) => {
 const Validator = reactive<FormRules<typeof RegisterForm>>(
     {
         username: [
-            {trigger: 'blur',
-            validator:checkUsername
+            {
+                trigger: ['blur', 'change'],
+                validator: checkUsername
             }
         ],
         password: [
-            { trigger: 'blur',
-            validator:checkPassword}
+            {
+                trigger: ['blur', 'change'],
+                validator: checkPassword
+            }
         ],
         repassword: [
-            {trigger: 'blur' ,
-            validator:checkRepassword}
+            {
+                trigger: ['blur', 'change'],
+                validator: checkRepassword
+            }
         ]
     }
 )
@@ -74,43 +82,46 @@ const Validator = reactive<FormRules<typeof RegisterForm>>(
 const submitForm = (formEl: FormInstance | undefined) => {
     if (!formEl) return
     formEl.validate((valid) => {
-    if (valid) {
-        console.log('submit!')
-        disableForm.value = true
-        axios.post(main.url+ '/api/register', {
-        'username':    RegisterForm.username,
-        'password': RegisterForm.password
-        /* Hash! */
-    },
-        {
-            headers: {'Content-Type':'application/x-www-form-urlencoded'},
-        }
-        ).then(res => {
-            if (res.status === 200) {
-                ElMessage.success("注册成功！")
-                disableForm.value = true
-                router.push('/login');
-            } 
-            else if (res.status === 503) {
-                errorMessage.value = '用户名已存在！'
-                disableForm.value = false                
-            }
-            else {
+        if (valid) {
+            console.log('submit!')
+            disableForm.value = true
+            axios.post(main.url + '/api/register', {
+                'username': RegisterForm.username,
+                'password': RegisterForm.password,
+                'email': RegisterForm.email,
+                'phone_num': RegisterForm.phone_num,
+                'gender': RegisterForm.gender
+                /* Hash! */
+            },
+                {
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                }
+            ).then(res => {
+                if (res.status === 200) {
+                    ElMessage.success("注册成功！")
+                    disableForm.value = true
+                    router.push('/login');
+                }
+                else if (res.status === 503) {
+                    errorMessage.value = '用户名已存在！'
+                    disableForm.value = false
+                }
+                else {
+                    disableForm.value = false
+                    errorMessage.value = '未知错误'
+                }
+            }).catch(err => {
+                console.log(err);
+                errorMessage.value = err;
                 disableForm.value = false
-                errorMessage.value = '未知错误'
-            }
-        }).catch(err => {
-            console.log(err);
-            errorMessage.value = err;
+            });
             disableForm.value = false
-        });
-        disableForm.value = false
-    } else {
-        console.log('error submit!');
-        errorMessage.value = '注册表单出错!'
-        disableForm.value = false
-        return false
-    }
+        } else {
+            console.log('error submit!');
+            errorMessage.value = '注册表单出错!'
+            disableForm.value = false
+            return false
+        }
     })
 }
 const resetForm = (formEl: FormInstance | undefined) => {
@@ -118,14 +129,14 @@ const resetForm = (formEl: FormInstance | undefined) => {
     formEl.resetFields()
 }
 
-watch(errorMessage, (oldValue ,newValue) => {
+watch(errorMessage, (oldValue, newValue) => {
     if (newValue !== oldValue && errorMessage.value !== '') {
         ElMessage({
-        message: errorMessage.value,
-        grouping: true,
-        type: 'error',
-        showClose: true
-    })
+            message: errorMessage.value,
+            grouping: true,
+            type: 'error',
+            showClose: true
+        })
         errorMessage.value = '';
     }
 });
@@ -133,77 +144,76 @@ watch(errorMessage, (oldValue ,newValue) => {
 
 <template>
     <div class="outer-container">
-        
+
         <div class="background-image"></div>
         <div class="login-container">
-        <h1 class="login-title">注册</h1>
-            <el-form
-                ref="formRef"
-                style="max-width: 315px ;width: 350px; position: relative;"
-                :model="RegisterForm"
-                label-width="auto"
-                :rules="Validator"
-                class="form-container"
-                status-icon
-                :disabled=disableForm
-                hide-required-asterisk	
-                >
-                <el-form-item
-                    prop="username"
-                    class="form-group"
-                >
-                <div class="form-label">用户名:&nbsp </div>
-                    <el-input
-                    class="form-input"
-                    v-model="RegisterForm.username"
-                    type="text"
-                    autocomplete="on"
-                    />
+            <h1 class="login-title">注册</h1>
+            <el-form ref="formRef" style="max-width: 315px ;width: 350px; position: relative;" :model="RegisterForm"
+                label-width="auto" :rules="Validator" class="form-container" status-icon :disabled=disableForm
+                hide-required-asterisk>
+                <el-form-item prop="username" class="form-group">
+                    <div class="form-label">用户名:&nbsp </div>
+                    <el-input class="form-input" v-model="RegisterForm.username" type="text" autocomplete="on" />
                 </el-form-item>
-                <el-form-item
-                    prop="password"
-                    class="form-group"
-                >
-                <div class="form-label">密&nbsp码:&nbsp</div>
-                    <el-input
-                    class="form-input"
-                    v-model="RegisterForm.password"
-                    type="password"
-                    autocomplete="off"
-                    show-password
-                    />
+                <el-form-item prop="email" class="form-group" :rules="[
+                    // {
+                    //     required: true,
+                    //     message: '请输入邮箱',
+                    //     trigger: 'blur',
+                    // },
+                    {
+                        type: 'email',
+                        message: '请输入正确的邮箱地址',
+                        trigger: ['blur', 'change'],
+                    },
+                ]">
+                    <div class="form-label">邮&nbsp箱:&nbsp </div>
+                    <el-input class="form-input" v-model="RegisterForm.email" type="text" autocomplete="on" />
                 </el-form-item>
-                <el-form-item
-                    prop="repassword"    
-                    class="form-group"
-                >
-                <div class="form-label">重复密码: </div>
-                    <el-input
-                    class="form-input"
-                    v-model="RegisterForm.repassword"
-                    type="password"
-                    autocomplete="off"
-                    show-password
-                    />
-                </el-form-item>   
-                <el-form-item>
-                    <el-button type="primary" class="login-button"@click="submitForm(formRef)">注册</el-button>
+                <el-form-item prop="phone" class="form-group" :rules="[
+                    // { required: true, message: '请输入手机号' },
+                    { type: 'number', message: '请输入正确的手机号' },
+                ]">
+                    <div class="form-label">手机号:&nbsp </div>
+                    <el-input class="form-input" v-model="RegisterForm.phone_num" type="text" autocomplete="on" />
+                </el-form-item>
+                <el-form-item prop="gender" class="form-group">
+                    <div class="form-label">性&nbsp别:&nbsp</div>
+                    <el-radio-group v-model="RegisterForm.gender" class="form-input">
+                        <el-radio value="male" size="large">男</el-radio>
+                        <el-radio value="female" size="large">女</el-radio>
+                        <el-radio value="" size="large">不愿透露</el-radio>
+                    </el-radio-group>
+                </el-form-item>
+                <el-form-item prop="password" class="form-group">
+                    <div class="form-label">密&nbsp码:&nbsp</div>
+                    <el-input class="form-input" v-model="RegisterForm.password" type="password" autocomplete="off"
+                        show-password />
+                </el-form-item>
+                <el-form-item prop="repassword" class="form-group">
+                    <div class="form-label">重复密码: </div>
+                    <el-input class="form-input" v-model="RegisterForm.repassword" type="password" autocomplete="off"
+                        show-password />
                 </el-form-item>
                 <el-form-item>
-                <el-button class="login-button" @click="resetForm(formRef)">清空</el-button>
+                    <el-button type="primary" class="login-button" @click="submitForm(formRef)">注册</el-button>
+                </el-form-item>
+                <el-form-item>
+                    <el-button class="clear-button" @click="resetForm(formRef)">清空</el-button>
                 </el-form-item>
             </el-form>
-        <router-link to="/login" class="gobutton">返回</router-link>
-        </div>  <!-- end of login-container -->
+            <router-link to="/login" class="gobutton">返回</router-link>
+        </div> <!-- end of login-container -->
 
-    </div>   <!-- end of outer-container -->
+    </div> <!-- end of outer-container -->
 </template>
 
 <style scoped>
-.gobutton{
+.gobutton {
     display: text-indent;
     color: #00b88d;
 }
+
 .outer-container {
     display: center;
     justify-content: center;
@@ -223,8 +233,8 @@ watch(errorMessage, (oldValue ,newValue) => {
 }
 
 .login-container {
-    width: 600px;
-    height: 700px;
+    width: 560px;
+    height: 660px;
     padding: 20px;
     border: 1px solid #ccc;
     border-radius: 20px;
@@ -233,35 +243,58 @@ watch(errorMessage, (oldValue ,newValue) => {
     left: 50%;
     transform: translate(-50%, -50%);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    background-color: rgba(248, 234, 171, 0.8); /* 设置一个半透明的背景色 */
+    background-color: rgba(248, 234, 171, 0.8);
+    /* 设置一个半透明的背景色 */
 }
+
 .login-button {
     justify-content: center;
     background-color: #f6bb4e;
     color: #fff;
     border: none;
     border-radius: 15px;
-    padding: 15px 0; /* 增加垂直内边距 */
+    padding: 15px 0;
+    /* 增加垂直内边距 */
     margin: auto;
     cursor: pointer;
     font-size: 15px;
     height: 50px;
-    width: 200px;
+    width: 280px;
+    margin-top: 20px;
 }
+
+.clear-button {
+    justify-content: center;
+    background-color: #605f5f;
+    color: #fff;
+    border: none;
+    border-radius: 15px;
+    padding: 15px 0;
+    /* 增加垂直内边距 */
+    margin: auto;
+    cursor: pointer;
+    font-size: 15px;
+    height: 50px;
+    width: 280px;
+    margin-top: -5px;
+}
+
 .login-title {
     text-align: center;
     font-size: 30px;
-    margin-top: 10px;
-    margin-bottom: 60px;
+    margin-top: 20px;
+    margin-bottom: 30px;
     font-family: "SimSun";
+    font-weight: bold;
 }
 
 
-.form-container{
+.form-container {
     margin: auto;
     border: initial;
     transform: translate(-0%, -0%);
-    background-color: rgba(255, 255, 255, 0); /* 设置一个半透明的背景色 */
+    background-color: rgba(255, 255, 255, 0);
+    /* 设置一个半透明的背景色 */
 }
 
 .login-form {
@@ -270,32 +303,39 @@ watch(errorMessage, (oldValue ,newValue) => {
 }
 
 .form-group {
-    margin-bottom: 70px;
-    align-items: flex-start; /* 让 form-label 和 form-input 上下对齐 */
+    margin-bottom: 26px;
+    align-items: flex-start;
+    /* 让 form-label 和 form-input 上下对齐 */
     display: flex;
     flex-direction: row;
+    width: 400px;
 }
+
 .form-label {
+    width: 100px;
     font-weight: bold;
-    font-size: 15px; /* 增加字体大小 */
+    font-size: 15px;
+    /* 增加字体大小 */
     font-family: "SimSun";
 }
-.el-input{
+
+.el-input {
     width: 240px;
     height: 55px;
 }
 
-.form-input  {
-    border: 1px solid #ccc; /* 增加边框宽度 */
-    border-radius: 5px;
-    font-size: 18px; /* 增加输入框字体大小 */
+.form-input {
+
+    align-items: flex-start;
+    height: 30px;
+    width: 220px;
+    font-size: 18px;
+    /* 增加输入框字体大小 */
+
 }
 
-.form-button{
+.form-button {
     display: flex;
     justify-content: center;
 }
-
 </style>
-
-
