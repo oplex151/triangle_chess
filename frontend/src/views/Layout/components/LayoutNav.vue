@@ -28,12 +28,12 @@ const categoryList = ref([
     url:'/profile',
     picture:""
   },
-  {
-    id:4,
-    name:"战绩查看",
-    url:"/record",
-    picture:""
-  },
+  // {
+  //   id:4,
+  //   name:"战绩查看",
+  //   url:"/record",
+  //   picture:""
+  // },
   {
     id:5,
     name:"帮助中心",

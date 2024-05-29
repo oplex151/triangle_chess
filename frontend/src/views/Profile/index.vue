@@ -10,6 +10,7 @@ import { ElDivider, ElInput, ElMessage } from 'element-plus'
 import { User, HomeFilled } from '@element-plus/icons-vue'
 import { Menu as IconMenu, Message, Setting } from '@element-plus/icons-vue'
 import UserInfo from './UserInfo.vue'
+import Record from '@/views/Record/index.vue'
 
 
 const router = useRouter()
@@ -24,7 +25,26 @@ function goBackHome(){
     router.push('/')
 }
 
-const CurrentView = UserInfo
+const CurrentView = ref(UserInfo)
+
+function handleSelect(index: string) {
+  switch (index) {
+    case '1':
+      CurrentView.value = UserInfo
+      break
+    case '2':
+      CurrentView.value = Record
+      break
+    case '3-1':
+      break
+    case '3-2':
+      break
+    case '3-3':
+      break
+    default:
+      break
+  }
+}
 
 </script>
 
@@ -46,12 +66,12 @@ const CurrentView = UserInfo
       <el-container class="menu-container">
         <el-aside width="150px"  class="aside">
           <el-scrollbar rounded>
-            <el-menu class="el-menu" active-text-color="#000">
-              <el-menu-item index="1" class="el-menu-item"
-              @click="CurrentView = UserInfo">
+            <el-menu class="el-menu" active-text-color="#000"
+            @select="handleSelect">
+              <el-menu-item index="1" class="el-menu-item">
                   <el-icon><user /></el-icon>个人信息
               </el-menu-item>
-              <el-menu-item index="2">
+              <el-menu-item index="2" class="el-menu-item">
                 <template #title>
                   <el-icon><icon-menu /></el-icon>对局历史
                 </template>
@@ -116,6 +136,7 @@ const CurrentView = UserInfo
 .el-menu{
   background-color :#ecb920;
   color : #000000;
+  z-index: 1000;
 }
 
 .el-menu-item{
@@ -149,7 +170,7 @@ const CurrentView = UserInfo
   margin-left: 10px;
   border-radius: 5px;
   background-color: #fdeec4;
-  min-height: 500px;
+  min-height: 900px;
 }
 
 .main {
@@ -158,6 +179,7 @@ const CurrentView = UserInfo
   margin-left: 10px;
   border-radius: 5px;
   background-color: #fdeec4;
+  min-height: 900px;
 }
 
 </style>

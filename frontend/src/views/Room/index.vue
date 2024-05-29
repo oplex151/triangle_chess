@@ -330,7 +330,7 @@ const handleReport = (id) => {
           <el-input class="custom-input" v-model="i_message" maxlength=80 show-word-limit @keyup.enter.native="sendMessage" placeholder="Please input" />
           <el-button @click="sendMessage" style="width:60px" type="primary">发送消息</el-button>
       </div>
-      </div>
+    </div>
   </div>
   <Report :toreportid=to_report_id :myuserid="Cookies.get('userid')" :dialogFormVisible=vis @reportEnd="handleReportEnd" />
 </template>
@@ -406,8 +406,9 @@ const handleReport = (id) => {
 }
 
 .container {
-  text-align: center;
-  margin-top: 20px;
+  margin-top: 60px !important;
+  border-radius: 10px;
+  padding: 30px !important;
 }
 
 .copy-button{

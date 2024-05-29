@@ -19,6 +19,7 @@
     "socket.io-client": "^4.7.5",
     "svg.js": "^2.7.1",
     "vue": "^3.4.21",
+    "vue-clipboard3": "^2.0.0",
     "vue-router": "^4.3.0",
     "vue-socket.io": "^3.0.10"
   },

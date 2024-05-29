@@ -261,9 +261,8 @@ const share = () => {
     position: absolute;
     top: 35px;
     left: -42px;
-    width: 1000px;
+    width: 1080px;
     height: 800px;
-
     background-image: url('@/assets/images/game/chessBoard.jpg');
     background-size: cover;
     opacity: 1.0; /* Adjust opacity as needed */

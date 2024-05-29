@@ -6,7 +6,7 @@ import Cookies from 'js-cookie';
 import { onMounted, ref } from 'vue';
 import { getRankLevel } from '@/config/rank';
 import { ElMessage } from 'element-plus';
-import { on } from '@svgdotjs/svg.js';
+
 
 const userinfo= ref({
     username: 'John Doe',

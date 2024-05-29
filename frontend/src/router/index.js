@@ -76,11 +76,6 @@ const router = createRouter({
       meta: {isAuth: true,connection: true},
     },
     {
-      path: '/record',
-      component: Record,
-      meta: {isAuth: true,connection: false},
-    },
-    {
       path: '/rank',
       component: Rank,
       meta: {isAuth: true,connection: true},

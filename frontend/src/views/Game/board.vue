@@ -279,9 +279,9 @@ defineExpose({
 }
 
 .camp {
-  position: absolute;
-  top: 0;
-  left: 0;
+  position: relative;
+  top: 40px;
+  left: 8%;
   font-size: 24px;
   color: #e9b526;
 }

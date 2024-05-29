@@ -27,6 +27,7 @@ const board = ref(null)
 const map_state = ref(game_info)
 import useClipboard from 'vue-clipboard3';
 
+
 const { toClipboard } = useClipboard()
 
 
@@ -49,6 +50,7 @@ const name = computed(()=>{
     return userids.value
 })
 const EndGo = () => {
+    console.log('EndGo')
     start.value = false
     moves.value = []
     step.value = 0
@@ -102,18 +104,18 @@ onMounted(() => {
     console.log(socket.value)
     socket.value.io.emit('viewGameRecords', { 'userid': userid })
 });
-function goBackHome() {
-    removeSockets(sockets_methods, socket.value, proxy)
-    Cookies.remove('room_id')
-    Cookies.remove('room_info')
-    socket.value.io.disconnect()
-    socket.value = null
-    router.push('/')
-}
+// function goBackHome() {
+//     removeSockets(sockets_methods, socket.value, proxy)
+//     socket.value.io.disconnect()
+//     socket.value = null
+//     router.push('/')
+// }
 onUnmounted(() => {
     try {
         removeSockets(sockets_methods, socket.value, proxy);
         socket.value.io.disconnect()
+        socket.value = null
+        console.log("Record Remove Socket Success!")
     }
     catch (err) {
         console.log("Record Remove Socket Failed!")
@@ -215,21 +217,24 @@ const share = () => {
     <Report :toreportid="to_report_id" :myuserid="userid" :dialogFormVisible=vis @reportEnd="handleReportEnd" />
     <div class="background-image-Record"></div>
     
-    <button class="button-home" @click="goBackHome()">
+    <!-- <button class="button-home" @click="goBackHome()">
             <el-icon style="vertical-align: middle" size="30px">
                 <HomeFilled />
             </el-icon>
-        </button>
+        </button> -->
     <button class="button-share" @click="share">
         <el-icon style="vertical-align: middle" size="30px">
                 <Share />
             </el-icon>
     </button>
     <div v-if="start">
-        <button @click="EndGo" class="end_button">结束回放</button>        
+        <button @click="EndGo" class="button">结束回放</button>   
+        <div class="brd2">     
         <div class="brd1">
             <div class="chessboard-overlay"></div>
+            <div class="chessboard-container">
             <Board :my_camp="my_camp" ref="board" @requireMove="Move" />
+            </div>
             <button @click="Next" class="next_button">下一步</button>
             <div class="avatar">
             <!---------0号位---------->
@@ -267,9 +272,12 @@ const share = () => {
             </div>
             </div>
         </div>
-
+        </div>
     </div>
     <div v-else>
+        <div>
+            <button @click="Get" class="button">开始回放</button>
+        </div>
         <div class="select_btn">
             <el-select v-model="value" filterable placeholder="请输入对局" :loading="loading" popper-class="select_down"
                 style="width: 240px">
@@ -277,13 +285,11 @@ const share = () => {
                 </el-option>
             </el-select>
         </div>
-        <div>
-            <button @click="Get" class="button">开始回放</button>
-        </div>
     </div>
 </template>
 
 <style scoped>
+
 .background-image-Record {
     position: fixed;
     top: 0;
@@ -307,9 +313,8 @@ const share = () => {
     z-index: -1;
 }
 
-.end_button {
+/* .end_button {
     display: block;
-    margin: 0 auto;
     padding: 10px 10px;
     font-size: 18px;
     font-weight: bold;
@@ -318,58 +323,48 @@ const share = () => {
     border-radius: 10px;
     border: none;
     cursor: pointer;
-}
+    position: absolute;
+    left: 50%;
+    z-index: 9999;
+} */
 
 .next_button {
     font-size: 18px;
     font-weight: bold;
-    padding: 10px 10px;
-    top: 400px;
-    left: 100px;
     color: #fff;
     background-color: #ecb920;
     border-radius: 10px;
     border: none;
     position: relative;
+    margin-right: 30px;
+    top: 388px;
 }
 
 .select_btn {
-    position: relative;
-    justify-content: center;
-    align-items: center;
-    position: absolute;
-    left: 50%;
-    margin-top: 10%;
-
-    transform: translate(-50%, -50%);
-
+   position: relative;
 }
-.button-home {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    background-color: #ecb920;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 40px;
-    font-size: 18px;
-    cursor: pointer;
 
-
-    z-index: 9999;
-}
 
 .button-home:hover {
     background-color: #e0a61b;
 }
 
-.brd1 {
+.brd2{
     position: absolute;
-    top: 100px;
-    left: 100px;
-    width: 1080px;
-    z-index: 10;
+    left: 50%;
+    transform: translate(-50%, -50%);
 }
+
+.brd1 {
+    position: relative;
+    z-index: -1;
+    width: 1100px;
+}
+
+.chessboard-container {
+    position: relative;
+}
+
 
 .el-select {
     .el-select__wrapper {
@@ -386,7 +381,7 @@ const share = () => {
 }
 .button-share{
     position: absolute;
-    top: 20px;
+    top: 80px;
     right: 20px;
     background-color: #ecb920;
     border: none;
@@ -395,6 +390,10 @@ const share = () => {
     font-size: 18px;
     cursor: pointer;
     z-index: 9999;
+}
+
+.button-share:hover{
+    background-color: #e0a61b;
 }
 
 </style>
