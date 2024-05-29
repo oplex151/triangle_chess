@@ -6,30 +6,48 @@ import {ref} from "vue";
 const categoryList = ref([
   {
     id:2,
-    name:"开始比赛",
+    name:"房间模式",
     url:"/room",
     picture:""
   },
   {
-    id:3,
-    name:"战绩查看",
-    url:"/",
+    id:7,
+    name:"匹配模式",
+    url:"/match",
     picture:""
   },
   {
-    id:4,
+    id:10,
+    name:"排位模式",
+    url:"/rank",
+    picture:""
+  },
+  {
+    id:3,
+    name:"个人中心",
+    url:'/profile',
+    picture:""
+  },
+  // {
+  //   id:4,
+  //   name:"战绩查看",
+  //   url:"/record",
+  //   picture:""
+  // },
+  {
+    id:5,
     name:"帮助中心",
     url:"/",
     picture:""
   },
   {
-    id:5,
+    id:6,
     name:"关于我们",
     url:"/",
     picture:""
   },
   {
-    id:6,
+    id:7,
     name:"登出",
     url:"/logout",
     picture:""
@@ -96,9 +114,7 @@ const logged = ref(Cookies.get("userid"))
   position: relative;
   left: 0%;
   transform: translateX(-0%, -0%);
-  //字体宋体
-  font-family: "SimSun", "宋体";
-  font-size: 14px;
+  font-size: 18px;
   font-weight: bold;
   //鼠标悬停时背景颜色变化
   cursor: pointer;

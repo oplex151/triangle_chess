@@ -1,8 +1,10 @@
---- 如果数据库不存在
-mysqldump -uroot -proot --databases -p trianglechess >trianglechess.sql
---- 如果数据库存在
-mysqldump -uroot -proot --databases -p --add-drop-database trianglechess >trianglechess.sql
+--- 导出
+mysqldump -uroot -proot --databases -p trianglechess --default-character-set=utf8 >trianglechess.sql
+
+--- 编码问题
+iconv -f UTF-16 -t UTF-8 trianglechess.sql > trianglechess_utf8.sql
 
 ---导入
+mysql -uroot -p -D trianglechess --default-character-set=utf8 < trianglechess.sql
 登录mysql后：
 source trianglechess.sql

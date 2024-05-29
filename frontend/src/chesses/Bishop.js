@@ -3,8 +3,8 @@ import { GEBI, getCol } from "@/utils/utils";
 import { Chess } from "./Chess";
 
 export class Bishop extends Chess {
-    constructor(position, camp) {
-        super(position, camp);
+    constructor(position, camp,inWhichArea) {
+        super(position, camp,inWhichArea);
         this.name = "象";
     }
 

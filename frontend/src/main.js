@@ -4,19 +4,21 @@ import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router'
 import ElementPlus from 'element-plus';
-import jsCookie from 'js-cookie'
 import 'element-plus/dist/index.css'
 
 const app = createApp(App)
 
 app.use(router)
 app.use(ElementPlus)
-// app.use(jsCookie)
+
 app.mount('#app')
 
+// var backend_url = "http://127.0.0.1:8888" //后端地址
+// if (navigator.platform.indexOf('Linux') != -1){
+//     backend_url = "http://124.70.208.148" //后端地址
+// }
 
 export default{ //后端地址
-    url: "http://127.0.0.1:8888"
+    url: "http://127.0.0.1:8888",
+    self_url: "http://127.0.0.1:5173"
 }
-// 测试一下
-// good good study, day day up

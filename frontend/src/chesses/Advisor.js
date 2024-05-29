@@ -3,9 +3,9 @@ import { getCol, getRow } from "@/utils/utils";
 import { Chess } from "./Chess";
 
 export class Advisor extends Chess {
-    constructor(position, camp) {
-        super(position, camp);
-        this.name = "士";
+    constructor(position, camp,inWhichArea) {
+        super(position, camp,inWhichArea);
+        this.name = "仕";
     }
 
     canMove() {

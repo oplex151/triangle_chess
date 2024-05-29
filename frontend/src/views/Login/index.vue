@@ -16,6 +16,7 @@ onMounted(() => {
   if (Cookies.get('userid') !== undefined) {
     router.push('/');
   }
+  console.log(main.url)
 });
 
 watchEffect(() => {
@@ -55,6 +56,7 @@ const login = () => {
   ).then(res => {
     if (res.status == 200) {
       Cookies.set('userid',res.data.userid);
+      Cookies.set('username',res.data.username);
       infoMessage.value = '登录成功';
       router.push('/');
     } else {

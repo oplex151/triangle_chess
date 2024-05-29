@@ -1,13 +1,17 @@
+# ECONNABORTED = 103 #"Connection aborted"
+
 SUCCESS = 200 #"success"
 OTHER_ERROR = 500 #"unknown error"
 LOGIN_UNEXIST_USER = 501 #"Login failed: User does not exist"
 LOGIN_WRONG_PASSWORD = 502 #"Login failed: Wrong password"
 ALREADY_LOGIN = 506 #"Already login"
 USER_NOT_LOGIN = 507 #"User not login"
-
+USER_NOT_EXIST = 508 #"User not exist"
+NAME_ALREADY_EXIST = 509 #"Name already exist"
 
 REGISTER_EXIST_USER = 503 #"Register failed: User already exists"
 REGISTER_FAILED = 504 #"Register failed: Internal server error"
+WRONG_OLD_PASSWORD = 513 #"Wrong old password"
 
 PARAM_ERROR = 505 #"Parameter error"
 
@@ -20,6 +24,13 @@ ROOM_NOT_EXIST = 520 #"Room not exist"
 ALREADY_IN_ROOM = 521 #"Already in room"
 NOT_IN_ROOM = 522 #"Not in room"
 ROOM_NOT_ENOUGH = 523 #"Room not enough"
+
+ALLREADY_FRIEND = 530 #"Already friend"
+NO_FRIENDS = 531 #"No friends"
+NOT_FRIEND = 532 #"Not friend"
+
+NOT_ADMIN = 540 #"Not admin"
+NO_APPEALS = 541 #"No appeals"
 
 MOVE_NO_PIECE = 601 #"Move failed: No piece to move"
 MOVE_OUT_OF_BOARD = 602 #"Move failed: Move out of board"

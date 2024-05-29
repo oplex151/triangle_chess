@@ -136,6 +136,11 @@ def moveApi():
     except Exception as e:
         return "{message: {0}}".format(str(e)),OTHER_ERROR
     
+@socketio.on('connect')
+def test_connect(message):
+    print(request)
+    emit('message', "{message: 'connect success'}")
+
 @socketio.event
 def sendMessage(data):
     '''test'''
@@ -145,10 +150,6 @@ def sendMessage(data):
     emit('receiveMessage',{'message':message},userid=userid,to=room_id,
             skip_sid=request.sid)
 
-@socketio.on('connect')
-def test_connect(message):
-    print(request)
-    emit('message', "{message: 'connect success'}")
         
 @socketio.event
 def receiveMessage(data):

@@ -1,411 +1,446 @@
-<script setup >
-
-
+<script setup>
 import VueSocketIO from 'vue-socket.io'
 import SocketIO from 'socket.io-client'
 import main from '@/main'
-import { camps } from '@/lib/game';
-import { GEBI } from '@/utils/utils';
+
 import Cookies from 'js-cookie';
-import { registerSockets, socket} from '@/sockets'
-import {XYZToPosition, PositionToXYZ} from '@/lib/convert'
+import { registerSockets, socket, registerSocketsForce, removeSockets } from '@/sockets'
 import router from '@/router';
-import {ElMessage} from "element-plus";
+import { ElMessage, ElMessageBox } from "element-plus";
+
+import { onMounted, ref, onUnmounted, computed, getCurrentInstance, onBeforeMount, watch } from 'vue';
+import Board from '@/views/Game/board.vue'
+import axios from "axios";
 import { lives } from '@/chesses/Live';
-import { onMounted, ref ,onUnmounted,computed,getCurrentInstance} from 'vue';
-import {COL, ROWTOP, ROWMID, AREABOT, ROWBOT} from '@/config/config';
+import * as CONST from '@/lib/const.js'
+import Report from '@/components/views/Report.vue'
+import Avatar from '@/components/views/Avatar.vue'
+import Messager from '@/components/views/Messager.vue';
 
-const map = new Map();
-const getid = (row, col) => (ROWTOP - row - 1) * COL + col + 1;
-const camp = ref(0);
+import useClipboard from 'vue-clipboard3';
 
-const userid =  Cookies.get('userid')
-const my_camp = Cookies.get('camp')
-let hoverChess;
-const isPocus = ref(false);
-const focusChess = ref();
-const hoverposition = ref();
-const hover_xyz = ref([0,0,0])
-const xyz = ref([0,0,0])
-const xyzn = ref([0,0,0])
-const my_camp_str = ['红方','黑方','金方']
+let my_camp = Cookies.get('camp')
+const { toClipboard } = useClipboard()
 
-const move_succ = ref(false)
-const {proxy} = getCurrentInstance()
-const sockets_methods={
-  movePieceSuccess(data){
-    move_succ.value = true
-    if(userid == data.userid){
-      ElMessage.info('移动成功')
+
+
+const userid = Cookies.get('userid')
+const { proxy } = getCurrentInstance()
+const board = ref(null)
+const winner_name = ref(null)
+const step_count = ref(null)
+const match_duration = ref(null)
+const record_id = ref(null)
+const vis = ref(false)
+const to_report_id = ref(-1)
+const room_info = JSON.parse(Cookies.get('room_info'))
+
+const o_message = ref([])
+const i_message = ref('')
+const my_name = computed(() => {
+  if (room_info.value) {
+    for (let user of room_info.value.users) {
+      if (user.userid == Cookies.get('userid')) {
+        return user.username
+      }
     }
-    else {
-      ElMessage.info('玩家'+data.username+'移动成功')
-    }
-    let position_start = XYZToPosition(data.x1,data.y1,data.z1)
-    let position_end = XYZToPosition(data.x2,data.y2,data.z2)
-    
-    focusChess.value = map.get(position_start);
-    // 移动棋子
-    moveChess(focusChess.value,position_end);
+  }
+  return ''
+})
+// const names = computed(() => {
+//   if (room_info.value) {
+//     let names = []
+//     for (let user of room_info.value.users) {
+//       names.push(user.username)
+//     }
+//     return names
+//   }
+//   return []
+// })
 
-    // 切换到下一个阵营
-    camp.value = (camp.value + 1)%3;
-    while(lives[camp.value]==false){
-      camp.value = (camp.value + 1)%3;
-    }
-  },
-  gameEnd(data){
-    ElMessage.info('游戏结束'+"获胜者为"+data.winner_name)
-    Cookies.remove('game_id')
-    Cookies.remove('camp')
-    router.replace('/room')
-  },
-  processWrong(data){
-    status = data.status
-    ElMessage.info(status)
+const copy = async (anything) => {
+  try {
+    await toClipboard(anything)
+    console.log('Copied to clipboard')
+  } catch (e) {
+    console.error(e)
   }
 }
 
-const camp_1_style = computed(() => {
-  if (my_camp==1){
-    return 'board'
+const sendMessage = (message) => {
+  console.log(message)
+  socket.value.io.emit('sendMessage', {
+    'userid': userid,
+    'message': i_message.value
   }
-  else if(my_camp==0){
-    return 'board-tilt-right'
-  }
-  else{
-    return 'board-tilt-left'
-  }
-});
-const camp_2_style = computed(() => {
-  if(my_camp==1){
-    return 'board-tilt-right'
-  }
-  else if(my_camp==0){
-    return 'board-tilt-left'
-  }
-  else{
-    return 'board'
-  }
-});
-const camp_0_style = computed(() => {
-  if (my_camp==1){
-    return 'board-tilt-left'
-  }
-  else if(my_camp==0){
-    return 'board'
-  }
-  else{
-    return 'board-tilt-right'
-  }
-});
-const action = (position) => {
-  // 未选中
-  if (!isPocus.value) {
-    if (!hoverChess) return;
-    if (hoverChess.camp !== camp.value) return;
-    // 如果不是你走，不能选中
-    if (camp.value != my_camp && my_camp>=0){
-      return;
-    }
-    isPocus.value = true;
-    GEBI(`${hoverChess.position}`).classList.add('chess_on');
-    focusChess.value = hoverChess;
-  }
-  // 选中
-  else {
-    isPocus.value = false;
-    GEBI(`${focusChess.value.position}`).classList.remove('chess_on');    
-    if (
-        focusChess.value.canMove().includes(position) 
-        // 暂时不启用, 阻止自己的棋子吃掉自己的棋子
-        && map.get(position)?.camp !== camp.value
-    ) {
-      xyz.value = PositionToXYZ(position)
-      xyzn.value = PositionToXYZ(focusChess.value.position)
-      socket.value.io.emit('movePiece',{'userid':userid,'chess_type':1, 
-                                      'x1':xyzn.value[0], 'y1':xyzn.value[1], 'z1':xyzn.value[2], 
-                                      'x2':xyz.value[0], 'y2':xyz.value[1], 'z2':xyz.value[2]})
-    }
-
-    // 暂时不启用，重新选择棋子
-    else{
-      if (!hoverChess) return;
-      if (hoverChess.camp !== camp.value) return;
-      // 如果不是你走，不能选中
-      if (camp.value != my_camp && my_camp>=0){
-        return;
-      }
-      isPocus.value = true;
-      focusChess.value = hoverChess;
-      GEBI(`${hoverChess.position}`).classList.add('chess_on');
-    }
-  }
-};
-
-let y1 = 0
-let y2 = 1
-
-
-const moveChess = (chess, to) => {
-  if (map.get(to)?.camp === camp.value) return false;
-  map.delete(chess.position);
-  chess.move(to);
-  map.set(to, chess);
-  return true;
-};
-const initMap = () => {
-  for (const [k, camp] of Object.entries(camps)) {
-    camp.get().forEach((chess) => {
-      GEBI(`${chess.position}`).innerText = chess.name;
-      switch (chess.camp){
-        case 0:
-          GEBI(`${chess.position}`).classList.add('camp0');
-          break;
-        case 1:
-          GEBI(`${chess.position}`).classList.add('camp1');
-          break;
-        case 2:
-          GEBI(`${chess.position}`).classList.add('camp2');
-          break;
-      }
-      
-      map.set(chess.position, chess);
-    });
-  }
-  // 注册socket监听
-  registerSockets(sockets_methods,socket.value,proxy);
-};
-
-const hover = (position) => {
-  hoverposition.value = position;
-  
-  if (!map.has(position)) return;
-  hoverChess = map.get(position);
-  hoverChess.canMove().forEach((posi) => {
-    GEBI(`${posi}`).classList.add('moviable');
-  });
-};
-
-const out = (position) => {
-  if (!map.has(position)) return;
-  hoverChess.canMove().forEach((posi) => {
-    GEBI(`${posi}`).classList.remove('moviable');
-  });
-};
-
-const Destory = () => {
-};
-
-onMounted(()=>{
-  if (!Cookies.get('camp')){
+  )
+  o_message.value.push({ 'user': my_name, 'message': i_message.value })
+}
+onMounted(() => {
+  if (!Cookies.get('camp')) {
     router.replace('/room')
     return
   }
-  if (!socket.value){
+  if (!socket.value) {
     socket.value = new VueSocketIO({
       debug: true,
       connection: SocketIO(main.url),
     })
     // 重新加入房间
-    socket.value.io.emit('joinRoom',{'userid':userid,'room_id':Cookies.get('room_id')})
+    socket.value.io.emit('joinRoom', { 'userid': userid, 'room_id': Cookies.get('room_id') })
   }
-  initMap(); // 初始化棋盘，改成相应后端消息来哦初始化棋盘
+  registerSocketsForce(sockets_methods, socket.value, proxy);
+
+  axios.post(main.url + '/api/game/init', {
+    'room_id': Cookies.get('room_id')
+  },
+    {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    }
+  ).then(res => {
+    if (res.status == 200) {
+      console.log(res.data)
+      board.value.initMap(res.data.game_info)
+    }
+    else {
+      ElMessage.error('获取房间信息失败')
+      return
+    }
+  }).catch(error => {
+    console.log(error)
+  })
+  console.log(socket.value)
 });
-onUnmounted(Destory);
+
+const sockets_methods = {
+  movePieceSuccess(data) {
+    if (userid == data.userid) {
+      ElMessage.info('移动成功')
+    }
+    else {
+      ElMessage.info('玩家' + data.username + '移动成功')
+    }
+    // 移动棋子_切换阵营
+    board.value.moveSuccess(data);
+  },
+  joinRoomSuccess(data) {
+    if (data.userid == Cookies.get('userid')) {
+      Cookies.set('room_id', data.room_id)
+      ElMessage.success('加入房间成功')
+    }
+    else {
+      ElMessage.success('玩家' + data.username + '加入房间')
+    }
+  },
+  receiveMessage(data){
+    if(data.username!=userid)
+      o_message.value.push({ 'user': data.username, 'message': data.message })
+  },
+  leaveRoomSuccess(data) {
+    if (data.userid == Cookies.get('userid')) {
+      Cookies.remove('room_id')
+      Cookies.remove('room_info')
+      ElMessage.success('离开房间成功')
+    }
+    else {
+      ElMessage.success('玩家' + data.username + '离开房间')
+    }
+  },
+  gameEnd(data) {
+    ElMessage.info('游戏结束' + "获胜者为" + data.winner_name)
+
+    // 模态框位置(待加入)
+    step_count.value = data.step_count;
+    winner_name.value = data.winner_name;
+    match_duration.value = data.match_duration;
+    record_id.value = data.record_id;
+    // 从后端接收到了比赛持续时间的整数值
+    let matchDurationSeconds = data.match_duration;
+
+    // 将整数值转换为毫秒
+    let matchDurationMilliseconds = matchDurationSeconds * 1000;
+
+    // 使用 Date 对象创建一个新的日期时间
+    let matchDurationDate = new Date(matchDurationMilliseconds);
+
+    // 将日期时间格式化为您需要的格式
+    let formattedMatchDuration = matchDurationDate.toISOString().substr(11, 8); // 格式化为 HH:mm:ss
+
+    ElMessageBox.confirm(
+      `游戏总步数：${data.step_count} 游戏赢家：${data.winner_name} 游戏时长：${formattedMatchDuration} `,
+      '游戏结算',
+      {
+        cancelButtonText: 'OK',
+        confirmButtonText: 'share'
+      }
+    )
+    .then((action) => {
+      if (action === 'confirm') {
+          
+          copy(main.self_url + '/publicShare?recordId=' + record_id.value)
+          ElMessage({
+            type: 'info',
+            message: "分享连接已经复制到剪贴板！",
+          })
+        }
+    })
+    .catch((action) => {
+        if (action === 'cancel') {
+            ElMessage({
+              type: 'info',
+              message: `action: ${action}`,
+            })
+          }
+
+        }
+      )
+    // 匹配模式退回主页面
+    console.log(data.room_type)
+    if (data.room_type == 1) {
+      Cookies.remove('game_id')
+      Cookies.remove('camp')
+      removeSockets(sockets_methods, socket.value, proxy);
+      socket.value.io.disconnect()
+      socket.value = null
+      router.replace('/')
+      return
+    }
+    // 天梯模式
+    else if (data.room_type == 2) {
+      Cookies.remove('game_id')
+      Cookies.remove('camp')
+      removeSockets(sockets_methods, socket.value, proxy);
+      socket.value.io.disconnect()
+      socket.value = null
+      router.replace('/rank')
+      return
+    }
+    // 创房间模式
+    else {
+      Cookies.remove('game_id')
+      Cookies.remove('camp')
+      removeSockets(sockets_methods, socket.value, proxy);
+      router.replace('/room')
+      return
+    }
+  },
+  surrenderSuccess(data) {
+    for (let i = 0; i < 3; i++) {
+      if (data.userid == Cookies.get('user' + i))
+        lives[i] = false
+      board.value.camp = data.game_info.turn
+    }
+    if (data.userid == Cookies.get('userid')) {
+      ElMessage.info('你投降了')
+    }
+    else {
+      ElMessage.info('用户' + data.username + '投降')
+    }
+  },
+  processWrong(data) {
+    let status1 = data.status
+    ElMessage.error("Error due to " + status1)
+    if (status1 == CONST.ROOM_NOT_EXIST) {
+      router.replace('/room')
+    }
+    else if (status1 == CONST.NOT_IN_ROOM) {
+      ElMessage.error('你不在房间中')
+      router.replace('/room')
+    }
+    else if (status1 == CONST.USER_NOT_LOGIN) {
+      ElMessage.error('用户未登录')
+      router.replace('/login')
+    }
+  }
+}
+
+function requestSurrender() {
+  if(Cookies.get('userid') >= 0)
+    if(lives[my_camp])
+      socket.value.io.emit('requestSurrender', {
+        'userid': Cookies.get('userid')
+      })
+    else{
+      ElMessage.error('你已经输了，不能投降')
+    }
+  else{
+    ElMessage.error('你不是本游戏的玩家，不能投降')
+  }
+}
+
+
+const Move = (data) => {
+  data.userid = userid
+  socket.value.io.emit('movePiece', data)
+}
+
+const handleReportEnd = (id) => {
+
+  vis.value = false;
+}
+const handleReport = () => {
+  console.log(id);
+  to_report_id.value = id;
+  console.log(to_report_id.value);
+  vis.value = true;
+}
+const camp_1_style = computed(() => {
+  if (my_camp == 1) {
+    return 'board'
+  }
+  else if (my_camp == 0) {
+    return 'board-tilt-right'
+  }
+  else {
+    return 'board-tilt-left'
+  }
+});
+const camp_2_style = computed(() => {
+  if (my_camp == 1) {
+    return 'board-tilt-right'
+  }
+  else if (my_camp == 0) {
+    return 'board-tilt-left'
+  }
+  else {
+    return 'board'
+  }
+});
+const camp_0_style = computed(() => {
+  if (my_camp == 1) {
+    return 'board-tilt-left'
+  }
+  else if (my_camp == 0) {
+    return 'board'
+  }
+  else {
+    return 'board-tilt-right'
+  }
+});
 </script>
 
 <template>
-  <div class="Game">
-    <div class="camp">
-      目前行动:{{camp == 1 ?'黑方':(camp == 0 ? '红方':'金方')}}
-      我的阵营:{{my_camp>=0?my_camp_str[my_camp]:'未知'}}
-      位置：{{hoverposition}}
-      XYZ：{{[hover_xyz[0],hover_xyz[1],hover_xyz[2]]}}
-      金色:{{camp_2_style}}
-      Mycamp:{{my_camp}}
-    </div>
-    <!--2号-->
-    <div :class="camp_2_style">
-      <!-- 遍历成棋盘 -->
-      <!-- 渲染所要的行数 -->
-      <div v-for="(row, index) in ROWTOP"
-           :key="row"
-           class="row"
-      >
-        <!-- 渲染所要的列数 -->
-        <div class="block chess"
-             :id="getid(index, i) + ''"
-             v-for="(col, i) in COL"
-             :key="col"
-             @mouseover="hover(getid(index, i))"
-             @mouseout="out(getid(index, i))"
-             @click="action(getid(index, i))"
-             v-if="index <= 4"
-        >
-        </div>
-      </div>
-    </div>
-    
-    <div :class="camp_1_style">
-      <div v-for="(row, index) in ROWTOP"
-           :key="row"
-           class="row"
-      >
-        <!-- 渲染所要的列数 -->
-        <div class="block chess"
-             :id="getid(index, i) + ''"
-             v-for="(col, i) in COL"
-             :key="col"
-             @mouseover="hover(getid(index, i))"
-             @mouseout="out(getid(index, i))"
-             @click="action(getid(index, i))"
-             v-if="index > 4 && index <= 9"
-        >
-        </div>
-      </div>
-    </div>
+  <Messager :o_message="o_message" v-model:i_message="i_message" @sendMessage="sendMessage" class="messager"/>
 
-    <div :class="camp_0_style">
-      <div v-for="(row, index) in ROWTOP"
-           :key="row"
-           class="row"
-      >
-        <!-- 渲染所要的列数 -->
-        <div class="block chess"
-             :id="getid(index, i) + ''"
-             v-for="(col, i) in COL"
-             :key="col"
-             @mouseover="hover(getid(index, i))"
-             @mouseout="out(getid(index, i))"
-             @click="action(getid(index, i))"
-             v-if="index > 9 && index <= 14"
-        >
-        </div>
-      </div>
-    </div>
-
+  <div class="background-image"></div>
+  <div class="chessboard-overlay"></div>
+  <div>
+    <button class="surrender-button" @click="requestSurrender">投降</button>
   </div>
+    <div  :class="camp_0_style">
+    <Avatar :my_userid=userid :userid=room_info.users[0].userid @reportUser="handleReport">
+      <template #name>
+        <p>{{room_info.users[0].username}}</p>
+      </template>
+      <template #avatar>
+        {{ room_info.users[0].username }}
+      </template>
+    </Avatar>
+  </div>
+    <!---------1号位---------->
+    <div  :class="camp_1_style">
+    <Avatar :my_userid=userid :userid=room_info.users[1].userid @reportUser="handleReport">
+      <template #name>
+        <p>{{room_info.users[1].username}}</p>
+      </template>
+      <template #avatar>
+        {{ room_info.users[1].username }}
+      </template>
+    </Avatar>
+    </div>
+    <!---------2号位---------->
+    <div  :class="camp_2_style">
+    <Avatar :my_userid=userid :userid=room_info.users[2].userid @reportUser="handleReport">
+      <template #name>
+        <p>{{room_info.users[2].username}}</p>
+      </template>
+      <template #avatar>
+        {{ room_info.users[2].username }}
+      </template>
+    </Avatar>
+    </div>
+    <Board ref="board" :my_camp ="my_camp" @requireMove="Move" />
+    <Report :toreportid=to_report_id :myuserid="userid" :dialogFormVisible=vis @reportEnd="handleReportEnd" />
 </template>
 
 
 <style scoped lang="scss">
-
-.camp {
-  position: absolute;
+.background-image {
+  position: fixed;
   top: 0;
   left: 0;
-}
-// 红方阵营
-.camp0 {
-  background-color: #ec7357 !important;
-}
-// 黑方阵营
-.camp1 {
-  background-color: #383a3f !important;
-}
-// 金方阵营
-.camp2 {
-  background-color: #999900 !important;
+  width: 100%;
+  height: 100%;
+  background-image: url('@/assets/images/login/图1.jpg');
+  background-size: cover;
+  z-index: -1;
 }
 
-
-//定义一个动画时间戳
-@keyframes fade {
-  0% {
-    background-color: rgba(pink, 0.4);
-  }
-  50% {
-    background-color: rgba(pink, 1);
-  }
-  100% {
-    background-color: rgba(pink, 0.4);
-  }
-}
-// 定义一个动画
-.moviable {
-  background-color: pink;
-  animation: fade 2s;
-  animation-iteration-count: infinite;
-}
-.chess {
-  color: wheat;
-  // 文本不可选中
-  user-select: none;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-.chess_on{
-  color: red !important;
-}
-.invert{
-  transform: rotate(180deg);
-}
-.block {
-  width: 50px;
-  height: 50px;
-  border: 1px solid skyblue;
-  &:hover {
-    background-color: skyblue;
-  }
-}
-.row {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transform: translate(-50%, -50%) rotate(0deg);
-}
-
-.row-tilt-left {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transform: translate(-50%, -50%) rotate(0deg);
-}
-
-.board {
+.chessboard-overlay {
   position: absolute;
-  top: 900px;
-  left: 800px;
-  transform: translate(-50%, -50%) rotate(180deg);
-  transform-origin: top left;
-  //width: 100vh; /* 设置宽度为视口高度，确保棋盘在旋转时不会溢出 */
-  //height: 100vh; /* 设置高度为视口高度，确保棋盘在旋转时不会溢出 */
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-.board :deep(.chess){
-  rotate: 180deg;
-  // 某些浏览器（例如小智双核）不支持 ::v-deep 伪元素选择器，这个我也没办法，只能这样了
-  // 御三家firefox,chrome,edge都支持
-}
-// = 1
-.board-tilt-left {
-  position: absolute;
-  top: 368px;
-  left: 492px;
-  transform: translate(-50%, -50%) rotate(-60deg);
-  transform-origin: top left;
-  //width: 100vh; /* 设置宽度为视口高度，确保棋盘在旋转时不会溢出 */
-  //height: 100vh; /* 设置高度为视口高度，确保棋盘在旋转时不会溢出 */
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  top: 35px;
+  left: -42px;
+  width: 1280 * 1.01px;
+  height: 800 * 1.01px;
+  background-image: url('@/assets/images/game/chessBoard.jpg');
+  background-size: cover;
+  opacity: 1.0; /* Adjust opacity as needed */
+  z-index: -1;
 }
 
-.board-tilt-right {
+.board{
   position: absolute;
-  top: 368px;
-  left: 1105px;
-  transform: translate(-50%, -50%) rotate(60deg);
-  transform-origin: top left;
-  //width: 100vh; /* 设置宽度为视口高度，确保棋盘在旋转时不会溢出 */
-  //height: 100vh; /* 设置高度为视口高度，确保棋盘在旋转时不会溢出 */
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  top: 700px;
+  left: 950px;
+  z-index: 1;
+}
+.board-tilt-right{
+  position: absolute;
+  top: 100px;
+  left: 950px;
+
+}
+.board-tilt-left{
+  position: absolute;
+  top: 100px;
+  left: 250px;
+
+}
+.surrender-button {
+  background-color: #ecb920;
+  border: none;
+  color: white;
+  padding: 15px 32px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  margin: 20px 50px;
+  transition-duration: 0.4s;
+  cursor: pointer;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+  z-index: 99;
+  /* Add shadows */
 }
 
+.surrender-button:hover {
+  background-color: #b48d17;
+  color: white;
+  box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2), 0 12px 40px 0 rgba(0, 0, 0, 0.19);
+  /* Add more shadows */
+}
+.messager{
+  position:absolute;
+  top:200px;
+  left:1000px;
+  max-width: 18%;
+  z-index: 1;
+  --text-width:190px;
+  --text-padding-right:10px;
+  --message-height:500px;
+  --message-width:10px;
+  --message-margin-bottom: 10px;
+  // 卧槽原来是这么实现的吗，太逆天了
+}
 </style>

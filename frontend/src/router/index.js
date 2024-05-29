@@ -9,7 +9,13 @@ import Game from '@/views/Game/index.vue'
 import Register from '@/views/Register/index.vue'
 import Logout from '@/views/Logout/index.vue'
 import Room from '@/views/Room/index.vue'
+import Record from '@/views/Record/index.vue'
+import Match from '@/views/Match/index.vue'
+import Rank from '@/views/Rank/index.vue'
+import Profile from '@/views/Profile/index.vue'
+import publicShare from '@/views/publicShare/index.vue'
 import { socket } from '@/sockets';
+
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -63,6 +69,40 @@ const router = createRouter({
       path:'/register',
       component: Register,
       meta: {isAuth: false,connection: false},
+    },
+    {
+      path: '/match',
+      component: Match,
+      meta: {isAuth: true,connection: true},
+    },
+    {
+      path: '/rank',
+      component: Rank,
+      meta: {isAuth: true,connection: true},
+    },
+    // {
+    //   path: '/backend',
+    //   component: Backend,
+    //   meta: {isAuth: true,connection: false},
+    // }
+    {
+      path:'/profile',
+      component: Profile,
+      meta: {isAuth: true,connection: false},
+    },
+    {
+      path: '/publicShare/:recordId',
+      meta: {isAuth: false,connection: false},
+      redirect: to => {
+        // 方法接收目标路由作为参数
+        // return 重定向的字符串路径/路径对象
+        return { path: '/publicShare', query: { recordId: to.params.recordId } }
+      },
+    },
+    {
+      path: '/publicShare',
+      component: publicShare,
+      meta: {isAuth: false,connection: false},
     }
   ]
 })
@@ -70,8 +110,12 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   //在不需要连接的页面，断开连接
   if (!to.meta.connection) {
-    socket.value = ""
+    if (socket.value) {
+      socket.value.io.disconnect()
+    }
+    socket.value = null
     Cookies.remove('room_id')
+    Cookies.remove('room_info')
   }
   if (to.meta.isAuth) {
     if (Cookies.get('userid')) {

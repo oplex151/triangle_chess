@@ -10,6 +10,7 @@
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore"
   },
   "dependencies": {
+    "@element-plus/icons-vue": "^2.3.1",
     "@svgdotjs/svg.js": "^3.2.0",
     "axios": "^1.6.8",
     "element-plus": "^2.7.1",
@@ -18,6 +19,7 @@
     "socket.io-client": "^4.7.5",
     "svg.js": "^2.7.1",
     "vue": "^3.4.21",
+    "vue-clipboard3": "^2.0.0",
     "vue-router": "^4.3.0",
     "vue-socket.io": "^3.0.10"
   },

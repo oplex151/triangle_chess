@@ -1,8 +1,5 @@
 from enum import Enum
-import sys
-import os
-from flask import Flask, request, jsonify
-from typing import Tuple, Union
+from typing import Dict, Optional, Union
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -10,35 +7,59 @@ import hashlib
 import random
 from .piece import Piece
 from .special_piece import *
+from .record import GameRecord
 from backend.message import *
 from backend.tools import setupLogger
 
 logger = setupLogger()
+
+class UserDict(Dict):
+    userid:int
+    username:str
 
 class EnumGameState(Enum):
     ongoing = "ongoing"
     win = "win"
     draw = "draw"
 
+class RoomType(Enum):
+    created = 'created'
+    matched = 'matched'
+    ranked  = 'ranked'
+
 class GameTable:
     max_row = 9
     max_col = 5
-    def __init__(self,users:list[int]):
-        self.game_id = hashlib.md5(str(sum(users)).encode('utf-8')).hexdigest()
-        self.user1 = {'user_id':users[0],'index':0} # 0
-        self.user2 = {'user_id':users[1],'index':1} # 1
-        self.user3 = {'user_id':users[2],'index':2} # 2
+    def __init__(self,users:list[UserDict], viewers:Optional[list[UserDict]] = None):
+        self.game_id = hashlib.md5(str(sum([user['userid'] for user in users])).encode('utf-8')).hexdigest()
+        self.users = users.copy()
         self.lives = [True,True,True]
+        if not viewers:
+            self.viewers = []
+        else :
+            self.viewers = viewers.copy()
 
         self.Pieces:list[list[Piece]] = [[],[],[]]
         
         self.turn = 0 # 目前轮到谁
         self.game_state = EnumGameState.ongoing # 游戏状态：ongoing（进行中）、win（胜利）、draw（平局）
         self.winner = -1 # 无胜者为-1
+        self.winner_id = -1
+        self.step_count = 0
 
         self.draw_requester = None  # 发起求和请求的玩家
         self.draw_respondents = set()  # 记录回应求和请求的玩家
         self.draw_agree = set()  # 记录对求和请求的回应
+
+        # 表现分相关
+        self.captured_pieces = [[],[],[]] # 玩家捕获的对手棋子
+        self.opponent_captured_pieces = [[],[],[]] # 对手捕获的玩家棋子
+
+        self.record = GameRecord(
+                p1=self.users[0]['userid'],
+                p2=self.users[1]['userid'],
+                p3=self.users[2]['userid']
+            )
 
         for i in range(3):
             self._initChess(i)
@@ -61,17 +82,19 @@ class GameTable:
         for i in range(self.max_row//2+1):
             self.Pieces[user_z].append(Soilder(user_z, 2*i, 3))
 
-    def _getUserIndex(self, user:int) -> int:
+    def _getUserIndex(self, userid:int) -> int:
         '''
         Description: 获取用户的索引
         Args:
-            user: 用户名
+            userid: 用户id
         Returns:
             int: 用户的索引
         '''
-        for item in [self.user1, self.user2, self.user3]:
-            if item['user_id'] == user:
-                return item['index']
+        for index,item in enumerate(self.users):
+            if item['userid'] == userid:
+                return index
+        else:
+            raise ValueError("该用户不是玩家")
         
     def searchGameTable(self, userid:int) -> bool:
         '''
@@ -81,13 +104,13 @@ class GameTable:
         Returns:
             bool: 是否在游戏中
         '''
-        for item in [self.user1, self.user2, self.user3]:
-            if item['user_id'] == userid:
+        for item in self.users:
+            if item['userid'] == userid:
                 return True
         else:
             return False
 
-    def movePiece(self, user:int ,px: int, py: int, pz: int, nx: int, ny: int, nz: int):
+    def movePiece(self, userid:int ,px: int, py: int, pz: int, nx: int, ny: int, nz: int):
         '''
         Description: 移动棋子
         Args:
@@ -101,15 +124,15 @@ class GameTable:
         Returns:
             bool: 是否移动成功
         '''
-        if  user not in [self.user1['user_id'], self.user2['user_id'], self.user3['user_id']]:
-            logger.error(f"用户{user}不在游戏中")
+        if  userid not in [u['userid'] for u in self.users]:
+            logger.error(f"用户{userid}不在游戏中")
             return NOT_JOIN_GAME # 用户不在游戏中
 
-        if self._getUserIndex(user) != self.turn:
-            logger.error(f"用户{user}不是轮到移动棋子")
+        if self._getUserIndex(userid) != self.turn:
+            logger.error(f"当前没有用户{userid}轮到移动棋子，应该是{self.turn}号玩家")
             return NOT_YOUR_TURN # 不是轮到该用户移动棋子
         try:
-            user_z = self._getUserIndex(user) # 获取用户的索引
+            user_z = self._getUserIndex(userid) # 获取用户的索引
             for piece in self.Pieces[user_z]: # 遍历用户的所有棋子
                 if piece.findPiece(px, py, pz): 
                     # 获取将要被杀死的棋子
@@ -119,31 +142,37 @@ class GameTable:
                         # 不能杀自己的棋子
                         return MOVE_INVALID
                     if piece.move(nx, ny, nz):
-                        logger.info(f"用户{user}移动棋子{piece.name}从({px},{py},{pz})到({nx},{ny},{nz})")
+                        logger.info(f"用户{userid}移动棋子{piece.name}从({px},{py},{pz})到({nx},{ny},{nz})")
                         # 判断是否杀死棋子
                         if kill_piece:
-                            logger.info(f"用户{user}击杀棋子{kill_piece.name}({nx},{ny},{nz}) by {piece.name}({px},{py},{pz})")
+                            logger.info(f"用户{userid}击杀棋子{kill_piece.name}({nx},{ny},{nz}) by {piece.name}({px},{py},{pz})")
                             # 被杀死的棋子死亡
                             kill_piece.setDead() 
+                            # 记录用作计算表现分
+                            self.captured_pieces[user_z].append(kill_piece)
+                            self.opponent_captured_pieces[kill_piece.user_z].append(kill_piece)
                             # 杀死Leader，该玩家阵亡，请前端自己判断阵亡，后端不发出通知
                             if kill_piece.name == 'Leader':
                                 self.lives[kill_piece.user_z] = False
                                 logger.info(f"用户{kill_piece.user_z}阵亡")
 
+                        # 记录弈子移动
+                        self.step_count += 1
+
+                        # 记录这一步
+                        startPos = f"{px},{py},{pz}"
+                        endPos = f"{nx},{ny},{nz}"
+                        self.record.recordMove(userid, piece.name, startPos, endPos)
+
                         # 判断游戏是否结束
                         if self.checkGameEnd():
                             return GAME_END
-                        
-                         # 切换到下一个用户
-                        self.turn = (self.turn+1)%3
-                        
-                        # 轮到下一个用户，但该用户阵亡，直接下一个人
-                        if not self.lives[self.turn]:
-                            self.turn = (self.turn+1)%3
+
+                        self.turnChange() # 切换到下一个玩家
 
                         return SUCCESS
             else:
-                logger.error(f"用户{user}没有棋子在({px},{py},{pz})")
+                logger.error(f"用户{userid}没有棋子在({px},{py},{pz})")
                 return MOVE_NO_PIECE # 棋子不存在
         except InvalidMoveError:
             logger.error(f"棋子{piece.name}非法移动") #在这里统一打印日志
@@ -154,7 +183,21 @@ class GameTable:
         except Exception as e:
             logger.error(e)
             return OTHER_ERROR # 其他错误
-        
+
+    def addViewer(self, user:UserDict):
+        '''
+        Description: 添加观战者
+        Args:
+            user: 用户
+        Returns:
+            bool: 是否添加成功
+        '''
+        if user['userid'] in [u['userid'] for u in self.users]:
+            return False
+        else:
+            self.viewers.append(user)
+            return True
+
     def isWithPiece(self, px: int, py: int, pz: int) -> Piece:
         '''
         Description: 判断某一位置是否有棋子
@@ -172,9 +215,18 @@ class GameTable:
         else:
             return None
     
-    def get_alive_players(self):
+    def turnChange(self):
+        index = 0
+        self.turn = (self.turn+1)%3
+        while not self.lives[self.turn]:
+            self.turn = (self.turn+1)%3
+            index += 1
+            if index > 3:
+                return
+
+    def getAlivePlayers(self):
         '''
-        Description: 返回存活玩家的 user_id 列表。
+        Description: 返回存活玩家的 userid 列表。
         Returns:
             alive_players: 存活玩家的列表
         '''
@@ -184,18 +236,28 @@ class GameTable:
         # 遍历 lives 列表中的存活状态
         for index, alive in enumerate(self.lives):
             if alive:
-                # 根据索引找到对应的用户
-                if index == 0:
-                    alive_players.append(self.user1['user_id'])
-                elif index == 1:
-                    alive_players.append(self.user2['user_id'])
-                elif index == 2:
-                    alive_players.append(self.user3['user_id'])
+                alive_players.append(self.users[index]['userid'])
         
-        # 返回存活玩家的 user_id 列表
+        # 返回存活玩家的 userid 列表
         return alive_players
 
-    def request_draw(self, userid:int):
+    def surrender(self, userid:int)->int:
+        '''
+        Description: 处理投降请求
+        '''
+        # 将投降的玩家设为死亡
+        for index,item in enumerate(self.users):
+            if item['userid'] == userid:
+                self.lives[index] = False
+                if self.turn == self._getUserIndex(userid):
+                    # 投降玩家，切换到下一个玩家
+                    self.turnChange()
+        if self.checkGameEnd():
+            return GAME_END
+        else:   
+            return SUCCESS
+
+    def requestDraw(self, userid:int):
         '''
         Description: 处理求和请求
         '''
@@ -209,7 +271,7 @@ class GameTable:
         # 初始化回应求和请求的玩家列表
         self.draw_respondents = set()
 
-    def respond_draw(self, userid:int, agree:bool):
+    def respondDraw(self, userid:int, agree:bool):
         '''
         Description: 处理求和回应
         '''
@@ -223,7 +285,7 @@ class GameTable:
         # 添加对求和请求的回应
         self.draw_agree.add(agree)
 
-    def set_draw(self, agree:bool):
+    def setDraw(self, agree:bool):
         '''
         Description: 处理求和的结果
         '''
@@ -249,18 +311,38 @@ class GameTable:
 
     def checkVictory(self):
         # 实现判断胜利条件的逻辑
-        # 计算存活的 Leader 的数量
-        living_leaders = [user_z for user_z in range(3) if self.Pieces[user_z][0].live]
-        if len(living_leaders) == 1:
+        live_users = [index for index, live in enumerate(self.lives) if live]
+        if len(live_users) == 1:
             # 只有一个 Leader 存活，游戏结束
-            self.winner = living_leaders[0]
+            self.winner =live_users[0]
+            self.winner_id = self.users[self.winner]['userid'] if self.winner != -1 else -1
             return True
-        
         return False
     
     def checkDraw(self):
         # 实现判断平局条件的逻辑
         pass
+
+    def getUserResult(self, userid):
+        '''
+        Description: 返回玩家的游戏结果。
+        Args:
+            userid: 需要返回的用户id
+        Returns:
+            result: 玩家的游戏结果("win","lose","draw" or "ongoing")
+        '''
+        index = self._getUserIndex(userid)
+        if self.lives[index] == False:
+            return "lose"
+        else:
+            if self.game_state == EnumGameState.ongoing:
+                return "ongoing"
+            else:
+                if self.game_state == EnumGameState.win and self.winner == index:
+                    return "win"
+                elif self.game_state == EnumGameState.draw and self.winner == -1:
+                    return "draw"
+        return None
 
     def getGameInfo(self):
         '''
@@ -271,7 +353,10 @@ class GameTable:
         data ={
             'turn': self.turn,
             'game_state': self.game_state.value,
-            'winner': self.winner,
+            'winner': self.winner, # 胜利者的索引0,1,2,-1
+            'lives': self.lives,
+            'viewers': self.viewers,
+            'users': self.users,
             'pieces': [piece.getPieceInfo() for piece_list in self.Pieces for piece in piece_list]
         }
         return data
@@ -294,23 +379,19 @@ class GameTable:
                 board += '\n'
         print(board)
 
-class RoomType(Enum):
-    created = 'created'
-    matched ='matched'
-
 class RoomManager:
-    def __init__(self, users: Union[list[int], int], room_type: RoomType=RoomType.created):
+    def __init__(self, users: Union[list[UserDict], UserDict], room_type: RoomType=RoomType.created):
         # 随机生成一串字符串
         self.room_id:str = hashlib.md5(str(random.randint(0,1000000000)).encode('utf-8')).hexdigest()
-        self.users = None
+        self.users:list[UserDict] | UserDict = None
         self.game_table = None
 
         if isinstance(users, list):
-            self.users = users
+            self.users = users.copy()
         else:
             self.users = [users]
 
-        self.holder = self.users[0] # 房主
+        self.holder = self.users[0]# 房主
         self.room_type = room_type # 房间类型
     
     def getRoomId(self) -> str:
@@ -322,22 +403,50 @@ class RoomManager:
     def removeGameTable(self):
         self.game_table = None
 
-    def addUser(self, userid: Union[int, list[int]]):
-        if isinstance(userid, list):
-            for u in userid:
+    def addUser(self, user: Union[UserDict, list[UserDict]]):
+        if isinstance(user, list):
+            for u in user:
                 if u not in self.users:
                     self.addUser(u)
         else:
-            if userid not in self.users:
-                self.users.append(userid)
+            if user not in self.users:
+                self.users.append(user)
         
     
-    def removeUser(self, userid:int):
-        if userid in self.users:
-            self.users.remove(userid)
-            logger.info(f"用户{userid}退出房间{self.room_id}")
-            return True
-        return False
+    def removeUser(self, userid:int, force=False):
+        for user in self.users:
+            if user['userid'] == userid:
+                leaved_user = user
+                logger.info(f"User {userid} leave room {self.room_id}"+f"this room's users: {self.users}")
+                self.users.remove(leaved_user)
+                if self.holder['userid'] == leaved_user['userid'] and len(self.users) > 0:
+                    # 房主退出房间，更换房主
+                    self.holder = self.users[0]
+                if self.game_table and leaved_user['userid'] in [u['userid'] for u in self.game_table.viewers]:
+                    # 观战者离开直接送出游戏
+                    self.game_table.viewers.remove(leaved_user)
+                elif force and self.game_table and leaved_user['userid'] in [u['userid'] for u in self.game_table.users]:
+                    # 强制退出房间和游戏
+                    self.game_table.users.remove(leaved_user)
+                return True
+        else:
+            return False
+            
+
+    def getRoomInfo(self):
+        '''
+        Description: 获取房间信息
+        Returns:
+            dict: 房间信息
+        '''
+        data = {
+            'room_id': self.room_id,
+            'room_type': self.room_type.value,
+            'holder': self.holder,
+            'users': self.game_table.users if self.game_table else self.users[:3],
+            'viewers': self.game_table.viewers if self.game_table else self.users[3:] if len(self.users) > 3 else [],
+        }
+        return data
 
 
 
@@ -355,17 +464,17 @@ def fetchRoomByRoomID(room_id:str, room_managers:list[RoomManager]) -> RoomManag
     else:
         return None
     
-def inWhitchRoom(user_id:int, room_managers:list[RoomManager]) -> str:
+def inWhitchRoom(userid:int, room_managers:list[RoomManager]) -> str:
     '''
     Description: 判断用户是否在某个房间中
     Args:
-        user_id: 用户ID
+        userid: 用户ID
         room_managers: 房间列表
     Returns:
         str: 房间ID
     '''
     for room in room_managers:
-        if user_id in room.users:
+        if userid in [user['userid'] for user in room.users]:
             return room.getRoomId()
     else:
         return None

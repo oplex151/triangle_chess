@@ -13,43 +13,21 @@ See [Vite Configuration Reference](https://vitejs.dev/config/).
 ## Project Setup
 
 ```sh
+```
+
+### Project Setup
+
+```sh
 npm install
-```
-
-### Project Setup
-
-```sh
-npm install element-plus --save
-```
-
-### Project Setup
-
-```sh
 npm install -D unplugin-vue-components unplugin-auto-import
-```
-
-### Project Setup
-
-```sh
 npm i sass -D
-```
-
-### Project Setup
-
-```sh
 npm i axios
-```
-
-### Project Setup
-
-```sh
 npm i js-cookie
-```
-
-### Project Setup
-
-```sh
+npm install element-plus --save
 npm i vue-socket.io
+npm install @element-plus/icons-vue
+
+npm install vue-clipboard3
 ```
 
 ### Compile and Hot-Reload for Development
