@@ -170,7 +170,6 @@ function handleSelect(index: string) {
   margin-left: 10px;
   border-radius: 5px;
   background-color: #fdeec4;
-  min-height: 900px;
 }
 
 .main {
@@ -179,7 +178,6 @@ function handleSelect(index: string) {
   margin-left: 10px;
   border-radius: 5px;
   background-color: #fdeec4;
-  min-height: 900px;
 }
 
 </style>

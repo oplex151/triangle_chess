@@ -1,6 +1,9 @@
 from functools import wraps
 import os
 import pymysql
+import base64
+from io import BytesIO
+from PIL import Image
 from dotenv import load_dotenv
 from flask import jsonify
 from backend.tools import setupLogger
@@ -18,6 +21,32 @@ cursor = None
 
 logger = setupLogger()
 
+def base64ToImage(base64_str:str):  # 用 b.show()可以展示
+    try:
+        sstr = base64_str.find("base64,")
+        if sstr == -1:
+            raise ValueError("Invalid base64 string")
+        header = base64_str[:sstr+7]
+        ext = header.split("/")[-1].split(";")[0]
+        if ext  == 'svg+xml':
+            image = base64.b64decode(base64_str[sstr+7:])
+            return image,"svg"
+        else:
+            base64_str = base64_str[sstr+7:]
+            # print(base64_str)
+            image = base64.b64decode(base64_str, altchars=None, validate=False)
+        image = Image.open(BytesIO(image))
+        return image,ext
+    except Exception as e:
+        print(e)
+        raise ValueError("Invalid base64 string")
+
+def saveImage(image,path,ext):
+    if ext == "svg":
+        with open(path,"wb") as f:
+            f.write(image)
+    else:
+        image.save(path)
 
 def connectDatabase(func):
     @wraps(func)
@@ -206,6 +235,7 @@ def getUserInfo(userid:int):
         dic['gender'] = data[5]
         dic['phone_num'] = data[6]
         dic['email'] = data[7]
+        dic['image_path'] = data[8]
         status = SUCCESS
     except Exception as e:
         logger.error("User {0} failed to get user info due to\n{1}".format(userid,str(e)),exc_info=True)
@@ -214,3 +244,28 @@ def getUserInfo(userid:int):
         cursor.close()
         db.close()
     return jsonify(dic),status
+
+@connectDatabase
+def uploadImage(userid:int, image:str):
+    res,status = {},None
+    # 后台接收到base64，把base64转成图片，存到文件服务器里面，根据存储的路径生成图片的url
+    # 存到数据库里面，记录图片的路径
+    # 前端根据图片路径显示图片
+    try:    
+        img,ext = base64ToImage(image)
+        image_path = '/static/'+str(userid)+ "."+ext
+        saveImage(img,os.environ.get('PROJECT_ROOT')+'/backend'+image_path,ext)
+        db.begin()
+        update_query = "UPDATE {0} SET imagePath = {1} WHERE userId = {2};".format(USER_TABLE,"'"+image_path+"'",userid)
+        cursor.execute(update_query)
+        db.commit()
+        res = {"image_path":image_path}
+        logger.info("User {0} uploaded image successfully".format(userid))
+    except Exception as e:
+        logger.error("Use0} failed to upload image due to\n{1}".format(userid,str(e)),exc_info=True)
+        status = OTHER_ERROR if status is None else status
+    finally:
+        cursor.close()
+        db.close()
+
+    return jsonify(res),status

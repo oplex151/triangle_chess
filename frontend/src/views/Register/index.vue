@@ -3,7 +3,7 @@ import { ElMessage } from 'element-plus';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
 import main from '@/main';
-import { reactive, ref, watch } from 'vue'
+import { onMounted, reactive, ref, watch } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
 
 const formRef = ref<FormInstance>()
@@ -93,9 +93,9 @@ const submitForm = (formEl: FormInstance | undefined) => {
                 'gender': RegisterForm.gender
                 /* Hash! */
             },
-                {
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                }
+            {
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            }
             ).then(res => {
                 if (res.status === 200) {
                     ElMessage.success("注册成功！")
@@ -140,17 +140,21 @@ watch(errorMessage, (oldValue, newValue) => {
         errorMessage.value = '';
     }
 });
+
 </script>
 
 <template>
+
     <div class="outer-container">
 
         <div class="background-image"></div>
         <div class="login-container">
+
             <h1 class="login-title">注册</h1>
             <el-form ref="formRef" style="max-width: 315px ;width: 350px; position: relative;" :model="RegisterForm"
                 label-width="auto" :rules="Validator" class="form-container" status-icon :disabled=disableForm
                 hide-required-asterisk>
+    
                 <el-form-item prop="username" class="form-group">
                     <div class="form-label">用户名:&nbsp </div>
                     <el-input class="form-input" v-model="RegisterForm.username" type="text" autocomplete="on" />
@@ -209,6 +213,42 @@ watch(errorMessage, (oldValue, newValue) => {
 </template>
 
 <style scoped>
+#leftContain{
+    border:1px solid #DCDCDC;
+    box-shadow: 0px 0px 4px 3px rgb(245,245,245);
+    width: 48%;
+    height: 90%;
+    display: inline-block;
+    margin-top: 2.5%;
+    margin-left: 20px;
+    float: left;
+    position: relative;
+}
+#leftContain img {
+    width: 85%;
+    height: 85%;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%,-55%);
+}
+#leftContain input {   /*与#leftContain img一样*/
+    width: 85%;
+    height: 85%;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%,-55%);
+}
+
+.picture-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 200px;
+    margin-top: 50px;
+}
+
 .gobutton {
     display: text-indent;
     color: #00b88d;

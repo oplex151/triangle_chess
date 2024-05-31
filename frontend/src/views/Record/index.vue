@@ -215,75 +215,77 @@ const share = () => {
 </script>
 <template>
     <Report :toreportid="to_report_id" :myuserid="userid" :dialogFormVisible=vis @reportEnd="handleReportEnd" />
-    <div class="background-image-Record"></div>
-    
-    <!-- <button class="button-home" @click="goBackHome()">
+    <div class="container">
+        <div class="background-image-Record"></div>
+        
+        <!-- <button class="button-home" @click="goBackHome()">
+                <el-icon style="vertical-align: middle" size="30px">
+                    <HomeFilled />
+                </el-icon>
+            </button> -->
+        <button class="button-share" @click="share">
             <el-icon style="vertical-align: middle" size="30px">
-                <HomeFilled />
-            </el-icon>
-        </button> -->
-    <button class="button-share" @click="share">
-        <el-icon style="vertical-align: middle" size="30px">
-                <Share />
-            </el-icon>
-    </button>
-    <div v-if="start">
-        <button @click="EndGo" class="button">结束回放</button>   
-        <div class="brd2">     
-        <div class="brd1">
-            <div class="chessboard-overlay"></div>
-            <div class="chessboard-container">
-            <Board :my_camp="my_camp" ref="board" @requireMove="Move" />
-            </div>
-            <button @click="Next" class="next_button">下一步</button>
-            <div class="avatar">
-            <!---------0号位---------->
-            <div :class="camp_0_style">
-            <Avatar :my_userid="userid" :userid="userids[0]" @reportUser="handleReport">
-                <template #name>
-                    <p>{{ name[0] }}</p>
-                </template>
-                <template #avatar>
-                    {{ name[0] }}
-                </template>
-            </Avatar>
-            </div>
-            <!---------1号位---------->
-            <div :class="camp_1_style">
-            <Avatar :my_userid="userid" :userid="userids[1]" @reportUser="handleReport">
-                <template #name>
-                    <p>{{ name[1] }}</p>
-                </template>
-                <template #avatar>
-                    {{ name[1] }}
-                </template>
-            </Avatar>
-            </div>
-            <!---------2号位---------->
-            <div :class="camp_2_style">
-            <Avatar :my_userid="userid" :userid="userids[2]"  @reportUser="handleReport">
-                <template #name>
-                    <p>{{ name[2] }}</p>
-                </template>
-                <template #avatar>
-                    {{ name[2] }}
-                </template>
-            </Avatar>
+                    <Share />
+                </el-icon>
+        </button>
+        <div v-if="start">
+            <button @click="EndGo" class="button">结束回放</button>   
+            <div class="brd2">     
+            <div class="brd1">
+                <div class="chessboard-overlay"></div>
+                <div class="chessboard-container">
+                <Board :my_camp="my_camp" ref="board" @requireMove="Move" />
+                </div>
+                <button @click="Next" class="next_button">下一步</button>
+                <div class="avatar">
+                <!---------0号位---------->
+                <div :class="camp_0_style">
+                <Avatar :my_userid="userid" :userid="userids[0]" @reportUser="handleReport">
+                    <template #name>
+                        <p>{{ name[0] }}</p>
+                    </template>
+                    <template #avatar>
+                        {{ name[0] }}
+                    </template>
+                </Avatar>
+                </div>
+                <!---------1号位---------->
+                <div :class="camp_1_style">
+                <Avatar :my_userid="userid" :userid="userids[1]" @reportUser="handleReport">
+                    <template #name>
+                        <p>{{ name[1] }}</p>
+                    </template>
+                    <template #avatar>
+                        {{ name[1] }}
+                    </template>
+                </Avatar>
+                </div>
+                <!---------2号位---------->
+                <div :class="camp_2_style">
+                <Avatar :my_userid="userid" :userid="userids[2]"  @reportUser="handleReport">
+                    <template #name>
+                        <p>{{ name[2] }}</p>
+                    </template>
+                    <template #avatar>
+                        {{ name[2] }}
+                    </template>
+                </Avatar>
+                </div>
+                </div>
             </div>
             </div>
         </div>
-        </div>
-    </div>
-    <div v-else>
-        <div>
-            <button @click="Get" class="button">开始回放</button>
-        </div>
-        <div class="select_btn">
-            <el-select v-model="value" filterable placeholder="请输入对局" :loading="loading" popper-class="select_down"
-                style="width: 240px">
-                <el-option v-for="item in options" :label="item.startTime" :key="item.recordId" :value="item.recordId">
-                </el-option>
-            </el-select>
+        <div v-else>
+            <div>
+                <button @click="Get" class="button">开始回放</button>
+            </div>
+            <div class="select_btn">
+                <el-select v-model="value" filterable placeholder="请输入对局" :loading="loading" popper-class="select_down"
+                    style="width: 240px">
+                    <el-option v-for="item in options" :label="item.startTime" :key="item.recordId" :value="item.recordId">
+                    </el-option>
+                </el-select>
+            </div>
         </div>
     </div>
 </template>
@@ -299,6 +301,11 @@ const share = () => {
     background-image: url('@/assets/images/login/图1.jpg');
     background-size: cover;
     z-index: -1;
+}
+
+.container{
+    width : 100%;
+    height: 900px;
 }
 
 .chessboard-overlay {

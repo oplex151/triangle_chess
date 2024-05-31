@@ -64,6 +64,24 @@ def registerApi():
         return "{message: 'parameter error'}",PARAM_ERROR
     return register(username, password, email, phone_num, gender)
 
+@app.route('/api/uploadImage', methods=['POST'])
+def uploadImageApi():
+    '''
+    Description: 上传图片
+    Args:
+        userid: 用户id
+        image: 图片文件
+    Returns:
+        上传成功200
+    '''
+    params = {'userid':int, 'image':str}
+    try:
+        userid,image = getParams(params,request.form)
+    except:
+        return "{message: 'parameter error'}",PARAM_ERROR
+    return uploadImage(userid, image)
+
+
 @app.route('/api/changeUserInfo', methods=['POST'])
 def changeUserInfoApi():
     '''

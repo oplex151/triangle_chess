@@ -286,21 +286,6 @@ defineExpose({
   color: #e9b526;
 }
 
-// 红方阵营
-// .camp0 {
-//   //background-color: transparent !important;
-// }
-
-// // 黑方阵营
-// .camp1 {
-//   //background-color: transparent !important;
-// }
-
-// // 金方阵营
-// .camp2 {
-//   //background-color: transparent !important;
-// }
-
 
 //定义一个动画时间戳
 @keyframes fade {
