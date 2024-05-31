@@ -227,16 +227,16 @@ function justIt (data) {
 .img-upload-container {
     display: inline-block;
     position: relative;
-    margin-left: 200px;
+    left: 200px;
     width: 100px;
     height: 100px;
-    bottom: 30px;
+    bottom: 40px;
 }
 
 .user-imgs{
-    position: relative; 
+    position: relative;
+    top: 100px;
     right: 150px;
-    top:130px;
 }
 
 .user-img{
@@ -308,8 +308,8 @@ function justIt (data) {
     border-width: 0px;
     color:chocolate;
     position: relative;
-    bottom: 10px;
-    left: 100px;
+    left: 70px;
+    top: 60px;
 }
 
 .random-button:hover {
