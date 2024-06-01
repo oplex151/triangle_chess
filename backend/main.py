@@ -597,7 +597,7 @@ def roomOver(game:GameTable, room:RoomManager, userid:int):
         print(f"对局时长为：{match_duration}")
         # 结束记录
         state,record_id = game.record.recordEnd(userid)
-        emit('gameEnd', {'status': GAME_END, 'record_id':record_id, 'room_type':room_type,"step_count":game.step_count,"match_duration": match_duration.total_seconds(),'winner': userid, 'winner_name': sessions[userid]}, to=room.room_id, namespace='/')
+        emit('gameEnd', {'status': GAME_END, 'record_id':record_id, 'room_info':room.getRoomInfo(),'room_type':room_type,"step_count":game.step_count,"match_duration": match_duration.total_seconds(),'winner': userid, 'winner_name': sessions[userid]}, to=room.room_id, namespace='/')
 
     elif game.game_state == EnumGameState.draw:
         # 记录结束时间
@@ -626,7 +626,7 @@ def watchGame(data):
         userid: 用户id          int
         room_id: 房间id        str
     """
-    global rooms,sessions
+    global rooms
     params = {'userid':int,  'room_id':str}
     try:
         userid,room_id = getParams(params,data)
@@ -642,16 +642,18 @@ def watchGame(data):
             return
         user = UserDict(userid=userid,username=sessions[userid])
         if room.game_table.addViewer(user):
-            room.addUser(user) 
+            room.addUser(user)
             join_room(room_id)
             logger.info(f"User {userid} watch game {room.game_table.game_id} and join room {room_id}")
             # 需要前端根据自己的身份来决定是成功加入观战，还是某某进入观战
-            emit('watchGameSuccess',{'room_id':room_id,'game_info':room.game_table.getGameInfo()},to=room_id,namespace='/')
+            emit('watchGameSuccess',{'room_info':room.getRoomInfo(),'game_info':room.game_table.getGameInfo()},to=room_id,namespace='/')
         else:
             emit('processWrong',{'status':NOT_JOIN_GAME},to=request.sid)
     except Exception as e:
         logger.error("Watch game error due to {0}".format(str(e)), exc_info=True)
         emit('processWrong',{'status':OTHER_ERROR},to=request.sid)
+        return
+
         
 
 @socketio.event

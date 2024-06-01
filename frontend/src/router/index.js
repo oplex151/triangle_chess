@@ -14,6 +14,7 @@ import Match from '@/views/Match/index.vue'
 import Rank from '@/views/Rank/index.vue'
 import Profile from '@/views/Profile/index.vue'
 import publicShare from '@/views/publicShare/index.vue'
+import Witness from '@/views/Witness/index.vue'
 import { socket } from '@/sockets';
 
 
@@ -103,7 +104,13 @@ const router = createRouter({
       path: '/publicShare',
       component: publicShare,
       meta: {isAuth: false,connection: false},
+    },
+    {
+      path:'/witness',
+      component:Witness,
+      meta:{isAuth: true,connection: false},
     }
+
   ]
 })
 
