@@ -34,12 +34,12 @@ const categoryList = ref([
   //   url:"/record",
   //   picture:""
   // },
-  {
-    id:5,
-    name:"帮助中心",
-    url:"/",
-    picture:""
-  },
+  // {
+  //   id:5,
+  //   name:"帮助中心",
+  //   url:"/",
+  //   picture:""
+  // },
   {
     id:6,
     name:"关于我们",

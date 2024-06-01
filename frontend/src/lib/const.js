@@ -16,6 +16,7 @@ export const PARAM_ERROR = 505;
 export const NOT_JOIN_GAME = 510;
 export const GAME_CREATE_FAILED = 511;
 export const NOT_YOUR_TURN = 512;
+export const BANNED_USER = 514;
 
 export const ROOM_NOT_EXIST = 520 ;
 export const ALREADY_IN_ROOM = 521;

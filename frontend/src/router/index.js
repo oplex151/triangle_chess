@@ -3,17 +3,18 @@ import Cookies from 'js-cookie';
 
 import Login from '@/views/Login/index.vue'
 import Layout from '@/views/Layout/index.vue'
-import Home from '@/views/Home/index.vue'
 import Category from '@/views/Category/index.vue'
 import Game from '@/views/Game/index.vue'
 import Register from '@/views/Register/index.vue'
 import Logout from '@/views/Logout/index.vue'
 import Room from '@/views/Room/index.vue'
-import Record from '@/views/Record/index.vue'
 import Match from '@/views/Match/index.vue'
 import Rank from '@/views/Rank/index.vue'
 import Profile from '@/views/Profile/index.vue'
 import publicShare from '@/views/publicShare/index.vue'
+import Admin from '@/views/Admin/index.vue'
+import AdminLogin from '@/views/Admin/login.vue'
+import Apeal from '@/views/Apeal/index.vue'
 import { socket } from '@/sockets';
 
 
@@ -27,12 +28,6 @@ const router = createRouter({
       meta: {isAuth: true,connection: false},
       // 这两个没用到
       children:[
-        //   主页-默认页
-        {
-          path: '/home',
-          component: Home,
-          meta: {isAuth: true,connection: false},
-        },
         //   主页-目录页
         {
           path: '/category',
@@ -53,6 +48,11 @@ const router = createRouter({
       component: Logout,
       meta: {isAuth: true,connection: false},
     },
+    // {
+    //   path: '/apeal',
+    //   component: Apeal,
+    //   meta: {isAuth: true,connection: false},
+    // },
     //   主页-游戏页
     {
       path:'/game',
@@ -80,15 +80,20 @@ const router = createRouter({
       component: Rank,
       meta: {isAuth: true,connection: true},
     },
-    // {
-    //   path: '/backend',
-    //   component: Backend,
-    //   meta: {isAuth: true,connection: false},
-    // }
     {
       path:'/profile',
       component: Profile,
       meta: {isAuth: true,connection: false},
+    },
+    {
+      path: '/admin',
+      component: Admin,
+      meta: {isAuth: false,connection: false},
+    },
+    {
+      path: '/admin/login',
+      component: AdminLogin,
+      meta: {isAuth: false,connection: false},
     },
     {
       path: '/publicShare/:recordId',
@@ -123,7 +128,8 @@ router.beforeEach((to, from, next) => {
     } else {
       next('/login')
     }
-  } else {
+  } 
+  else {
     next()
   }
 })

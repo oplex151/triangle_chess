@@ -1,12 +1,7 @@
 <script setup>
-import main from '@/main'
 import { camps, initChess } from '@/lib/game';
 import { GEBI } from '@/utils/utils';
-import Cookies from 'js-cookie';
-import { registerSockets, socket } from '@/sockets'
 import { XYZToPosition, PositionToXYZ } from '@/lib/convert'
-import router from '@/router';
-import { ElMessage } from "element-plus";
 import * as CONST from '@/lib/const.js'
 import { lives, changeLives } from '@/chesses/Live';
 import { onMounted, ref, onUnmounted, computed, getCurrentInstance } from 'vue';

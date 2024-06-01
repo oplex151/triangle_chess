@@ -12,6 +12,8 @@ NAME_ALREADY_EXIST = 509 #"Name already exist"
 REGISTER_EXIST_USER = 503 #"Register failed: User already exists"
 REGISTER_FAILED = 504 #"Register failed: Internal server error"
 WRONG_OLD_PASSWORD = 513 #"Wrong old password"
+BANNED_USER = 514 #"Banned user"
+USER_ALREADY_BANNED = 515 #"User already banned"
 
 PARAM_ERROR = 505 #"Parameter error"
 

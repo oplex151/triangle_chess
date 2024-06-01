@@ -4,6 +4,9 @@ import pymysql
 import base64
 from io import BytesIO
 from PIL import Image
+import datetime
+import jwt #装PyJWT
+import hashlib
 from dotenv import load_dotenv
 from flask import jsonify
 from backend.tools import setupLogger
@@ -48,6 +51,13 @@ def saveImage(image,path,ext):
     else:
         image.save(path)
 
+def hash_token(password):
+    # 使用SHA-256算法加密密码
+    return hashlib.sha256(password.encode()).hexdigest()
+
+def validate_token(plain_password, hashed_password):
+    return hash_token(plain_password) == hashed_password
+
 def connectDatabase(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
@@ -57,16 +67,29 @@ def connectDatabase(func):
         return func(*args, **kwargs)
     return wrapper
 
+def adminLogin(password, config_password):
+    #if not protected_route(request.headers.get('Authorization').split(' ')[1]):
+    res = {} 
+    if password == 'sanguoxiangqi':
+        token = jwt.encode({'role':'admin','exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1)}, config_password)
+        res['token'] = token
+        return jsonify(res),SUCCESS
+    else:
+        return jsonify(res),OTHER_ERROR
+
 @connectDatabase
 def login(username, password):
     global sessions
     res,status = {},None
     try:
         db.begin()
-        select_query = "SELECT userPassword, userId FROM {0} WHERE userName = {1};".format(USER_TABLE,"'"+username+"'")
+        select_query = "SELECT userPassword, userId, banned FROM {0} WHERE userName = {1};".format(USER_TABLE,"'"+username+"'")
         cursor.execute(select_query)
         result = cursor.fetchone()
         if result is not None and result[0] == password:
+            if result[2] == 1:
+                logger.error("User {0} is banned".format(username))
+                return "{}",BANNED_USER
             if result[1] in sessions:
                 logger.error("User {0} already logged in".format(username))
                 return "{}",ALREADY_LOGIN
@@ -268,4 +291,60 @@ def uploadImage(userid:int, image:str):
         cursor.close()
         db.close()
 
+    return jsonify(res),status
+
+@connectDatabase
+def getUserData():
+    res,status = [],None
+    try:
+        db.begin()
+        select_query = "SELECT * FROM {0};".format(USER_TABLE)
+        cursor.execute(select_query)
+        data = cursor.fetchall()
+        for i in data:
+            dic = {}
+            dic["userid"] = i[0]
+            dic["username"] = i[1]
+            dic['rank'] = i[3]
+            dic['score'] = i[4]
+            dic['gender'] = i[5]
+            dic['phone_num'] = i[6]
+            dic['email'] = i[7]
+            dic['image_path'] = i[8]
+            dic['banned'] = i[9]
+            res.append(dic)
+        status = SUCCESS
+    except Exception as e:
+        logger.error("Failed to get user data due to\n{0}".format(str(e)),exc_info=True)
+        status = OTHER_ERROR
+    finally:
+        cursor.close()
+        db.close()
+    return jsonify(res),status
+
+@connectDatabase
+def changeUserBanned(userid:int, banned:int):
+    res,status = {},None
+    try:
+        db.begin()
+        select_query = "SELECT * FROM {0} WHERE userId = {1};".format(USER_TABLE, userid)
+        cursor.execute(select_query)
+        data = cursor.fetchone()
+        if data is None:
+            logger.error("User {0} not exists".format(userid))
+            return None,USER_NOT_EXIST
+        if data[9] == 1 and banned == 1:
+            logger.error("User {0} is already banned".format(userid))
+            return None,USER_ALREADY_BANNED
+        update_query = "UPDATE {0} SET banned = {1} WHERE userId = {2};".format(USER_TABLE,banned, userid)
+        cursor.execute(update_query)
+        db.commit()
+        logger.info("User {0} banned successfully".format(userid))
+        status = SUCCESS
+    except Exception as e:
+        logger.error("User {0} failed to ban due to\n{1}".format(userid,str(e)),exc_info=True)
+        status = OTHER_ERROR
+    finally:
+        cursor.close()
+        db.close()
     return jsonify(res),status

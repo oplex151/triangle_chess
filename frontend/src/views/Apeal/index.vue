@@ -1,43 +1,33 @@
 <template>
-    <el-dialog 
-    v-model="props.dialogFormVisible" 
-    title="举报" 
-    width="500" 
-    class="report-dialog" 
-    :before-close="handleClose"
+    <div class="apeal-body">
+    <el-form 
+    :model="ruleForm" 
+    :rules="rules" 
+    ref="ruleFormRef"
+    :size="formSize"
     >
-        <el-form 
-        :model="ruleForm" 
-        :rules="rules" 
-        ref="ruleFormRef"
-        :size="formSize"
-        >
-            <el-form-item label="举报理由" prop="reason">
-                <el-radio-group v-model="ruleForm.reason">
-                    <el-radio value="Bad_content">违规发言</el-radio>
-                    <el-radio value="Bad_behaviour">恶意行为</el-radio>
-                    <el-radio value="Bad_selfie">违规头像或信息</el-radio>
-                    <el-radio value="Other">其他</el-radio>
-                </el-radio-group>
-            </el-form-item>
-            <el-form-item label="详细原因" prop="detail">
+        <el-form-item label="申诉理由" prop="reason">
+            <el-radio-group v-model="ruleForm.reason">
+                <el-radio value="Apeal_bad_report">恶意举报</el-radio>
+                <el-radio value="Bad_bug">遭遇bug</el-radio>
+                <el-radio value="Ask_help">请求帮助</el-radio>
+                <el-radio value="Other">其他</el-radio>
+            </el-radio-group>
+        </el-form-item>
+        <el-form-item label="详细原因" prop="detail">
                 <el-input v-model="ruleForm.detail" />
-            </el-form-item>
-        </el-form>
-        <template #footer>
-            <div class="dialog-footer">
-                <el-button @click="handleClose">Cancel</el-button>
-                <el-button type="primary" @click="handleSubmit(ruleFormRef)">
-                    Confirm
-                </el-button>
-            </div>
-        </template>
-    </el-dialog>
+        </el-form-item>
+    </el-form>
+    <div class="dialog-footer">
+        <el-button @click="handleClose">Cancel</el-button>
+        <el-button type="primary" @click="handleSubmit(ruleFormRef)">
+            Confirm
+        </el-button>
+    </div>
+    </div>
 </template>
 
 <script lang="ts" setup>
-// props:toreportid，需要举办的名字
-// 
 import { defineProps, defineEmits, ref ,reactive, computed } from 'vue'
 import type { ComponentSize, FormInstance, FormRules } from 'element-plus'
 import { ElMessage } from 'element-plus'
@@ -46,8 +36,6 @@ import main from '@/main';
 const formSize = ref<ComponentSize>('default')
 
 const props = defineProps({
-    toreportid: Number,
-    dialogFormVisible: Boolean,
     myuserid: Number
 })
 const emit = defineEmits(['reportEnd','reportStop'])
@@ -72,10 +60,9 @@ const rules = reactive < FormRules < RuleForm >> ({
 })
 
 const Confirm = () => {
-    ElMessage.success(props.toreportid + ' 已被您('+props.myuserid+')举报，原因：' + ruleForm.reason + ' ' + ruleForm.detail)
     axios.post(main.url+ '/api/addAppeals', {
-        'userid':props.toreportid,
-        'type': 0,  //report
+        'userid':props.myuserid,
+        'type': 1,  //apeal
         'content':ruleForm.reason +':'+ruleForm.detail,
         'fromid':props.myuserid
     },
@@ -84,17 +71,15 @@ const Confirm = () => {
     }
     ).then(res => {
     if (res.status == 200) {
-        ElMessage.success(props.toreportid + ' 已被您举报，原因：' + ruleForm.reason + ' ' + ruleForm.detail)
-
+        ElMessage.success("发送成功")
     } 
     else {
-        ElMessage.success('举报出错,反正是发过去了')
+        ElMessage.success('发送出错,反正是发过去了')
         console.log(res)
-        
     }
     })
     .catch(error => {
-        ElMessage.success('举报出错')
+        ElMessage.success('发送出错')
         console.log(error)
     });
     resetForm(ruleFormRef.value)  
@@ -119,3 +104,16 @@ const handleClose = (done: () => void) => {
     emit('reportEnd')
 }
 </script>
+
+<style scoped>
+.apeal-body {
+    padding: 20px;
+    min-height: 300px;
+}
+.dialog-footer {
+    margin-top: 20px;
+    position: absolute;
+    left: 50%;
+    bottom: 70px;
+}
+</style>

@@ -9,6 +9,7 @@ os.environ['PROJECT_ROOT'] = str(project_root)
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 print("Project root set to:", os.environ['PROJECT_ROOT']) # 设置项目根目录
 
+import jwt
 import flask
 from flask_socketio import SocketIO,join_room,leave_room,emit,close_room
 from flask_cors import CORS
@@ -24,10 +25,24 @@ from backend.game import *
 
 app = flask.Flask(__name__)
 CORS(app,cors_allowed_origins="*")
+app.config['SECRET_KEY'] = 'sanguoxiangqi'
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 # 日志工具
 logger = setupLogger()
+
+def protectedAdmin(token):
+    try:
+        payload = jwt.decode(token, app.config['SECRET_KEY'],algorithms=['HS256'])
+        # 验证成功，可以提取信息
+        print('Authenticated',payload)
+        return True
+    except jwt.ExpiredSignatureError:
+        print('Token过期')
+        return False
+    except jwt.InvalidTokenError:
+        print('Token无效')
+        return False
 
 @app.route('/api/login', methods=['POST'])
 def loginApi():
@@ -119,6 +134,100 @@ def changePasswordApi():
     except:
         return "{message: 'parameter error'}",PARAM_ERROR
     return changePassword(userid, old_password, new_password)
+
+@app.route('/api/adminLogin',methods=['POST'])
+def adminLoginApi():
+    '''
+    Description: 管理员登录
+    Args:
+        password: 密码
+    Returns:
+        登录成功200
+    '''
+    params = {'password':str}
+    try:
+        password = getParams(params,request.form)
+    except:
+        return "{message: 'parameter error'}",PARAM_ERROR
+    return adminLogin(password,app.config['SECRET_KEY'])
+
+@app.route('/api/checkAdmin',methods=['POST'])
+def checkAdminApi():
+    '''
+    Description: 检查管理员权限
+    Args:
+        token: token
+    Returns:
+        权限验证成功200
+    '''
+    params = {'token':str}
+    try:
+        token = getParams(params,request.form)
+    except:
+        return "{message: 'parameter error'}",PARAM_ERROR
+    if protectedAdmin(token):
+        return "{message: 'admin'}",SUCCESS
+    else:
+        return "{message: 'not admin'}",NOT_ADMIN
+
+@app.route('/api/getUserData', methods=['POST'])
+def getUserDataApi():
+    '''
+    Description: 获取用户数据
+    Args:
+        token: token
+    Returns:
+        用户数据 详见数据库user表
+    '''
+    params = {'token':str}
+    try:
+        token = getParams(params,request.form)
+    except:
+        return "{message: 'parameter error'}",PARAM_ERROR
+    if protectedAdmin(token):
+        return getUserData()
+    else:
+        return "{message: 'not admin'}",NOT_ADMIN
+    
+@app.route('/api/banUser', methods=['POST'])
+def banUserApi():
+    '''
+    Description: 封禁用户
+    Args:
+        token: token
+        userid: 用户id
+    Returns:
+        封禁成功200
+    '''
+    params = {'token':str, 'userid':int}
+    try:
+        token,userid = getParams(params,request.form)
+    except:
+        return "{message: 'parameter error'}",PARAM_ERROR
+    if protectedAdmin(token):
+        return changeUserBanned(userid, 1)
+    else:
+        return "{message: 'not admin'}",NOT_ADMIN
+
+@app.route('/api/releaseUser', methods=['POST'])
+def releaseUserApi():
+    '''
+    Description: 解封用户
+    Args:
+        token: token
+        userid: 用户id
+    Returns:
+        解封成功200
+    '''
+    params = {'token':str, 'userid':int}
+    try:
+        token,userid = getParams(params,request.form)
+    except:
+        return "{message: 'parameter error'}",PARAM_ERROR
+    if protectedAdmin(token):
+        return changeUserBanned(userid, 0)
+    else:
+        return "{message: 'not admin'}",NOT_ADMIN
 
 @app.route('/api/logout', methods=['POST'])
 def logoutApi():
@@ -222,31 +331,70 @@ def addAppealsApi():
         userid: 用户id
         type: 申诉种类
         content: 申诉内容
+        fromid: 申诉来源id
     Returns:
         添加申诉成功200
     '''
-    params = {'userid':int, 'type':str, 'content':str}
+    params = {'userid':int, 'type':str, 'content':str, 'fromid':int}
     try:
-        userid, appeal_type, content = getParams(params,request.form)
+        userid, appeal_type, content, fromid = getParams(params,request.form,['type','content','fromid'])
     except:
         return "{message: 'parameter error'}",PARAM_ERROR
-    return addAppeals(userid, appeal_type, content)
+    return addAppeals(userid, appeal_type, content, fromid)
 
 @app.route('/api/getAppeals', methods=['POST'])
 def getAppealsApi():
     '''
     Args:
-        userid: 用户id
-        adminid: 管理员用户id
+        token: token
     Returns:
         申诉列表 详见数据库appeal表
     '''
-    params = {'userid':int, 'adminid':int}
+    params = {'token':str}
     try:
-        userid, adminid = getParams(params,request.form)
+        token = getParams(params,request.form)
     except:
         return "{message: 'parameter error'}",PARAM_ERROR
-    return getAppealsInfo(userid, adminid)
+    if protectedAdmin(token):
+        return getAppealsInfo(None)
+    else:
+        return "{message: 'not admin'}",NOT_ADMIN
+
+@app.route('/api/handleAppeal', methods=['POST'])
+def handleAppealApi():
+    '''
+    Args:
+        token: token
+        appeal_id: 申诉id
+        feedback: 处理结果
+    Returns:
+        处理申诉成功200
+    '''
+    params = {'token':str, 'appeal_id':int, 'feedback':str}
+    try:
+        token, appeal_id, feedback = getParams(params,request.form,['handle_result'])
+    except:
+        return "{message: 'parameter error'}",PARAM_ERROR
+    if protectedAdmin(token):
+        return handleAppeal(appeal_id, feedback)
+    else:
+        return "{message: 'not admin'}",NOT_ADMIN
+
+
+@app.route('/api/getUserAppeal', methods=['POST'])
+def getUserAppealApi():
+    '''
+    Args:
+        userid: 用户id
+    Returns:
+        用户的申诉列表 详见数据库appeal表
+    '''
+    params = {'userid':int}
+    try:
+        userid = getParams(params,request.form)
+    except:
+        return "{message: 'parameter error'}",PARAM_ERROR
+    return getAppealsInfo(userid)
 
 @socketio.on('connect')
 def connect():

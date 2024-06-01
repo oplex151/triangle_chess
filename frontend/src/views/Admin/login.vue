@@ -1,24 +1,17 @@
-<script setup>
-import { ref, watch ,onMounted, watchEffect} from 'vue';
-import { useRouter } from 'vue-router';
+<script setup lang="ts">
+import { ref ,watchEffect} from 'vue';
 import axios from 'axios';
+import { defineEmits, defineProps } from 'vue';
+import { useRouter,useRoute } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import main from '@/main';
 import Cookies from 'js-cookie';
-import * as CONST from '@/lib/const';
 
 const uname = ref('');
 const password = ref('');
 const errorMessage = ref('');
 const infoMessage = ref('');
 const router = useRouter();
-
-onMounted(() => {
-  if (Cookies.get('userid') !== undefined) {
-    router.push('/');
-  }
-  console.log(main.url)
-});
 
 watchEffect(() => {
   if (errorMessage.value !== '') {
@@ -41,63 +34,41 @@ watchEffect(() => {
   }
 });
 
-const login = () => {
-  if (uname.value === '' || password.value === '') {
-    errorMessage.value = '用户名或密码不能为空';
+function adminLogin() {
+  if ( password.value === '') {
+    errorMessage.value = '密码不能为空';
     return;
   }
-  axios.post(main.url+ '/api/login', {
-    'username': uname.value,
+  axios.post(main.url+ '/api/adminLogin', 
+  {
     'password': password.value
-    },
-    {
-        headers: {'Content-Type':'application/x-www-form-urlencoded'},
-    }
+  },
+  {
+      headers: {'Content-Type':'application/x-www-form-urlencoded'},
+  }
   ).then(res => {
     if (res.status == 200) {
-      Cookies.set('userid',res.data.userid);
-      Cookies.set('username',res.data.username);
+      Cookies.set('admin_token',res.data.token);
       infoMessage.value = '登录成功';
-      router.push('/');
-    }
-    else {
+      router.push('/admin');
+    } else {
       errorMessage.value = '用户名或密码错误';
     }
-  })
-  .catch(error => {
-    // 捕获错误
-    if (error.response.status == 506) {
-      // 请求已发出，但服务器响应状态码不在 2xx 范围内
-      errorMessage.value = '请勿重复登录';
-      if (Cookies.get('userid') !== undefined) {
-        router.push('/');
-      }
-    }
-    else if(error.response.status == 501){
-      errorMessage.value = '用户不存在';
-    }
-    else if(error.response.status == 502){
-      errorMessage.value = '密码错误';
-    }
-    else if (error.response.status == CONST.BANNED_USER) {
-      errorMessage.value = '账号被封禁';
-    }
-    else {
-      errorMessage.value = '请求错误';
-    }
+  }).catch(err => {
+    console.log(err);
+    errorMessage.value = '登录失败';
   });
-};
-
+}
 </script>
 
 <template>
   <div class="outer-container">
     <div class="background-image"></div>
     <div class="login-container">
-      <h1 class="login-title" >用户登录</h1>
+      <h1 class="login-title">管理员登录</h1>
 
       <div class="form-container">
-        <form class="login-form" @submit.prevent="login">
+        <form class="login2-form" @submit.prevent="adminLogin">
           <div class="form-group">
             <label for="uname" class="form-label">用户名：</label>
             <input type="text" id="uname" v-model="uname" class="form-input">
@@ -107,13 +78,11 @@ const login = () => {
             <input type="password" id="password" v-model="password" class="form-input">
           </div>
           <div class="form-button">
-          <el-button
-          native-type="submit" class="login-button">登录</el-button>
+          <button class="admin-button">
+          管理员登入</button >
           </div>
         </form>
       </div> <!-- end of form-container -->
-      <router-link
-      to="/register" class="go_button">立即注册！</router-link>
     </div>  <!-- end of login-container -->
   </div>   <!-- end of outer-container -->
 </template>
@@ -170,7 +139,7 @@ const login = () => {
   justify-content: center;
 }
 
-.login-form {
+.login2-form {
   display: flex;
   flex-direction: column;
 }
