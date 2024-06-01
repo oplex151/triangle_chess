@@ -9,6 +9,7 @@ import Cookies from 'js-cookie'
 import { useRouter } from 'vue-router';
 import { ElDivider, ElInput, ElMessage } from 'element-plus'
 import * as CONST from '@/lib/const.js'
+import { lives, resetLives } from '@/chesses/Live';
 import { User, HomeFilled } from '@element-plus/icons-vue'
 
 import Avatar from '@/components/views/Avatar.vue'
@@ -112,7 +113,14 @@ const sockets_methods = {
     }
   },
   leaveRoomSuccess(data){
-    if (data.userid == Cookies.get('userid')){
+    if (data.userid == -1){
+      Cookies.remove('room_id')
+      Cookies.remove('room_info')
+      room_id.value = null
+      room_info.value = null
+      ElMessage.success('房主离开，房间解散！')
+    }
+    else if (data.userid == Cookies.get('userid')){
       Cookies.remove('room_id')
       Cookies.remove('room_info')
       room_id.value = null
@@ -144,6 +152,7 @@ const sockets_methods = {
         camp = i
       }
     }
+    resetLives()
     if (camp>=-1){
       Cookies.set('camp',camp)
       console.log(Cookies.get('camp'))

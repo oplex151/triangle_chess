@@ -270,14 +270,27 @@ def disconnect():
             if room_id is not None:
                 room:RoomManager = fetchRoomByRoomID(room_id,rooms)
                 if room is not None:
-                    room.removeUser(userid)
-                    leave_room(room_id)
-                    if len(room.users) == 0:
+                    if room.isHolder(userid) and room.game_table is None:
+                        userids = [u['userid'] for u in room.users]
+                        emit('leaveRoomSuccess',{'userid':-1},to=room.room_id,namespace='/',skip_sid=request.sid)
+
+                        for u in userids:
+                            sid = uid2sid(u)
+                            if sid: 
+                                leave_room(room_id,sid=sid) 
+                                sid2uid.pop(sid)
+                                
                         rooms.remove(room)
-                        close_room(room=room_id,namespace='/')
-                        logger.info(f"Room {room_id} is empty, remove it")
+                        logger.info(f"Room {room_id} with no holder, so remove it")
                     else:
-                        emit('leaveRoomSuccess',{'userid':userid,'username':sessions[userid],'room_info':room.getRoomInfo()},to=room.room_id,namespace='/')
+                        room.removeUser(userid)
+                        leave_room(room_id)
+                        if len(room.users) == 0:
+                            rooms.remove(room)
+                            close_room(room=room_id,namespace='/')
+                            logger.info(f"Room {room_id} is empty, remove it")
+                        else:
+                            emit('leaveRoomSuccess',{'userid':userid,'username':sessions[userid],'room_info':room.getRoomInfo()},to=room.room_id,namespace='/')
         except:
             logger.error("User {0} disconnect, ".format(userid), exc_info=True)
 
@@ -400,15 +413,33 @@ def leaveRoom(data):
         return
     room:RoomManager = fetchRoomByRoomID(room_id,rooms)
     if room is None:
+
         logger.error("No such room {0}".format(room_id))
         emit('processWrong',{'status':ROOM_NOT_EXIST},to=request.sid)
         return
-    if room.removeUser(userid):
+    
+    if room.isHolder(userid):
+
+        userids = [u['userid'] for u in room.users]
+        emit('leaveRoomSuccess',{'userid':-1},to=room_id,namespace='/', skip_sid=request.sid)
+        emit('leaveRoomSuccess',{'userid':userid,'username':sessions[userid],'room_info':room.getRoomInfo()},to=request.sid)
+
+        for u in userids:
+            sid = uid2sid(u)
+            if sid: 
+                leave_room(room_id,sid=sid) 
+                sid2uid.pop(sid)
+
+        rooms.remove(room)
+        logger.info(f"Room {room_id} with no holder, so remove it")
+    elif room.removeUser(userid):
         emit('leaveRoomSuccess',{'userid':userid,'username':sessions[userid],'room_info':room.getRoomInfo()},to=room_id)
         leave_room(room_id)
+
         # 更新sid2uid
         if request.sid in sid2uid:
             sid2uid.pop(request.sid)
+
         # 房间为空, 移除房间
         if len(room.users) == 0:
             rooms.remove(room)
@@ -566,7 +597,7 @@ def roomOver(game:GameTable, room:RoomManager, userid:int):
         print(f"对局时长为：{match_duration}")
         # 结束记录
         state,record_id = game.record.recordEnd(userid)
-        emit('gameEnd', {'status': GAME_END, 'record_id':record_id, 'room_type':room_type,"step_count":game.step_count,"match_duration": match_duration.total_seconds(),'winner': userid, 'winner_name': sessions[userid]}, to=room.room_id)
+        emit('gameEnd', {'status': GAME_END, 'record_id':record_id, 'room_type':room_type,"step_count":game.step_count,"match_duration": match_duration.total_seconds(),'winner': userid, 'winner_name': sessions[userid]}, to=room.room_id, namespace='/')
 
     elif game.game_state == EnumGameState.draw:
         # 记录结束时间
@@ -576,7 +607,7 @@ def roomOver(game:GameTable, room:RoomManager, userid:int):
         match_duration = (game.record.end_time - game.record.start_time)
         # 结束记录
         state,recordId=game.record.recordEnd(None)
-        emit('gameEnd', {'status': GAME_END, 'recordId':recordId,'room_type':room_type,"step_count":game.step_count,"match_duration": match_duration,'winner': -1, 'winner_name': None}, to=room.room_id)
+        emit('gameEnd', {'status': GAME_END, 'recordId':recordId,'room_type':room_type,"step_count":game.step_count,"match_duration": match_duration.total_seconds(),'winner': -1, 'winner_name': None}, to=room.room_id,namespace='/')
 
     room.removeGameTable()
     if room.room_type == RoomType.matched:
@@ -678,7 +709,7 @@ def requestDraw(data):
     except:
         emit('processWrong',{'status':PARAM_ERROR},to=request.sid)
         return
-    # 先判断用户是否在房间中
+    
     room_id = inWhitchRoom(userid,rooms)
     if room_id is None:
         emit('processWrong',{'status':NOT_IN_ROOM},to=request.sid)
@@ -690,11 +721,10 @@ def requestDraw(data):
     try:
         game.requestDraw(userid)
         # 广播求和请求给其他存活的玩家
-        for user in game.getAlivePlayers():
-            if user != userid:
-                emit('drawRequest', {'requester': userid}, to=user)
+        emit('drawRequest', {'requester': userid, 'username': sessions[userid]}, to=room_id, skip_sid=request.sid)
         return
     except Exception as e:
+        logger.error("Request draw error due to {0}".format(str(e)), exc_info=True)
         emit('processWrong',{'status':OTHER_ERROR},to=request.sid)
         return 
     
@@ -718,29 +748,30 @@ def respondDraw(data):
     if room_id is None:
         emit('processWrong',{'status':NOT_IN_ROOM},to=request.sid)
         return
-    game:GameTable = fetchRoomByRoomID(room_id,rooms).game_table
+    room = fetchRoomByRoomID(room_id,rooms)
+    game = room.game_table
     if game is None:
         emit('processWrong',{'status':NOT_JOIN_GAME},to=request.sid)
         return
     try:
-        # 通知所有玩家游戏结束
         game.respondDraw(userid, agree)
         # 所有存活的玩家均已回应
-        if len(game.draw_respondents) == len(game.getAlivePlayers):
+        if len(game.draw_respondents) == len(game.getAlivePlayers()):
             for res_agree in game.draw_agree:
                 if res_agree == False:
-                    for user in game.getAlivePlayers:
-                        emit('gameOngoing', {'status': SUCCESS}, to=user)
-                    game.setDraw()
+                    logger.info(f"Draw was rejected, so game continues")
+                    emit('gameOngoing', {'status': SUCCESS,'userid': userid, 'username': sessions[userid]}, to=room_id)
+                    game.setDraw(False)
                     return
-            for user in game.users:
-                emit('gameEnd', {'status': GAME_END, 'winner': -1}, to=room_id)
-            # TODO:: 通知所有玩家游戏结束
-            game.setDraw()
+
+            game.setDraw(True)
+
+            roomOver(game=game, room=room, userid=game.winner_id)
         else:
-            emit('wait_for_others', {'status': SUCCESS}, to=user)
+            emit('waitForOthers', {'status': SUCCESS, 'userid': userid, 'username': sessions[userid], 'agree': agree}, to=room_id)
         return
     except Exception as e:
+        logger.error("Respond draw error due to {0}".format(str(e)), exc_info=True)
         emit('processWrong',{'status':OTHER_ERROR},to=request.sid)
         return 
 
@@ -843,8 +874,6 @@ def cycleRank(app):
                                 rank_queue.put(user)
                         # if room and room in rooms:
                         #     rooms.remove(room)
-
-
                 else:
                     # 重新将所有用户放回队列
                     for user in user_list:

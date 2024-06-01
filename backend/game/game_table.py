@@ -270,13 +270,16 @@ class GameTable:
         
         # 初始化回应求和请求的玩家列表
         self.draw_respondents = set()
+        self.draw_agree = set()
+        self.draw_respondents.add(userid)
+        self.draw_agree.add(True)
 
     def respondDraw(self, userid:int, agree:bool):
         '''
         Description: 处理求和回应
         '''
         # 如果用户不是求和请求的回应对象之一，忽略
-        if self.draw_requester is None or userid == self.draw_requester or self.lives[userid] == False:
+        if self.draw_requester is None or userid == self.draw_requester or self.lives[self._getUserIndex(userid)] == False:
             return
         
         # 添加回应的用户
@@ -431,7 +434,9 @@ class RoomManager:
                 return True
         else:
             return False
-            
+
+    def isHolder(self, userid:int) -> bool:
+        return self.holder['userid'] == userid
 
     def getRoomInfo(self):
         '''

@@ -32,3 +32,8 @@ export const MOVE_OUT_OF_BOARD = 602;
 export const MOVE_INVALID = 603;
 
 export const GAME_END = 701;
+
+
+//游戏状态机
+export const STATUS_ONING = 1
+export const STATUS_DRAWING = 2

@@ -5,3 +5,6 @@ export function changeLives(livesin) {
         lives[i] = livesin[i];
     }
 }
+export function resetLives(){
+    lives = [true, true, true];
+}
