@@ -149,8 +149,8 @@ def calculateNewScore(player_score, opponent_scores, result, player_performance)
     return round(new_score)
 
 @connectDatabase
-def updateUserRank(userid, new_score):
-    rank,score = rankScore(new_score)
+def updateUserRank(userid, new_totalscore):
+    rank,score = rankScore(new_totalscore)
     # 实现将新段位积分更新到数据库中
     result = False
     try:
@@ -207,8 +207,8 @@ def endRankGame(game:GameTable):
             new_totalscore = calculateNewScore(player_score[user_z], opponent_scores[user_z], result, player_performance)
             logger.info("计算新分数: %s", new_totalscore)
 
-            new_rank, new_score = rankScore(new_totalscore)
-            updateUserRank(userid, new_rank, new_score)  # 将新积分更新到数据库中
+            #new_rank, new_score = rankScore(new_totalscore)
+            updateUserRank(userid, new_totalscore)  # 将新积分更新到数据库中
 
     except Exception as e:
         logger.error("Error ending rank game {0} due to\n{1}".format(game.game_id,str(e)))

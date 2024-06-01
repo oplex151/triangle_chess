@@ -190,67 +190,18 @@ const camp_0_style = computed(() => {
 });
 </script>
 <template>
-    <Report :toreportid="to_report_id" :myuserid="userid" :dialogFormVisible=vis @reportEnd="handleReportEnd" />
-    <!-- <div class="background-image"></div> -->
-
-    <button class="button-home" @click="goBackHome()">
-            <el-icon style="vertical-align: middle" size="30px">
-                <HomeFilled />
-            </el-icon>
-        </button>
-    <button class="button-share">
-        <el-icon style="vertical-align: middle" size="30px">
-                <Share />
-            </el-icon>
-    </button>
-    <div v-if="start">
-        <button @click="EndGo" class="end_button">结束回放</button>
-        <div class="brd">
-            <Board :my_camp="my_camp" ref="board" @requireMove="Move" />
-            <button @click="Next" class="next_button">下一步</button>
-        </div>
-        <div class="avatar">
-            <!---------0号位---------->
-            <Avatar :my_userid="userid" :userid="userids[0]" @reportUser="handleReport" :class="camp_0_style">
-                <template #name>
-                    <p>{{ name[0] }}</p>
-                </template>
-                <template #avatar>
-                    {{ name[0] }}
-                </template>
-            </Avatar>
-            <!---------1号位---------->
-            <Avatar :my_userid="userid" :userid="userids[1]" @reportUser="handleReport" :class="camp_1_style">
-                <template #name>
-                    <p>{{ name[1] }}</p>
-                </template>
-                <template #avatar>
-                    {{ name[1] }}
-                </template>
-            </Avatar>
-            <!---------2号位---------->
-            <Avatar :my_userid="userid" :userid="userids[2]"  @reportUser="handleReport" :class="camp_2_style">
-                <template #name>
-                    <p>{{ name[2] }}</p>
-                </template>
-                <template #avatar>
-                    {{ name[2] }}
-                </template>
-            </Avatar>
-        </div>
-    </div>
-    <div v-else>
-        <div class="select_btn">
-            <el-select v-model="value" filterable placeholder="请输入对局" :loading="loading" popper-class="select_down"
-                style="width: 240px">
-                <el-option v-for="item in options" :label="item.startTime" :key="item.recordId" :value="item">
-                </el-option>
-            </el-select>
-        </div>
-        <div>
-            <button @click="Get" class="button">开始回放</button>
-        </div>
-    </div>
+            <div v-for="(item,index) in camp_c" :key="index">
+                <div :class="item">
+                    <Avatar :my_userid="userid" :userid="userids[index]" @reportUser="handleReport">
+                        <template #name>
+                            <p>{{ name[index] }}</p>
+                        </template>
+                        <template #avatar>
+                            <img :src="main.url+avatars[userids[index]]" alt="头像" />
+                        </template>
+                    </Avatar>
+                </div>
+            </div>
 </template>
 
 <style>

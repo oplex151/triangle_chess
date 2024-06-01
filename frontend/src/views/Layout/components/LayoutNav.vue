@@ -23,6 +23,12 @@ const categoryList = ref([
     picture:""
   },
   {
+    id:11,
+    name:"观战模式",
+    url:"/witness",
+    picture:""
+  },
+  {
     id:3,
     name:"个人中心",
     url:'/profile',

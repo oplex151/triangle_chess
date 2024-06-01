@@ -40,8 +40,9 @@ const draw_responser = ref([])
 
 const o_message = ref([])
 const i_message = ref('')
-const my_name = Cookies.get('username')
 
+const my_name = Cookies.get('username')
+const avatars = ref({})
 
 const copy = async (anything) => {
   try {
@@ -95,6 +96,21 @@ onMounted(() => {
     console.log(error)
   })
   console.log(socket.value)
+  let userids = room_info.users.map(user => {
+    return user.userid;
+  }) 
+  axios.post(main.url + '/api/getAvatars', {'userids': userids.join(',')},
+  {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+  }
+  )
+  .then(res => {
+      console.log(res.data)
+      avatars.value = res.data
+  })
+  .catch(err => {
+      console.error(err)
+  })
 });
 
 const sockets_methods = {
@@ -126,8 +142,17 @@ const sockets_methods = {
       Cookies.remove('room_id')
       Cookies.remove('room_info')
       ElMessage.success('离开房间成功')
+      if (Cookies.get('camp') == -1) {
+        Cookies.remove('game_id')
+        Cookies.remove('camp')
+        removeSockets(sockets_methods, socket.value, proxy);
+        socket.value.io.disconnect()
+        socket.value = null
+        router.replace('/')
+        return
+      }
     }
-    else {
+      else {
       ElMessage.success('玩家' + data.username + '离开房间')
     }
   },
@@ -175,6 +200,7 @@ const sockets_methods = {
         }
     })
     .catch((action) => {})
+    console.log(data.room_info)
     // 匹配模式退回主页面
     console.log(data.room_type)
     if (data.room_type == 1) {
@@ -198,9 +224,11 @@ const sockets_methods = {
     }
     // 创房间模式
     else {
+      // Cookies.set('room_info',data.room_info)
       Cookies.remove('game_id')
       Cookies.remove('camp')
       removeSockets(sockets_methods, socket.value, proxy);
+      sessionStorage.setItem('fromGame', 'true')
       router.replace('/room')
       return
     }
@@ -293,6 +321,12 @@ function requestSurrender() {
   }
 }
 
+function leaveRoom() {
+  socket.value.io.emit('leaveRoom', { 'room_id': Cookies.get('room_id'), 'userid': Cookies.get('userid') })
+  console.log("点击了退出房间")
+  i_message.value = ''
+  o_message.value = []
+}
 
 function requestDraw(){
   if(my_camp.value >= 0){
@@ -366,12 +400,16 @@ const camp_0_style = computed(() => {
 
   <div class="background-image"></div>
   <div class="chessboard-overlay"></div>
-  <div>
+  <div v-if="my_camp >= 0">
     <button class="surrender-button" @click="requestSurrender">投降</button>
   </div>
-  <div>
+  <div v-if="my_camp >= 0">
     <button class="surrender-button" @click="requestDraw">求和</button>
   </div>
+  <div v-if="my_camp == -1">
+    <button class="leave-button" @click="leaveRoom">退出房间</button>
+  </div>
+
   <div class="wait-draw-info" v-if="game_status == CONST.STATUS_DRAWING">
     <div v-for="user in draw_responser" :key="user.userid">
       <div class="wait-draw-user-agree" v-if="user.agree">
@@ -388,7 +426,7 @@ const camp_0_style = computed(() => {
         <p>{{room_info.users[0].username}}</p>
       </template>
       <template #avatar>
-        {{ room_info.users[0].username }}
+        <img :src="main.url+avatars[room_info.users[0].userid]" alt="头像" />
       </template>
     </Avatar>
   </div>
@@ -399,7 +437,7 @@ const camp_0_style = computed(() => {
         <p>{{room_info.users[1].username}}</p>
       </template>
       <template #avatar>
-        {{ room_info.users[1].username }}
+        <img :src="main.url+avatars[room_info.users[1].userid]" alt="头像" />
       </template>
     </Avatar>
     </div>
@@ -410,7 +448,7 @@ const camp_0_style = computed(() => {
         <p>{{room_info.users[2].username}}</p>
       </template>
       <template #avatar>
-        {{ room_info.users[2].username }}
+        <img :src="main.url+avatars[room_info.users[2].userid]" alt="头像" />
       </template>
     </Avatar>
     </div>
@@ -517,6 +555,32 @@ const camp_0_style = computed(() => {
   box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2), 0 12px 40px 0 rgba(0, 0, 0, 0.19);
   /* Add more shadows */
 }
+
+.leave-button {
+  background-color: #ecb920;
+  border: none;
+  color: white;
+  padding: 15px 32px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  margin: 20px 30px;
+  transition-duration: 0.4s;
+  cursor: pointer;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+  z-index: 99;
+  /* Add shadows */
+}
+
+.leave-button:hover {
+  background-color: #b48d17;
+  color: white;
+  box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2), 0 12px 40px 0 rgba(0, 0, 0, 0.19);
+  /* Add more shadows */
+}
+
 .messager{
   position:absolute;
   top:200px;

@@ -294,7 +294,7 @@ function justIt (data) {
 }
 
 .waring {
-    color: #555;
+    color: #f40404;
     font-size: 14px;
     position: absolute;
     bottom: 30px;

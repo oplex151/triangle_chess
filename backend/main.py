@@ -3,7 +3,6 @@ import sys
 from pathlib import Path
 import threading
 import time
-
 project_root = Path(__file__).parent.parent.absolute()
 os.environ['PROJECT_ROOT'] = str(project_root)
 sys.path.append(str(Path(__file__).resolve().parent.parent))
@@ -396,6 +395,130 @@ def getUserAppealApi():
         return "{message: 'parameter error'}",PARAM_ERROR
     return getAppealsInfo(userid)
 
+@app.route('/api/getAvatars', methods=['POST'])
+def getAvatarsApi():
+    '''
+    Args:
+        userids: 用户ids
+    Returns:
+        用户头像列表 详见数据库avatar表
+    '''
+    params = {'userids':str}
+    logger.debug("getavatars:"+str(request.form))
+    logger.debug(request.form.getlist('userids[]'))
+    try:
+        userids = getParams(params,request.form)
+    except:
+        return "{message: 'parameter error'}",PARAM_ERROR
+    logger.debug("gettavatars:"+str(userids))
+    userids = eval(userids)
+    avatars,status = getSomeUserAvatar(userids)
+    return jsonify(avatars),status
+
+
+
+
+
+
+
+
+
+
+
+
+
+@app.route('/api/likeGameRecord', methods=['POST'])
+def likeGameRecordApi():
+    '''
+    Args:
+        recordid: 对局记录id
+    Returns:
+        点赞成功200
+    '''
+    params = {'recordid': int}
+    try:
+        recordid = getParams(params, request.form)
+    except:
+        return "{message: 'parameter error'}", PARAM_ERROR
+    return likeGameRecord(recordid)
+
+@app.route('/api/unlikeGameRecord', methods=['POST'])
+def unlikeGameRecordApi():
+    '''
+    Args:
+        recordid: 对局记录id
+    Returns:
+        取消点赞成功200
+    '''
+    params = {'recordid': int}
+    try:
+        recordid = getParams(params, request.form)
+    except:
+        return "{message: 'parameter error'}", PARAM_ERROR
+    return unlikeGameRecord(recordid)
+
+@app.route('/api/addComment', methods=['POST'])
+def addCommentApi():
+    '''
+    Args:
+        recordid: 对局记录id
+        userid: 用户id
+        content: 评论内容str
+    Returns:
+        添加评论成功200
+    '''
+    params = {'recordid': int, 'userid': int, 'content': str}
+    try:
+        recordid, userid, content = getParams(params, request.form)
+    except:
+        return "{message: 'parameter error'}", PARAM_ERROR
+    return addComment(recordid, userid, content)
+
+@app.route('/api/likeComment', methods=['POST'])
+def likeCommentApi():
+    '''
+    Args:
+        commentid: 评论id
+    Returns:
+        点赞成功200
+    '''
+    params = {'recordid': int}
+    try:
+        recordid = getParams(params, request.form)
+    except:
+        return "{message: 'parameter error'}", PARAM_ERROR
+    return likeComment(recordid)
+
+@app.route('/api/unlikeComment', methods=['POST'])
+def unlikeCommentApi():
+    '''
+    Args:
+        commentid: 评论id
+    Returns:
+        取消点赞成功200
+    '''
+    params = {'recordid': int}
+    try:
+        recordid = getParams(params, request.form)
+    except:
+        return "{message: 'parameter error'}", PARAM_ERROR
+    return unlikeComment(recordid)
+
+@app.route('/api/viewRecordComments', methods=['POST'])
+def viewRecordCommentsApi():
+    '''
+    Args:
+        recordid: 对局记录id
+    Returns:
+        评论列表
+    '''
+    params = {'recordid': int}
+    try:
+        recordid = getParams(params, request.form)
+    except:
+        return "{message: 'parameter error'}", PARAM_ERROR
+    return viewRecordComments(recordid)
+
 @socketio.on('connect')
 def connect():
     '''
@@ -481,7 +604,16 @@ def createRoom(data):
     join_room(room_id)
     logger.info(f"Create room {room_id} by user {userid}, type is {room_type}, sid={request.sid}\n"
                 +f"this room's users: {new_room.users}")
-    emit('createRoomSuccess',{'room_id':room_id,'room_info':new_room.getRoomInfo()},to=request.sid)
+    
+    avatar,_ = getSomeUserAvatar([userid])
+    logger.debug(f"avatar: {avatar}")
+    try:
+        avatar = avatar[userid]
+    except KeyError:
+        avatar = None
+        logger.error(f"User {userid} has no avatar")    
+        
+    emit('createRoomSuccess',{'room_id':room_id,'room_info':new_room.getRoomInfo(),'avatar':avatar},to=request.sid)
     # 更新sid2uid
     if request.sid not in sid2uid:
         sid2uid[request.sid] = userid
@@ -538,7 +670,15 @@ def joinRoom(data):
     join_room(room_id)
     logger.info(f"User {userid} join room {room_id}, sid={request.sid}"
                 +f"this room's users: {room.users}")
-    emit('joinRoomSuccess',{'room_id':room_id,'userid':userid,'username':sessions[userid],'room_info':room.getRoomInfo()},to=room_id)
+    
+    avatar,_ = getSomeUserAvatar([userid])
+    try:
+        avatar = avatar[userid]
+    except KeyError:
+        avatar = None
+        logger.error(f"User {userid} has no avatar")
+    emit('joinRoomSuccess',{'room_id':room_id,'userid':userid,'username':sessions[userid],
+                            'room_info':room.getRoomInfo(),'avatar':avatar},to=room_id)
     # 更新sid2uid
     if request.sid not in sid2uid: 
         sid2uid[request.sid] = userid
@@ -745,7 +885,7 @@ def roomOver(game:GameTable, room:RoomManager, userid:int):
         print(f"对局时长为：{match_duration}")
         # 结束记录
         state,record_id = game.record.recordEnd(userid)
-        emit('gameEnd', {'status': GAME_END, 'record_id':record_id, 'room_type':room_type,"step_count":game.step_count,"match_duration": match_duration.total_seconds(),'winner': userid, 'winner_name': sessions[userid]}, to=room.room_id, namespace='/')
+        emit('gameEnd', {'status': GAME_END, 'record_id':record_id, 'room_info':room.getRoomInfo(),'room_type':room_type,"step_count":game.step_count,"match_duration": match_duration.total_seconds(),'winner': userid, 'winner_name': sessions[userid]}, to=room.room_id, namespace='/')
 
     elif game.game_state == EnumGameState.draw:
         # 记录结束时间
@@ -774,7 +914,7 @@ def watchGame(data):
         userid: 用户id          int
         room_id: 房间id        str
     """
-    global rooms,sessions
+    global rooms
     params = {'userid':int,  'room_id':str}
     try:
         userid,room_id = getParams(params,data)
@@ -790,16 +930,18 @@ def watchGame(data):
             return
         user = UserDict(userid=userid,username=sessions[userid])
         if room.game_table.addViewer(user):
-            room.addUser(user) 
+            room.addUser(user)
             join_room(room_id)
             logger.info(f"User {userid} watch game {room.game_table.game_id} and join room {room_id}")
             # 需要前端根据自己的身份来决定是成功加入观战，还是某某进入观战
-            emit('watchGameSuccess',{'room_id':room_id,'game_info':room.game_table.getGameInfo()},to=room_id,namespace='/')
+            emit('watchGameSuccess',{'room_info':room.getRoomInfo(),'game_info':room.game_table.getGameInfo()},to=room_id,namespace='/')
         else:
             emit('processWrong',{'status':NOT_JOIN_GAME},to=request.sid)
     except Exception as e:
         logger.error("Watch game error due to {0}".format(str(e)), exc_info=True)
         emit('processWrong',{'status':OTHER_ERROR},to=request.sid)
+        return
+
         
 
 @socketio.event

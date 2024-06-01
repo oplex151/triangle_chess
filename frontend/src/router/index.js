@@ -15,6 +15,7 @@ import publicShare from '@/views/publicShare/index.vue'
 import Admin from '@/views/Admin/index.vue'
 import AdminLogin from '@/views/Admin/login.vue'
 import Apeal from '@/views/Apeal/index.vue'
+import Witness from '@/views/Witness/index.vue'
 import { socket } from '@/sockets';
 
 
@@ -108,7 +109,13 @@ const router = createRouter({
       path: '/publicShare',
       component: publicShare,
       meta: {isAuth: false,connection: false},
+    },
+    {
+      path:'/witness',
+      component:Witness,
+      meta:{isAuth: true,connection: false},
     }
+
   ]
 })
 

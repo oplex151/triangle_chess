@@ -124,16 +124,15 @@ const deleteFriend = () => {
 <template>
     <el-popover :width="300" class="avatar-popover">
         <template #reference>
-            <el-avatar>
+            <el-avatar :size="50">
                 <template v-slot>
                     <slot name="avatar"></slot>
                 </template>
             </el-avatar>
         </template>
-
         <template #default>
             <div class="rich-conent">
-                <el-avatar>
+                <el-avatar :size="50">
                     <template v-slot>
                         <slot name="avatar"></slot>
                     </template>

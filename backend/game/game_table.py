@@ -428,6 +428,8 @@ class RoomManager:
                 if self.game_table and leaved_user['userid'] in [u['userid'] for u in self.game_table.viewers]:
                     # 观战者离开直接送出游戏
                     self.game_table.viewers.remove(leaved_user)
+                    logger.info(f"viewer {userid} leave room ")
+
                 elif force and self.game_table and leaved_user['userid'] in [u['userid'] for u in self.game_table.users]:
                     # 强制退出房间和游戏
                     self.game_table.users.remove(leaved_user)
