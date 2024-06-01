@@ -123,6 +123,9 @@ const sockets_methods = {
       case CONST.GAME_CREATE_FAILED:
         ElMessage.error('游戏创建失败:未知错误')
         break
+      case CONST.ROOM_FULL:
+        ElMessage.error('房间已满')
+        break
       case CONST.USER_NOT_LOGIN:
         ElMessage.error('用户未登录')
         router.push('/login')

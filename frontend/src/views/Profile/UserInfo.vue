@@ -1,6 +1,5 @@
 <script setup>
 import main from '@/main';
-import { User, HomeFilled } from '@element-plus/icons-vue'
 import axios from 'axios';
 import Cookies from 'js-cookie';
 import { onMounted, ref } from 'vue';
@@ -21,7 +20,7 @@ const userinfo= ref({
 
 const image_path = ref()
 const base64 = ref()
-
+const editMode = ref(false)
 
 onMounted(() => {
     getUserInfo();
@@ -43,7 +42,7 @@ function getUserInfo() {
             userinfo.value.email = response.data.email;
             userinfo.value.phone_num = response.data.phone_num;
             userinfo.value.gender = response.data.gender;
-            userinfo.value.rank = getRankLevel(response.data.score);
+            userinfo.value.rank = getRankLevel(response.data.rank);
             userinfo.value.score = response.data.score;
             console.log(response.data.image_path)
             image_path.value = main.url + response.data.image_path;
@@ -136,6 +135,46 @@ function justIt (data) {
     haven_upload.value = false
 }
 
+const email = ref('')
+const phone_num = ref('')
+const gender = ref('')
+
+function cancelEdit () {
+    editMode.value = false
+    email.value = ''
+    phone_num.value = ''
+    gender.value = ''
+}
+
+function saveEdit () {
+    editMode.value = false
+    axios.post(main.url + '/api/changeUserInfo', {
+        'userid': Cookies.get('userid'),
+        'email': email.value,
+        'phone_num': phone_num.value,
+        'gender': gender.value
+    },
+    {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    }
+    ).then(response => {
+        if (response.status == 200) {
+            userinfo.value.email = email.value
+            userinfo.value.phone_num = phone_num.value
+            userinfo.value.gender = gender.value
+            ElMessage.success('修改成功')
+            cancelEdit()
+        }
+        else {
+            ElMessage.error('修改失败，请稍后再试')
+            cancelEdit()
+        }
+    }).catch(error => {
+        console.log(error)
+        cancelEdit()
+    })
+}
+
 </script>
 
 <template>
@@ -182,15 +221,33 @@ function justIt (data) {
             </div>
             <div class="info-item">
                 <span class="info-title">性别</span>
-                <span class="info-text">{{userinfo.gender}}</span>
+                <span class="info-text" v-if="!editMode">
+                    {{userinfo.gender}}
+                </span>
+                <el-radio-group v-if="editMode" v-model="gender"
+                class="info-text">
+                    <el-radio value="male" size="large">男</el-radio>
+                    <el-radio value="female" size="large">女</el-radio>
+                    <el-radio value="" size="large">不愿透露</el-radio>
+                Q</el-radio-group>
             </div>
             <div class="info-item">
                 <span class="info-title">邮箱</span>
-                <span class="info-text">{{userinfo.email}}</span>
+                <span class="info-text" v-if="!editMode">{{userinfo.email}}</span>
+                <input type="email" v-model="email"
+                v-if="editMode"
+                class="info-text"
+                placeholder="请输入邮箱">
+                </input>
             </div>
             <div class="info-item">
                 <span class="info-title">手机号</span>
-                <span class="info-text">{{userinfo.phone_num}}</span>
+                <span class="info-text" v-if="!editMode">{{userinfo.phone_num}}</span>
+                <input type="text" v-model="phone_num"
+                v-if="editMode"
+                class="info-text"
+                placeholder="请输入手机号">
+                </input>
             </div>
             <div class="info-item">
                 <span class="info-title">段位</span>
@@ -200,8 +257,16 @@ function justIt (data) {
                 <span class="info-title">积分</span>
                 <span class="info-text">{{userinfo.score}}</span>
             </div>
-
         </div> 
+        <button class="edit-button" @click="editMode = true"
+        v-if="!editMode"
+        >修改</button>
+        <button class="edit-button" @click="cancelEdit"
+        v-if="editMode"
+        >放弃</button>
+        <button class="save-button" @click="saveEdit"
+        v-if="editMode"
+        >提交</button>
     </div>
   </div>
 </template>
@@ -366,4 +431,32 @@ function justIt (data) {
     border-radius: 5px;
 }
 
+.edit-button {
+    background-color: #333;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    padding: 10px 20px;
+    margin-top: 20px;
+    cursor: pointer;
+}
+
+.edit-button:hover {
+    background-color: #555;
+}
+.save-button {
+    margin-right: -70px;
+    margin-left: 100px;
+    background-color: #8be516;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    padding: 10px 20px;
+    margin-top: 20px;
+    cursor: pointer;
+}
+
+.save-button:hover {
+    background-color: #70c110;
+}
 </style>

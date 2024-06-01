@@ -55,6 +55,9 @@ const sockets_methods = {
       case CONST.NOT_JOIN_GAME:
         ElMessage.error('加入观战失败')
         break
+      case CONST.ROOM_FULL:
+        ElMessage.error('房间已满')
+        break
       case CONST.OTHER_ERROR:
         ElMessage.error('其他错误')
         break

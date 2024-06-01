@@ -333,7 +333,7 @@ function goBackHome() {
     background-color: transparent;
 }
 .菜鸟{
-    background-color: #4e4842;
+    background-color: #918e8b;
 }
 .青铜{
     background-color: #cd7f32;
@@ -345,7 +345,7 @@ function goBackHome() {
     background-color: #ffd700;
 }
 .白金{
-    background-color: #f4edbf;
+    background-color: #cff4e9f2;
 }
 .钻石{
     background-color: #b9f2ff;
@@ -354,6 +354,6 @@ function goBackHome() {
     background-color: #e87000;
 }
 .超神{
-    background-color: #e70000;
+    background-image: url("@/assets/images/game/超神.jpg");
 }
 </style>

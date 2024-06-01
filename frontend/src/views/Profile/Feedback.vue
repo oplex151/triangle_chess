@@ -3,6 +3,8 @@ import { ref, onMounted } from 'vue'
 import main from '@/main.js'
 import Cookies from 'js-cookie'
 import axios from 'axios'
+import { ElMessage } from 'element-plus';
+import * as CONST from '@/lib/const.js'
 
 
 
@@ -30,8 +32,12 @@ function getUserAppeal() {
             ElMessage.error('Error getting user appeals')
         }
     }).catch(error => {
-        console.log(error)
-        ElMessage.error('Error getting user appeals')
+        if (error.response.status == CONST.NO_APPEALS) {
+            ElMessage.info("没有申诉记录")
+        }
+        else{
+            ElMessage.error('Error getting user appeals')
+        }
     })
 }
 const formatDate = (timestamp) => {

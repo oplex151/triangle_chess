@@ -666,7 +666,9 @@ def joinRoom(data):
         logger.info(f"User {userid} rejoin to game {room.game_table.game_id}")
         emit('rejoinGameSuccess',{'room_id':room_id},to=request.sid,namespace='/')
     
-    room.addUser(UserDict(userid=userid,username=sessions[userid]))
+    if room.addUser(UserDict(userid=userid,username=sessions[userid])) == False:
+        emit('processWrong',{'status':ROOM_FULL},to=request.sid)
+        return
     join_room(room_id)
     logger.info(f"User {userid} join room {room_id}, sid={request.sid}"
                 +f"this room's users: {room.users}")
@@ -1232,7 +1234,7 @@ def viewGameRecords(data):
     try:
         # 查询游戏记录
         records = viewUserGameRecords(userid)
-        logger.info(records)
+        #logger.info(records)
         emit('gameRecord', {'record': records}, to=request.sid)
     except Exception as e:
         emit('processWrong',{'status':OTHER_ERROR},to=request.sid)

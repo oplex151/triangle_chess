@@ -284,7 +284,7 @@ defineExpose({
 .camp {
   position: relative;
   top: 40px;
-  left: 20px;
+  left: 40px;
   font-size: 18px;
   color: #e9b526;
   display: inline-block;
