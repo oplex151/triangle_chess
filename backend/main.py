@@ -214,7 +214,6 @@ def getRankScoreApi():
         return "{message: 'parameter error'}",PARAM_ERROR
     return getRankScore(userid)
     
-
 @app.route('/api/addAppeals', methods=['POST'])
 def addAppealsApi():
     '''
@@ -247,6 +246,98 @@ def getAppealsApi():
     except:
         return "{message: 'parameter error'}",PARAM_ERROR
     return getAppealsInfo(userid, adminid)
+
+@app.route('/api/likeGameRecord', methods=['POST'])
+def likeGameRecordApi():
+    '''
+    Args:
+        recordid: 对局记录id
+    Returns:
+        点赞成功200
+    '''
+    params = {'recordid': int}
+    try:
+        recordid = getParams(params, request.form)
+    except:
+        return "{message: 'parameter error'}", PARAM_ERROR
+    return likeGameRecord(recordid)
+
+@app.route('/api/unlikeGameRecord', methods=['POST'])
+def unlikeGameRecordApi():
+    '''
+    Args:
+        recordid: 对局记录id
+    Returns:
+        取消点赞成功200
+    '''
+    params = {'recordid': int}
+    try:
+        recordid = getParams(params, request.form)
+    except:
+        return "{message: 'parameter error'}", PARAM_ERROR
+    return unlikeGameRecord(recordid)
+
+@app.route('/api/addComment', methods=['POST'])
+def addCommentApi():
+    '''
+    Args:
+        recordid: 对局记录id
+        userid: 用户id
+        content: 评论内容str
+    Returns:
+        添加评论成功200
+    '''
+    params = {'recordid': int, 'userid': int, 'content': str}
+    try:
+        recordid, userid, content = getParams(params, request.form)
+    except:
+        return "{message: 'parameter error'}", PARAM_ERROR
+    return addComment(recordid, userid, content)
+
+@app.route('/api/likeComment', methods=['POST'])
+def likeCommentApi():
+    '''
+    Args:
+        commentid: 评论id
+    Returns:
+        点赞成功200
+    '''
+    params = {'recordid': int}
+    try:
+        recordid = getParams(params, request.form)
+    except:
+        return "{message: 'parameter error'}", PARAM_ERROR
+    return likeComment(recordid)
+
+@app.route('/api/unlikeComment', methods=['POST'])
+def unlikeCommentApi():
+    '''
+    Args:
+        commentid: 评论id
+    Returns:
+        取消点赞成功200
+    '''
+    params = {'recordid': int}
+    try:
+        recordid = getParams(params, request.form)
+    except:
+        return "{message: 'parameter error'}", PARAM_ERROR
+    return unlikeComment(recordid)
+
+@app.route('/api/viewRecordComments', methods=['POST'])
+def viewRecordCommentsApi():
+    '''
+    Args:
+        recordid: 对局记录id
+    Returns:
+        评论列表
+    '''
+    params = {'recordid': int}
+    try:
+        recordid = getParams(params, request.form)
+    except:
+        return "{message: 'parameter error'}", PARAM_ERROR
+    return viewRecordComments(recordid)
 
 @socketio.on('connect')
 def connect():
