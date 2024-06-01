@@ -10,7 +10,7 @@ import { useRouter } from 'vue-router';
 import { onMounted, ref, onUnmounted, computed, getCurrentInstance } from 'vue';
 import { User, HomeFilled } from '@element-plus/icons-vue'
 import axios from 'axios';
-
+import {getRankLevel} from '@/config/rank.js'
 const { proxy } = getCurrentInstance()
 const router = useRouter()
 const room_id = ref(null)
@@ -63,71 +63,11 @@ onMounted(() => {
         }
     )})
 });
-const type = computed(() => {
-    if (rank.value <= 5) {
-        return 'bronze'
-    } 
-    else if (rank.value <= 10) {
-        return 'sliver'
-    } 
-    else if (rank.value <= 15){
-        return 'gold'
-    } 
-    else if (rank.value<=20){
-        return 'platinum'
-    }
-    else if (rank.value<=25){
-        return 'diamond'
-    }
-    else if (rank.value<=30){
-        return 'master'
-    }
-    else {
-        return 'challenger'
-    }
-})
-const rankname = computed(()=>{
-    if (type.value=='bronze'){
-        return '青铜'
-    }
-    else if (type.value=='sliver'){
-        return '白银'
-    }
-    else if (type.value=='gold'){
-        return '黄金'
-    }
-    else if (type.value=='platinum'){
-        return '铂金'
-    }
-    else if (type.value=='diamond'){
-        return '钻石'
-    }
-    else if (type.value=='master'){
-        return '大师'
-    }
-    else {
-        return '挑战者'
-    }
-})
-const littlerank = computed(()=>{
-    let littlerank = rank.value%5+1
-    if (littlerank == 1){
-        return 'V'
-    }
-    else if (littlerank == 2){
-        return 'IV'
-    }
-    else if (littlerank == 3){
-        return 'III'
-    }
-    else if (littlerank == 4){
-        return 'II'
-    }
-    else {
-        return 'I'
-    }
 
+const rankname = computed(()=>{
+    return getRankLevel(rank.value)
 })
+
 //需要注册的监听时间，离开页面记得销毁
 const sockets_methods = {
     startRankSuccess(data) {
@@ -186,8 +126,8 @@ function goBackHome() {
         </p>
         
         <p>
-            <h3 class = "score" :class="type">
-                {{rankname}}   {{littlerank}} <br/> 
+            <h3 class = "score" :class="rankname">
+                {{rankname}}    <br/> 
                 {{totalscore}} 分
             </h3>
         </p>
@@ -257,9 +197,9 @@ function goBackHome() {
 }
 
 @font-face {
-  font-family: "阿里妈妈东方大楷 Regular";font-weight: 400;src: url("//at.alicdn.com/wf/webfont/uWrOvAFUee6Z/j21mxPjobcF7.woff2") format("woff2"),
-  url("//at.alicdn.com/wf/webfont/uWrOvAFUee6Z/V0SgC0T8YlgT.woff") format("woff");
-  font-display: swap;
+    font-family: "阿里妈妈东方大楷 Regular";font-weight: 400;src: url("//at.alicdn.com/wf/webfont/uWrOvAFUee6Z/j21mxPjobcF7.woff2") format("woff2"),
+    url("//at.alicdn.com/wf/webfont/uWrOvAFUee6Z/V0SgC0T8YlgT.woff") format("woff");
+    font-display: swap;
 }
 @font-face {
         font-family: "Bitstream Vera Serif Bold";
@@ -387,25 +327,31 @@ function goBackHome() {
 
 
 /* 段位颜色 */
-.bronze{
+.无{
+    background-color: transparent;
+}
+.菜鸟{
+    background-color: #4e4842;
+}
+.青铜{
     background-color: #cd7f32;
 }
-.sliver{
+.白银{
     background-color: #f2f2f2;
 }
-.gold{
+.黄金{
     background-color: #ffd700;
 }
-.platinum{
+.白金{
     background-color: #f4edbf;
 }
-.diamond{
+.钻石{
     background-color: #b9f2ff;
 }
-.master{
-    background-color: #ff8c00;
+.王者{
+    background-color: #e87000;
 }
-.challenger{
-    background-color: #ff0000;
+.超神{
+    background-color: #e70000;
 }
 </style>

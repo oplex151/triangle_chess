@@ -26,6 +26,7 @@ const step = ref(0)
 const board = ref(null)
 const map_state = ref(game_info)
 import useClipboard from 'vue-clipboard3';
+import axios from 'axios';
 
 
 const { toClipboard } = useClipboard()
@@ -44,8 +45,8 @@ const userids = computed(() => {
         }
     }
     return names
-
 })
+const avatars = ref({})
 const name = computed(()=>{
     return userids.value
 })
@@ -73,6 +74,18 @@ const sockets_methods = {
         nextTick(() => {
             board.value.initMap(map_state.value)
         });
+        axios.post(main.url + '/api/getAvatars', {'userids': userids.value.join(',')},
+        {
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        }
+        )
+        .then(res => {
+            console.log(res.data)
+            avatars.value = res.data
+        })
+        .catch(err => {
+            console.error(err)
+        })
 
     },
     processWrong(data) {
@@ -212,6 +225,10 @@ const share = () => {
     }
 
 }
+const camp_c = computed(() => {
+    return [camp_0_style.value, camp_1_style.value, camp_2_style.value]
+})
+
 </script>
 <template>
     <Report :toreportid="to_report_id" :myuserid="userid" :dialogFormVisible=vis @reportEnd="handleReportEnd" />
@@ -239,38 +256,19 @@ const share = () => {
                 <button @click="Next" class="next_button">下一步</button>
                 <div class="avatar">
                 <!---------0号位---------->
-                <div :class="camp_0_style">
-                <Avatar :my_userid="userid" :userid="userids[0]" @reportUser="handleReport">
-                    <template #name>
-                        <p>{{ name[0] }}</p>
-                    </template>
-                    <template #avatar>
-                        {{ name[0] }}
-                    </template>
-                </Avatar>
-                </div>
-                <!---------1号位---------->
-                <div :class="camp_1_style">
-                <Avatar :my_userid="userid" :userid="userids[1]" @reportUser="handleReport">
-                    <template #name>
-                        <p>{{ name[1] }}</p>
-                    </template>
-                    <template #avatar>
-                        {{ name[1] }}
-                    </template>
-                </Avatar>
-                </div>
-                <!---------2号位---------->
-                <div :class="camp_2_style">
-                <Avatar :my_userid="userid" :userid="userids[2]"  @reportUser="handleReport">
-                    <template #name>
-                        <p>{{ name[2] }}</p>
-                    </template>
-                    <template #avatar>
-                        {{ name[2] }}
-                    </template>
-                </Avatar>
-                </div>
+                <div v-for="(item,index) in camp_c" :key="index">
+                    <div :class="item">
+                        <Avatar :my_userid="userid" :userid="userids[index]" @reportUser="handleReport">
+                            <template #name>
+                                <p>{{ name[index] }}</p>
+                            </template>
+                            <template #avatar>
+                                <img :src="main.url+avatars[userids[index]]" alt="头像" />
+                            </template>
+                        </Avatar>
+                        </div>
+                    </div>
+
                 </div>
             </div>
             </div>

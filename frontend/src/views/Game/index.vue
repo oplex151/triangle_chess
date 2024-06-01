@@ -47,16 +47,7 @@ const my_name = computed(() => {
   }
   return ''
 })
-// const names = computed(() => {
-//   if (room_info.value) {
-//     let names = []
-//     for (let user of room_info.value.users) {
-//       names.push(user.username)
-//     }
-//     return names
-//   }
-//   return []
-// })
+const avatars = ref({})
 
 const copy = async (anything) => {
   try {
@@ -110,6 +101,21 @@ onMounted(() => {
     console.log(error)
   })
   console.log(socket.value)
+  let userids = room_info.users.map(user => {
+    return user.userid;
+  }) 
+  axios.post(main.url + '/api/getAvatars', {'userids': userids.join(',')},
+  {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+  }
+  )
+  .then(res => {
+      console.log(res.data)
+      avatars.value = res.data
+  })
+  .catch(err => {
+      console.error(err)
+  })
 });
 
 const sockets_methods = {
@@ -220,6 +226,7 @@ const sockets_methods = {
       Cookies.remove('game_id')
       Cookies.remove('camp')
       removeSockets(sockets_methods, socket.value, proxy);
+      sessionStorage.setItem('fromGame', 'true')
       router.replace('/room')
       return
     }
@@ -333,7 +340,7 @@ const camp_0_style = computed(() => {
         <p>{{room_info.users[0].username}}</p>
       </template>
       <template #avatar>
-        {{ room_info.users[0].username }}
+        <img :src="main.url+avatars[room_info.users[0].userid]" alt="头像" />
       </template>
     </Avatar>
   </div>
@@ -344,7 +351,7 @@ const camp_0_style = computed(() => {
         <p>{{room_info.users[1].username}}</p>
       </template>
       <template #avatar>
-        {{ room_info.users[1].username }}
+        <img :src="main.url+avatars[room_info.users[1].userid]" alt="头像" />
       </template>
     </Avatar>
     </div>
@@ -355,7 +362,7 @@ const camp_0_style = computed(() => {
         <p>{{room_info.users[2].username}}</p>
       </template>
       <template #avatar>
-        {{ room_info.users[2].username }}
+        <img :src="main.url+avatars[room_info.users[2].userid]" alt="头像" />
       </template>
     </Avatar>
     </div>

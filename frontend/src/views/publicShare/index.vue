@@ -172,6 +172,9 @@ const share = () => {
     copy(main.self_url+'/publicShare?recordId='+route.query.recordId)
     ElMessage.success('链接已复制到剪贴板')
 }
+const camp_c = computed(() => {
+    return [camp_0_style.value, camp_1_style.value, camp_2_style.value]
+})
 </script>
 <template>
     <div class="background-image-publicShare"></div>
@@ -194,39 +197,19 @@ const share = () => {
             <button @click="Next" class="next_button">下一步</button>
             <div class="avatar">
             <!---------0号位---------->
-            <div :class="camp_0_style">
-                <Avatar :my_userid="userid" :userid="userids[0]" @reportUser="handleReport">
-                    <template #name>
-                        <p>{{ name[0] }}</p>
-                    </template>
-                    <template #avatar>
-                        {{ name[0] }}
-                    </template>
-                </Avatar>
+                <div v-for="(item,index) in camp_c" :key="index">
+                    <div :class="item">
+                        <Avatar :my_userid="userid" :userid="userids[index]" @reportUser="handleReport">
+                            <template #name>
+                                <p>noname{{index}}</p>
+                            </template>
+                            <template #avatar>
+                                <img :src="main.url+'/static/noname.png'" alt="头像" />
+                            </template>
+                        </Avatar>
+                    </div>
+                </div>
             </div>
-            <!---------1号位---------->
-            <div :class="camp_1_style">
-                <Avatar :my_userid="userid" :userid="userids[1]" @reportUser="handleReport">
-                    <template #name>
-                        <p>{{ name[1] }}</p>
-                    </template>
-                    <template #avatar>
-                        {{ name[1] }}
-                    </template>
-                </Avatar>
-            </div>
-            <!---------2号位---------->
-            <div :class="camp_2_style">
-                <Avatar :my_userid="userid" :userid="userids[2]"  @reportUser="handleReport" >
-                    <template #name>
-                        <p>{{ name[2] }}</p>
-                    </template>
-                    <template #avatar>
-                        {{ name[2] }}
-                    </template>
-                </Avatar>
-            </div>
-        </div>
         </div>
     </div>
 </template>

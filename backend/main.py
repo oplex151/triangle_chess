@@ -3,7 +3,6 @@ import sys
 from pathlib import Path
 import threading
 import time
-
 project_root = Path(__file__).parent.parent.absolute()
 os.environ['PROJECT_ROOT'] = str(project_root)
 sys.path.append(str(Path(__file__).resolve().parent.parent))
@@ -248,6 +247,38 @@ def getAppealsApi():
         return "{message: 'parameter error'}",PARAM_ERROR
     return getAppealsInfo(userid, adminid)
 
+@app.route('/api/getAvatars', methods=['POST'])
+def getAvatarsApi():
+    '''
+    Args:
+        userids: 用户ids
+    Returns:
+        用户头像列表 详见数据库avatar表
+    '''
+    params = {'userids':str}
+    logger.debug("getavatars:"+str(request.form))
+    logger.debug(request.form.getlist('userids[]'))
+    try:
+        userids = getParams(params,request.form)
+    except:
+        return "{message: 'parameter error'}",PARAM_ERROR
+    logger.debug("gettavatars:"+str(userids))
+    userids = eval(userids)
+    avatars,status = getSomeUserAvatar(userids)
+    return jsonify(avatars),status
+
+
+
+
+
+
+
+
+
+
+
+
+
 @socketio.on('connect')
 def connect():
     '''
@@ -320,7 +351,16 @@ def createRoom(data):
     join_room(room_id)
     logger.info(f"Create room {room_id} by user {userid}, type is {room_type}, sid={request.sid}\n"
                 +f"this room's users: {new_room.users}")
-    emit('createRoomSuccess',{'room_id':room_id,'room_info':new_room.getRoomInfo()},to=request.sid)
+    
+    avatar,_ = getSomeUserAvatar([userid])
+    logger.debug(f"avatar: {avatar}")
+    try:
+        avatar = avatar[userid]
+    except KeyError:
+        avatar = None
+        logger.error(f"User {userid} has no avatar")    
+        
+    emit('createRoomSuccess',{'room_id':room_id,'room_info':new_room.getRoomInfo(),'avatar':avatar},to=request.sid)
     # 更新sid2uid
     if request.sid not in sid2uid:
         sid2uid[request.sid] = userid
@@ -377,7 +417,15 @@ def joinRoom(data):
     join_room(room_id)
     logger.info(f"User {userid} join room {room_id}, sid={request.sid}"
                 +f"this room's users: {room.users}")
-    emit('joinRoomSuccess',{'room_id':room_id,'userid':userid,'username':sessions[userid],'room_info':room.getRoomInfo()},to=room_id)
+    
+    avatar,_ = getSomeUserAvatar([userid])
+    try:
+        avatar = avatar[userid]
+    except KeyError:
+        avatar = None
+        logger.error(f"User {userid} has no avatar")
+    emit('joinRoomSuccess',{'room_id':room_id,'userid':userid,'username':sessions[userid],
+                            'room_info':room.getRoomInfo(),'avatar':avatar},to=room_id)
     # 更新sid2uid
     if request.sid not in sid2uid: 
         sid2uid[request.sid] = userid

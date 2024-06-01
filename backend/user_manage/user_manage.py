@@ -246,6 +246,32 @@ def getUserInfo(userid:int):
     return jsonify(dic),status
 
 @connectDatabase
+def getSomeUserAvatar(userids:list[int]):
+    dic, status = {}, None
+    try:
+        # 首先就检查用户名是否已经存在
+        db.begin()
+        for userid in userids:
+            
+            select_query = "SELECT * FROM {0} WHERE userId = {1};".format(USER_TABLE, userid)
+            cursor.execute(select_query)
+            data = cursor.fetchone()
+            if data is None:
+                logger.error("User {0} not exists".format(userid))
+                dic[userid] = None
+            else:
+                dic[userid] = data[8]
+            status = SUCCESS
+    except Exception as e:
+        logger.error("User {0} failed to get user info due to\n{1}".format(userid,str(e)),exc_info=True)
+        status = OTHER_ERROR
+    finally:
+        cursor.close()
+        db.close()
+    # 没有jsonify
+    return dic,status
+
+@connectDatabase
 def uploadImage(userid:int, image:str):
     res,status = {},None
     # 后台接收到base64，把base64转成图片，存到文件服务器里面，根据存储的路径生成图片的url
@@ -267,5 +293,4 @@ def uploadImage(userid:int, image:str):
     finally:
         cursor.close()
         db.close()
-
     return jsonify(res),status

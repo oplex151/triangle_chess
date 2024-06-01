@@ -24,6 +24,8 @@ const o_message = ref([])
 
 const to_report_id= ref(0)
 const vis = ref(false)
+
+const avatars = ref({})
 // 格式提示：
 // room_info:{
 //   room_id:xxx,
@@ -50,20 +52,21 @@ const my_name = computed(() => {
   }
   return ''
 })
-const i_am_holder = computed(() => {
-  if (room_info.value) {
-    return room_info.value.holder.userid == Cookies.get('userid')
-  }
-  return false
-})  
+// const i_am_holder = computed(() => {
+//   if (room_info.value) {
+//     return room_info.value.holder.userid == Cookies.get('userid')
+//   }
+//   return false
+// })  
 
 const sockets_methods = {
   createRoomSuccess(data){
     Cookies.set('room_id',data.room_id)
     room_id.value = data.room_id
     room_info.value = data.room_info
-
+    avatars.value[Cookies.get('userid')] = data.avatar
     ElMessage.success('创建房间成功')
+
   },
   joinRoomSuccess(data){
     if (data.userid == Cookies.get('userid')){
@@ -71,10 +74,27 @@ const sockets_methods = {
       room_id.value = data.room_id
       room_info.value = data.room_info
       ElMessage.success('加入房间成功')
+      avatars.value[data.userid] = data.avatar
+      let userids = data.room_info.users.map(user => {
+        return user.userid;
+      })      
+      axios.post(main.url + '/api/getAvatars', {'userids': userids.join(',')},
+      {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      }
+      )
+      .then(res => {
+        console.log(res.data)
+        avatars.value = res.data
+      })
+      .catch(err => {
+        console.error(err)
+      })
     }
     else{
       room_info.value = data.room_info
       ElMessage.success('玩家'+data.username+'加入房间')
+      avatars.value[data.userid] = data.avatar
     }
   },
   processWrong(data){
@@ -118,12 +138,14 @@ const sockets_methods = {
       room_id.value = null
       room_info.value = null
       ElMessage.success('离开房间成功')
+      avatars.value = {}
     }
     else{
       ElMessage.success('玩家'+data.username+'离开房间')
       if (room_info.value.holder.userid != Cookies.get('userid') && data.room_info.holder.userid == Cookies.get('userid')) 
         ElMessage.success('房主离开房间，你是新的房主')
       room_info.value = data.room_info
+      avatars.value[data.userid] = null
     }
   },
   rejoinGameSuccess(data){
@@ -161,10 +183,31 @@ const sockets_methods = {
 
 onMounted(() => {
   establishConnection()
-  if (Cookies.get('room_id') && Cookies.get('room_info')) {
+  let fromGame = sessionStorage.getItem('fromGame')
+  if (fromGame == 'true') {
     room_id.value = Cookies.get('room_id')
     room_info.value = JSON.parse(Cookies.get('room_info'))
+    let userids = room_info.value.users.map(user => {
+      return user.userid;
+    })      
+    axios.post(main.url + '/api/getAvatars', {'userids': userids.join(',')},
+    {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    }
+    )
+    .then(res => {
+      console.log(res.data)
+      avatars.value = res.data
+    })
+    .catch(err => {
+      console.error(err)
+    })
   }
+  else{
+    Cookies.remove('room_id')
+    Cookies.remove('room_info')
+  }
+  sessionStorage.removeItem('fromGame')
 })
 
 function establishConnection() {
@@ -241,9 +284,7 @@ const handleReportEnd = () => {
   vis.value = false;
 }
 const handleReport = (id) => {
-  console.log(id);
   to_report_id.value = id;
-  console.log(to_report_id.value);
   vis.value = true;
 }
 
@@ -313,13 +354,14 @@ const handleReport = (id) => {
                 <p>{{user.username}}</p>
               </template>
               <template #avatar>
-                <User/>
+                <img :src="main.url+avatars[user.userid]" alt="头像" />
               </template>
-            </Avatar>   
+            </Avatar> 
             <span class="user-name" style="vertical-align: middle">{{ user.username }}</span>            
           </li>
         </div>
       </div>
+
       <div class="message" v-if="room_id">
         
         <div class="message-show">
