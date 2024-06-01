@@ -40,16 +40,7 @@ const draw_responser = ref([])
 
 const o_message = ref([])
 const i_message = ref('')
-// const my_name = computed(() => {
-//   if (room_info.value) {
-//     for (let user of room_info.value.users) {
-//       if (user.userid == Cookies.get('userid')) {
-//         return user.username
-//       }
-//     }
-//   }
-//   return ''
-// })
+
 const my_name = Cookies.get('username')
 const avatars = ref({})
 
