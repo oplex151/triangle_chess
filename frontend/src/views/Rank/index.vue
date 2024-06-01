@@ -7,6 +7,7 @@ import Cookies from 'js-cookie';
 import { registerSockets, socket, registerSocketsForce, removeSockets } from '@/sockets'
 import { ElMessage ,ElMessageBox} from "element-plus";
 import { useRouter } from 'vue-router';
+import { lives, resetLives } from '@/chesses/Live';
 import { onMounted, ref, onUnmounted, computed, getCurrentInstance } from 'vue';
 import { User, HomeFilled } from '@element-plus/icons-vue'
 import axios from 'axios';
@@ -85,6 +86,7 @@ const sockets_methods = {
                 camp = i
             }
         }
+        resetLives()
         if (camp >= -1) {
             Cookies.set('camp', camp)
             ElMessage.success('游戏开始,你是' + (camp > 0 ? (camp > 1 ? '金方玩家' : '黑方玩家') : (camp == 0 ? '红方玩家' : '观战者')))

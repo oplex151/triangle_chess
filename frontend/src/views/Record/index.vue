@@ -12,6 +12,7 @@ import Board from '@/views/Game/board.vue'
 import game_info from '@/assets/jsons/game_info.json'
 import Report from '@/components/views/Report.vue'
 import Avatar from '@/components/views/Avatar.vue'
+import * as CONST from '@/lib/const.js'
 
 const start = ref(false)
 const options = ref([])
@@ -251,7 +252,7 @@ const camp_c = computed(() => {
             <div class="brd1">
                 <div class="chessboard-overlay"></div>
                 <div class="chessboard-container">
-                <Board :my_camp="my_camp" ref="board" @requireMove="Move" />
+                <Board :my_camp="my_camp" ref="board" :game_status="CONST.STATUS_ONING" @requireMove="Move" />
                 </div>
                 <button @click="Next" class="next_button">下一步</button>
                 <div class="avatar">

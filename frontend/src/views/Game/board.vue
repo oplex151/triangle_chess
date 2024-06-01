@@ -7,6 +7,7 @@ import { registerSockets, socket } from '@/sockets'
 import { XYZToPosition, PositionToXYZ } from '@/lib/convert'
 import router from '@/router';
 import { ElMessage } from "element-plus";
+import * as CONST from '@/lib/const.js'
 import { lives, changeLives } from '@/chesses/Live';
 import { onMounted, ref, onUnmounted, computed, getCurrentInstance } from 'vue';
 import { COL, ROWTOP, ROWMID, AREABOT, ROWBOT } from '@/config/config';
@@ -25,9 +26,13 @@ const xyz = ref([0, 0, 0])
 const xyzn = ref([0, 0, 0])
 const my_camp_str = ['红方', '黑方', '金方']
 
-const props = defineProps(['my_camp'])
+const props = defineProps(
+  {
+    my_camp:{default:0},
+    game_status:{default:CONST.STATUS_ONING},
+  }
+)
 const emit = defineEmits(['requireMove'])
-const backgroundImageUrls = ref([]);
 
 //核心财产
 const chessPoints = [
@@ -101,6 +106,9 @@ const camp_0_style = computed(() => {
   }
 });
 const action = (position) => {
+  console.log(props.game_status)
+  if (props.game_status != CONST.STATUS_ONING)
+    return
   // 未选中
   if (!isPocus.value) {
     if (!hoverChess) return;
@@ -166,16 +174,16 @@ const initMap = (game_info) => {
       GEBI(`${chess.position}`).innerText = chess.name;
       switch (chess.camp) {
         case 0:
-          // GEBI(`${chess.position}`).classList.add('camp0');
+          GEBI(`${chess.position}`).classList.add('camp0');
           chess.image = "src/assets/images/game/chess/realChess/" + chess.name + "白.png";
           break;
 
         case 1:
-          // GEBI(`${chess.position}`).classList.add('camp1');
+          GEBI(`${chess.position}`).classList.add('camp1');
           chess.image = "src/assets/images/game/chess/realChess/" + chess.name + "黑.png";
           break;
         case 2:
-          // GEBI(`${chess.position}`).classList.add('camp2');
+          GEBI(`${chess.position}`).classList.add('camp2');
           chess.image = "src/assets/images/game/chess/realChess/" + chess.name + "金.png";
           break;
       }
@@ -235,7 +243,7 @@ defineExpose({
   <div class="Game">
     <div class="camp">
       目前行动: {{ camp == 1 ? '黑方' : (camp == 0 ? '红方' : '金方') }}
-      我的阵营: {{ props.my_camp >= 0 ? my_camp_str[props.my_camp] : '观战者' }}
+      我的阵营: {{ props.my_camp >= 0 ? my_camp_str[props.my_camp] : (props.my_camp == -1 ? '观战者' :'未知') }}
     </div>
     <!--2号-->
     <div :class="camp_2_style">
@@ -281,9 +289,14 @@ defineExpose({
 .camp {
   position: relative;
   top: 40px;
-  left: 8%;
-  font-size: 24px;
+  left: 20px;
+  font-size: 18px;
   color: #e9b526;
+  display: inline-block;
+  border-radius: 5px;
+  padding: 7px;
+  max-width: 150px;
+  background-color: antiquewhite;
 }
 
 

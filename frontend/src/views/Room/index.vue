@@ -9,6 +9,7 @@ import Cookies from 'js-cookie'
 import { useRouter } from 'vue-router';
 import { ElDivider, ElInput, ElMessage } from 'element-plus'
 import * as CONST from '@/lib/const.js'
+import { lives, resetLives } from '@/chesses/Live';
 import { User, HomeFilled } from '@element-plus/icons-vue'
 
 import Avatar from '@/components/views/Avatar.vue'
@@ -132,7 +133,14 @@ const sockets_methods = {
     }
   },
   leaveRoomSuccess(data){
-    if (data.userid == Cookies.get('userid')){
+    if (data.userid == -1){
+      Cookies.remove('room_id')
+      Cookies.remove('room_info')
+      room_id.value = null
+      room_info.value = null
+      ElMessage.success('房主离开，房间解散！')
+    }
+    else if (data.userid == Cookies.get('userid')){
       Cookies.remove('room_id')
       Cookies.remove('room_info')
       room_id.value = null
@@ -166,6 +174,7 @@ const sockets_methods = {
         camp = i
       }
     }
+    resetLives()
     if (camp>=-1){
       Cookies.set('camp',camp)
       console.log(Cookies.get('camp'))
@@ -178,7 +187,6 @@ const sockets_methods = {
     if(data.username!=my_name.value)
       o_message.value.push({ 'user': data.username, 'message': data.message })
   },
-
 }
 
 onMounted(() => {
@@ -249,8 +257,6 @@ function goBackHome(){
   //   leaveRoom()
   // }
   // 不知道到底需不需要离开房间
-  
-  
   removeSockets(sockets_methods, socket.value, proxy)
   Cookies.remove('room_id')
   Cookies.remove('room_info')
@@ -347,8 +353,11 @@ const handleReport = (id) => {
     <ElDivider/>
     <div class="in-room">
       <div class="room-info">
+        <div v-if="room_info" class="room-tag">
+          参战者
+        </div>
         <div v-if="room_info">
-          <li v-for="user in room_info.users" class="user" @mouseover="get_info"> 
+          <li v-for="user in room_info.users" class="user" @mouseover="get_info">
             <Avatar :my_userid="Cookies.get('userid')" :userid=user.userid @reportUser="handleReport" class="avas">
               <template #name>
                 <p>{{user.username}}</p>
@@ -356,21 +365,39 @@ const handleReport = (id) => {
               <template #avatar>
                 <img :src="main.url+avatars[user.userid]" alt="头像" />
               </template>
-            </Avatar> 
-            <span class="user-name" style="vertical-align: middle">{{ user.username }}</span>            
+            </Avatar>
+            <span class="user-name" style="vertical-align: middle">{{ user.username }}</span>
           </li>
         </div>
       </div>
 
       <div class="message" v-if="room_id">
-        
+
         <div class="message-show">
           <li v-for="(item, index) in o_message">
             {{item.user}} - {{ item.message }}
           </li>
         </div>
-          <el-input class="custom-input" v-model="i_message" maxlength=80 show-word-limit @keyup.enter.native="sendMessage" placeholder="Please input" />
-          <el-button @click="sendMessage" style="width:60px" type="primary">发送消息</el-button>
+        <el-input class="custom-input" v-model="i_message" maxlength=80 show-word-limit placeholder="Please input" />
+        <el-button @click="sendMessage" style="width:60px" type="primary">发送消息</el-button>
+      </div>
+      <div class="room-info">
+        <div v-if="room_info" class="room-tag" >
+          观战者
+        </div>
+        <div v-if="room_info">
+          <li v-for="viewer in room_info.viewers" class="user" @mouseover="get_info">
+            <Avatar :my_userid="Cookies.get('userid')" :userid=viewer.userid @reportUser="handleReport" class="avas">
+              <template #name>
+                <p>{{viewer.username}}</p>
+              </template>
+              <template #avatar>
+                <User/>
+              </template>
+            </Avatar>
+            <span class="user-name" style="vertical-align: middle">{{ viewer.username }}</span>
+          </li>
+        </div>
       </div>
     </div>
   </div>
@@ -589,6 +616,10 @@ const handleReport = (id) => {
 }
 
 .room-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   margin-top: 20px;
   margin-left: 20px;
   margin-right: 20px;
@@ -597,6 +628,21 @@ const handleReport = (id) => {
   background-color:bisque;
   border-radius: 10px;
 }
+
+.room-tag{
+  font-size: 24px;
+  font-weight: bold;
+  color: #ecb920;
+  font-family:'Times New Roman', Times, serif;
+  margin-top: 20px;
+  margin-left: 20px;
+  margin-right: 20px;
+  display: flex;
+  max-width: 30%;
+  background-color:bisque;
+  border-radius: 10px;
+}
+
 
 .user{
   margin: 20px;
