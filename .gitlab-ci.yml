@@ -18,7 +18,7 @@
 
 job1:
   stage: .pre
-  scipt:
+  script:
     - echo 'my .pre job'
 
 job2:
