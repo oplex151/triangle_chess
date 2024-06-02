@@ -307,7 +307,7 @@ def uploadImage(userid:int, image:str):
         img,ext = base64ToImage(image)
         image_path = '/static/'+str(userid)+ "."+ext
         project_root = os.environ.get('PROJECT_ROOT')   #bug uwsgi的根目录不一样 
-        if project_root.endswith('bakcend'):
+        if project_root.endswith('backend'):
             saveImage(img, os.environ.get('PROJECT_ROOT') + image_path,ext)
         else:
             saveImage(img, os.environ.get('PROJECT_ROOT') + '/backend' + image_path,ext)

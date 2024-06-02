@@ -415,11 +415,11 @@ defineExpose({
 
 }
 
-.board :deep(.chess) {
-  rotate: 180deg !important;
+//.board :deep(.chess) {
+ // rotate: 180deg !important;
   // 某些浏览器（例如小智双核）不支持 ::v-deep 伪元素选择器，这个我也没办法，只能这样了
   // 御三家firefox,chrome,edge都支持
-}
+//}
 
 // = 1
 .board-tilt-left {
