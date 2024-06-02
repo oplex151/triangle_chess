@@ -396,7 +396,7 @@ const camp_0_style = computed(() => {
 </script>
 
 <template>
-  <Messager :o_message="o_message" v-model:i_message="i_message" @sendMessage="sendMessage" class="messager"/>
+  <Messager :o_message="o_message" v-model:i_message="i_message" @sendMessage="sendMessage" class="messager" v-if="my_camp >= 0"/>
 
   <div class="background-image"></div>
   <div class="chessboard-overlay"></div>
@@ -483,7 +483,7 @@ const camp_0_style = computed(() => {
 
 .wait-draw-info{
   margin-top: 20px;
-  margin-left: 20px;
+  margin-left: 40px;
   position: relative;
   font-size:20px;
   color: #fff;

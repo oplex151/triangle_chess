@@ -13,6 +13,8 @@ from backend.tools import setupLogger
 
 logger = setupLogger()
 
+MAX_WATCHERS = 3
+
 class UserDict(Dict):
     userid:int
     username:str
@@ -192,6 +194,8 @@ class GameTable:
         Returns:
             bool: 是否添加成功
         '''
+        if len(self.viewers) >= MAX_WATCHERS:
+            return False
         if user['userid'] in [u['userid'] for u in self.users]:
             return False
         else:
@@ -407,6 +411,8 @@ class RoomManager:
         self.game_table = None
 
     def addUser(self, user: Union[UserDict, list[UserDict]]):
+        if len(self.users) >= 3+MAX_WATCHERS:
+            return False
         if isinstance(user, list):
             for u in user:
                 if u not in self.users:
@@ -414,6 +420,7 @@ class RoomManager:
         else:
             if user not in self.users:
                 self.users.append(user)
+        return True
         
     
     def removeUser(self, userid:int, force=False):

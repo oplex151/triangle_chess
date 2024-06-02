@@ -6,6 +6,7 @@ import * as CONST from '@/lib/const.js'
 import { lives, changeLives } from '@/chesses/Live';
 import { onMounted, ref, onUnmounted, computed, getCurrentInstance } from 'vue';
 import { COL, ROWTOP, ROWMID, AREABOT, ROWBOT } from '@/config/config';
+import main from "@/main"
 
 
 const map = new Map();
@@ -170,16 +171,19 @@ const initMap = (game_info) => {
       switch (chess.camp) {
         case 0:
           GEBI(`${chess.position}`).classList.add('camp0');
-          chess.image = "src/assets/images/game/chess/realChess/" + chess.name + "白.png";
+          //chess.image = "@/assets/images/game/chess/realChess/" + chess.name + "白.png";
+          chess.image = main.url + "/static/game/chess/realChess/" + chess.name + "白.png";   //bug 图片路径访问不到
           break;
 
         case 1:
           GEBI(`${chess.position}`).classList.add('camp1');
-          chess.image = "src/assets/images/game/chess/realChess/" + chess.name + "黑.png";
+          //chess.image = "@/assets/images/game/chess/realChess/" + chess.name + "黑.png";
+          chess.image = main.url + "/static/game/chess/realChess/" + chess.name + "黑.png";
           break;
         case 2:
           GEBI(`${chess.position}`).classList.add('camp2');
-          chess.image = "src/assets/images/game/chess/realChess/" + chess.name + "金.png";
+          //chess.image = "@/assets/images/game/chess/realChess/" + chess.name + "金.png";
+          chess.image = main.url + "/static/game/chess/realChess/" + chess.name + "金.png";
           break;
       }
       GEBI(`${chess.position}`).classList.add('chess-background');  // 添加自定义class
@@ -284,7 +288,7 @@ defineExpose({
 .camp {
   position: relative;
   top: 40px;
-  left: 20px;
+  left: 40px;
   font-size: 18px;
   color: #e9b526;
   display: inline-block;

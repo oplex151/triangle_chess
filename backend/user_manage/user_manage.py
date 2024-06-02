@@ -1,6 +1,7 @@
 from functools import wraps
 import os
 import pymysql
+from pathlib import Path
 import base64
 from io import BytesIO
 from PIL import Image
@@ -17,10 +18,7 @@ DATA_BASE = "trianglechess" # 数据库名称
 USER_TABLE = "user"
 
 load_dotenv()
-password = os.getenv("MYSQL_PASSWORD")
-
-db = None
-cursor = None
+db_password = os.getenv("MYSQL_PASSWORD")
 
 logger = setupLogger()
 
@@ -58,15 +56,6 @@ def hash_token(password):
 def validate_token(plain_password, hashed_password):
     return hash_token(plain_password) == hashed_password
 
-def connectDatabase(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        global db, cursor
-        db = pymysql.connect(host="127.0.0.1",user="root",password=password,database=DATA_BASE)
-        cursor = db.cursor()
-        return func(*args, **kwargs)
-    return wrapper
-
 def adminLogin(password, config_password):
     #if not protected_route(request.headers.get('Authorization').split(' ')[1]):
     res = {} 
@@ -77,9 +66,11 @@ def adminLogin(password, config_password):
     else:
         return jsonify(res),OTHER_ERROR
 
-@connectDatabase
+
 def login(username, password):
     global sessions
+    db = pymysql.connect(host="127.0.0.1",user="root",password=db_password,database=DATA_BASE)
+    cursor = db.cursor()
     res,status = {},None
     try:
         db.begin()
@@ -111,8 +102,10 @@ def login(username, password):
         db.close()
     return jsonify(res),status
     
-@connectDatabase
+
 def register(username, password, email, phone_num, gender):
+    db = pymysql.connect(host="127.0.0.1",user="root",password=db_password,database=DATA_BASE)
+    cursor = db.cursor()
     res,status = {},None
     try:
         # 首先就检查用户名是否已经存在
@@ -154,8 +147,10 @@ def register(username, password, email, phone_num, gender):
         db.close()
     return jsonify(res),status
 
-@connectDatabase
+
 def changeUserInfo(userid:int, username:str=None, email:str=None, phone_num:str=None, gender:str=None):
+    db = pymysql.connect(host="127.0.0.1",user="root",password=db_password,database=DATA_BASE)
+    cursor = db.cursor()
     res,status = {},None
     try:
         # 首先就检查用户名是否已经存在
@@ -198,8 +193,10 @@ def changeUserInfo(userid:int, username:str=None, email:str=None, phone_num:str=
         db.close()
     return jsonify(res),status
 
-@connectDatabase
+
 def changePassword(userid:int, old_password:str, new_password:str):
+    db = pymysql.connect(host="127.0.0.1",user="root",password=db_password,database=DATA_BASE)
+    cursor = db.cursor()
     res,status = {},None
     try:
         # 首先就检查用户名是否已经存在
@@ -239,8 +236,10 @@ def logout(userid:int):
         logger.error("User {0} not logged in".format(userid))
         return "{}",USER_NOT_LOGIN
 
-@connectDatabase
+
 def getUserInfo(userid:int):
+    db = pymysql.connect(host="127.0.0.1",user="root",password=db_password,database=DATA_BASE)
+    cursor = db.cursor()
     dic, status = {}, None
     try:
         # 首先就检查用户名是否已经存在
@@ -268,8 +267,10 @@ def getUserInfo(userid:int):
         db.close()
     return jsonify(dic),status
 
-@connectDatabase
+
 def getSomeUserAvatar(userids:list[int]):
+    db = pymysql.connect(host="127.0.0.1",user="root",password=db_password,database=DATA_BASE)
+    cursor = db.cursor()
     dic, status = {}, None
     try:
         # 首先就检查用户名是否已经存在
@@ -294,8 +295,10 @@ def getSomeUserAvatar(userids:list[int]):
     # 没有jsonify
     return dic,status
 
-@connectDatabase
+
 def uploadImage(userid:int, image:str):
+    db = pymysql.connect(host="127.0.0.1",user="root",password=db_password,database=DATA_BASE)
+    cursor = db.cursor()
     res,status = {},None
     # 后台接收到base64，把base64转成图片，存到文件服务器里面，根据存储的路径生成图片的url
     # 存到数据库里面，记录图片的路径
@@ -303,7 +306,11 @@ def uploadImage(userid:int, image:str):
     try:    
         img,ext = base64ToImage(image)
         image_path = '/static/'+str(userid)+ "."+ext
-        saveImage(img,os.environ.get('PROJECT_ROOT')+'/backend'+image_path,ext)
+        project_root = os.environ.get('PROJECT_ROOT')   #bug uwsgi的根目录不一样 
+        if project_root.endswith('bakcend'):
+            saveImage(img, os.environ.get('PROJECT_ROOT') + image_path,ext)
+        else:
+            saveImage(img, os.environ.get('PROJECT_ROOT') + '/backend' + image_path,ext)
         db.begin()
         update_query = "UPDATE {0} SET imagePath = {1} WHERE userId = {2};".format(USER_TABLE,"'"+image_path+"'",userid)
         cursor.execute(update_query)
@@ -311,15 +318,17 @@ def uploadImage(userid:int, image:str):
         res = {"image_path":image_path}
         logger.info("User {0} uploaded image successfully".format(userid))
     except Exception as e:
-        logger.error("Use0} failed to upload image due to\n{1}".format(userid,str(e)),exc_info=True)
+        logger.error("Use {0} failed to upload image due to\n{1}".format(userid,str(e)),exc_info=True)
         status = OTHER_ERROR if status is None else status
     finally:
         cursor.close()
         db.close()
     return jsonify(res),status
 
-@connectDatabase
+
 def getUserData():
+    db = pymysql.connect(host="127.0.0.1",user="root",password=db_password,database=DATA_BASE)
+    cursor = db.cursor()
     res,status = [],None
     try:
         db.begin()
@@ -347,8 +356,9 @@ def getUserData():
         db.close()
     return jsonify(res),status
 
-@connectDatabase
 def changeUserBanned(userid:int, banned:int):
+    db = pymysql.connect(host="127.0.0.1",user="root",password=db_password,database=DATA_BASE)
+    cursor = db.cursor()
     res,status = {},None
     try:
         db.begin()

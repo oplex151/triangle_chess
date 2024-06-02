@@ -362,14 +362,14 @@ function rowStyle ({row, rowIndex}) {
                     <HomeFilled />
                 </el-icon>
             </button> -->
-        <button class="button-share" @click="share">
-            <el-icon style="vertical-align: middle" size="30px">
-                <Share />
-            </el-icon>
-        </button>
-        <div v-if="start">
-            <button @click="EndGo" class="button end-record-button">结束回放</button>
-            <div class="brd2">
+        <div v-if="start" class="record-container">
+            <button class="button-share" @click="share">
+                <el-icon style="vertical-align: middle" size="30px">
+                        <Share />
+                    </el-icon>
+            </button>
+            <button @click="EndGo" class="end-button">结束回放</button>   
+            <div class="brd2">     
             <div class="brd1">
                 <div class="chessboard-overlay"></div>
                 <div class="chessboard-container">
@@ -498,7 +498,17 @@ function rowStyle ({row, rowIndex}) {
 
 .container{
     width : 100%;
-    height: 900px;
+    height: 500px;
+}
+
+.record-container{
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.7);
+    z-index: 1888;
 }
 
 .chessboard-overlay {
@@ -513,20 +523,23 @@ function rowStyle ({row, rowIndex}) {
     z-index: -1;
 }
 
-/* .end_button {
-    display: block;
-    padding: 10px 10px;
+.end-button {
     font-size: 18px;
     font-weight: bold;
     color: #fff;
     background-color: #ecb920;
     border-radius: 10px;
+    position: relative;
     border: none;
-    cursor: pointer;
-    position: absolute;
-    left: 50%;
+    padding: 10px;
+    right: 30%;
+    top: 5%;
     z-index: 9999;
-} */
+}
+
+.end-button:hover {
+    background-color: #d29a19;
+}
 
 .next_button {
     font-size: 18px;
@@ -537,7 +550,11 @@ function rowStyle ({row, rowIndex}) {
     border: none;
     position: relative;
     margin-right: 30px;
-    top: 388px;
+    top: 360px;
+}
+
+.next_button:hover {
+    background-color: #e0a61b;
 }
 
 .select_btn {
@@ -567,9 +584,9 @@ function rowStyle ({row, rowIndex}) {
 }
 
 .button-share{
-    position: absolute;
-    top: 80px;
-    right: 20px;
+    position: relative;
+    top:5%;
+    left: 50%;
     background-color: #ecb920;
     border: none;
     padding: 10px 20px;

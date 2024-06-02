@@ -668,7 +668,9 @@ def joinRoom(data):
         logger.info(f"User {userid} rejoin to game {room.game_table.game_id}")
         emit('rejoinGameSuccess',{'room_id':room_id},to=request.sid,namespace='/')
     
-    room.addUser(UserDict(userid=userid,username=sessions[userid]))
+    if room.addUser(UserDict(userid=userid,username=sessions[userid])) == False:
+        emit('processWrong',{'status':ROOM_FULL},to=request.sid)
+        return
     join_room(room_id)
     logger.info(f"User {userid} join room {room_id}, sid={request.sid}"
                 +f"this room's users: {room.users}")
@@ -1234,7 +1236,7 @@ def viewGameRecords(data):
     try:
         # 查询游戏记录
         records = viewUserGameRecords(userid)
-        logger.info(records)
+        #logger.info(records)
         emit('gameRecord', {'record': records}, to=request.sid)
     except Exception as e:
         emit('processWrong',{'status':OTHER_ERROR},to=request.sid)
@@ -1283,8 +1285,8 @@ def sendMessage(data):
     emit('receiveMessage',{'username':sessions[userid],'message':message,'userid':userid},to=room_id,
             skip_sid=request.sid)
     
+threading.Thread(target=cycleMatch,args=[app] ,daemon=True, name='cycleMatch').start()  #bug uwsgi不执行main函数
+threading.Thread(target=cycleRank,args=[app] ,daemon=True, name='cycleRank').start()
 if __name__ == "__main__":
-    threading.Thread(target=cycleMatch,args=[app] ,daemon=True, name='cycleMatch').start()
-    threading.Thread(target=cycleRank,args=[app] ,daemon=True, name='cycleRank').start()
     socketio.run(app,debug=True,host='0.0.0.0',port=8888,allow_unsafe_werkzeug=True)
     print("Good bye!")

@@ -14,6 +14,7 @@ REGISTER_FAILED = 504 #"Register failed: Internal server error"
 WRONG_OLD_PASSWORD = 513 #"Wrong old password"
 BANNED_USER = 514 #"Banned user"
 USER_ALREADY_BANNED = 515 #"User already banned"
+ROOM_FULL = 516 #"Room full"
 
 PARAM_ERROR = 505 #"Parameter error"
 

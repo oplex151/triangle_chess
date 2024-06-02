@@ -160,11 +160,6 @@ watch(errorMessage, (oldValue, newValue) => {
                     <el-input class="form-input" v-model="RegisterForm.username" type="text" autocomplete="on" />
                 </el-form-item>
                 <el-form-item prop="email" class="form-group" :rules="[
-                    // {
-                    //     required: true,
-                    //     message: '请输入邮箱',
-                    //     trigger: 'blur',
-                    // },
                     {
                         type: 'email',
                         message: '请输入正确的邮箱地址',
