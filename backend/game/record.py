@@ -105,7 +105,46 @@ def viewUserGameRecords(user_id):
         # db.rollback()
         logger.error("Failed to view user {0} game records: due to\n{1}".format(user_id, str(e)))
         return None,OTHER_ERROR
-    
+
+def viewAllVisibleGameRecords():
+    try:
+        # 查询所有可见的游戏记录
+        select_query = "SELECT * FROM {0} WHERE visible=1 ORDER BY startTime DESC;".format(GAME_RECORD_TABLE)
+        cursor.execute(select_query)
+        records = cursor.fetchall()
+        for record in records:
+            # 查询每个记录的走棋记录
+            record['startTime'] = record['startTime'].strftime("%Y-%m-%dT%H:%M:%S")
+            record['endTime'] = record['endTime'].strftime("%Y-%m-%dT%H:%M:%S") if record['endTime'] else None
+        return records,SUCCESS
+    except Exception as e:
+        # db.rollback()
+        logger.error("Failed to view all visible game records: due to\n{0}".format(str(e)))
+        return None,OTHER_ERROR
+
+def changeGameRecordVisible(record_id, visible):
+    status = OTHER_ERROR
+    try:
+        # 更新游戏记录的可见性
+        db = pymysql.connect(host="127.0.0.1",user="root",password=password,database=DATA_BASE)
+        cursor = db.cursor()
+        print(visible,record_id)
+        update_query = "UPDATE {0} SET visible={1} WHERE recordId={2};".format(GAME_RECORD_TABLE,visible, record_id)
+        cursor.execute(update_query)
+        db.commit()
+        logger.info("Changed game record {0} visible to {1}".format(record_id, visible))
+        status = SUCCESS
+    except Exception as e:
+        db.rollback()
+        logger.error("Failed to change game record {0} visible to {1} due to\n{2}".format(record_id, visible, str(e)))
+        status = OTHER_ERROR
+    finally:
+        cursor.close()
+        db.close()
+    return '{}',status
+
+
+
 def viewGameMoveRecords(record_id):
     try:
         # 查询特定用户参与的游戏记录

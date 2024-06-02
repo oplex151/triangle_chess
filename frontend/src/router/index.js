@@ -14,7 +14,7 @@ import Profile from '@/views/Profile/index.vue'
 import publicShare from '@/views/publicShare/index.vue'
 import Admin from '@/views/Admin/index.vue'
 import AdminLogin from '@/views/Admin/login.vue'
-import Apeal from '@/views/Apeal/index.vue'
+import Ground from '@/views/Ground/index.vue'
 import Witness from '@/views/Witness/index.vue'
 import { socket } from '@/sockets';
 
@@ -49,11 +49,11 @@ const router = createRouter({
       component: Logout,
       meta: {isAuth: true,connection: false},
     },
-    // {
-    //   path: '/apeal',
-    //   component: Apeal,
-    //   meta: {isAuth: true,connection: false},
-    // },
+    {
+      path: '/ground',
+      component: Ground,
+      meta: {isAuth: true,connection: false},
+    },
     //   主页-游戏页
     {
       path:'/game',

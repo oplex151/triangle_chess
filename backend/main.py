@@ -1235,9 +1235,15 @@ def viewGameRecords(data):
         return
     try:
         # 查询游戏记录
-        records = viewUserGameRecords(userid)
-        #logger.info(records)
-        emit('gameRecord', {'record': records}, to=request.sid)
+        if userid == -1:
+            records,status = viewAllVisibleGameRecords()
+            logger.info('view all game records num={}'.format(len(records)))
+        else:
+            records,status = viewUserGameRecords(userid)
+        if status == SUCCESS:
+            emit('gameRecord', {'record': records}, to=request.sid)
+        else:
+            emit('processWrong',{'status':status},to=request.sid)
     except Exception as e:
         emit('processWrong',{'status':OTHER_ERROR},to=request.sid)
         logger.error(e)
@@ -1265,6 +1271,26 @@ def viewMoveRecords(data):
         emit('processWrong',{'status':OTHER_ERROR},to=request.sid)
         logger.error(e)
         return
+
+@app.route('/api/changeVisible', methods=['POST'])
+def changeVisibleApi():
+    """
+    修改游戏记录可见性请求
+    Args:
+        record_id: 对局id      int 
+        visible:   是否可见    int
+    """
+    params = {'record_id':int,'visible':int}
+    try:
+        record_id,visible = getParams(params,request.form)
+    except:        
+        return '{}',PARAM_ERROR
+    try:
+        # 修改游戏记录可见性
+        return changeGameRecordVisible(record_id,visible)
+    except Exception as e:
+        logger.error("failed to change game record visible due to {0}".format(str(e)), exc_info=True)
+        return '{}',OTHER_ERROR
 
 @socketio.event
 def sendMessage(data):

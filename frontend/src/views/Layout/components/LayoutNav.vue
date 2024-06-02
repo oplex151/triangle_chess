@@ -48,8 +48,8 @@ const categoryList = ref([
   // },
   {
     id:6,
-    name:"关于我们",
-    url:"/",
+    name:"棋局广场",
+    url:"/ground",
     picture:""
   },
   {
