@@ -17,7 +17,7 @@ import * as CONST from '@/lib/const.js'
 
 const start = ref(false)
 const options = ref([])
-const record_id = ref('')
+const record_id = ref(-1)
 const loading = ref(true)
 const { proxy } = getCurrentInstance()
 const router = useRouter()
@@ -60,6 +60,7 @@ const EndGo = () => {
     moves.value = []
     step.value = 0
     my_camp.value = -1
+    record_id.value = -1
 }
 const sockets_methods = {
     gameRecord(data) {
@@ -147,6 +148,8 @@ onUnmounted(() => {
 
 });
 const Get = ref(() => {
+    if (record_id.value == -1)
+        return
     // console.log(record_id.value)
     my_camp.value = getCamp(record_id.value)
     // console.log(record_id.value['recordId'])
@@ -238,6 +241,12 @@ const share = () => {
 const camp_c = computed(() => {
     return [camp_0_style.value, camp_1_style.value, camp_2_style.value]
 })
+
+const view_comments_record_id = ref(-1)
+const comment_content = ref({name:""})
+const comments = ref([])
+const comments_dialog = ref(false)
+
 // 点赞
 function likeGameRecord(row) {
   row.liked = true;
@@ -299,32 +308,35 @@ function unlikeComment(row){
   });
 }
 
-function addComments(row,content) {
+
+function addComments(content) {
   axios.post(main.url+'/api/addComment',
-      { 'recordid': row.recordId,"userid": userid,"content":content},
+      { 'recordid': view_comments_record_id.value,"userid": userid,"content":content},
       { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
   ).then(response => {
-    ElMessage.success('评论成功');
-    row.commentNum += 1; // 更新评论数
-    comment_content.value.name = '';
-    viewComments(row);
+    if (response.status === 200) {
+      ElMessage.success('评论成功');
+      options.value.find(item => item.recordId === view_comments_record_id.value).commentNum += 1; // 更新评论数
+      comment_content.value.name = '';
+      viewComments(view_comments_record_id.value);
+    }
+    else
+      ElMessage.error('评论失败');
   }).catch(error => {
     ElMessage.error('评论失败');
     console.error(error);
   });
 }
 
-const comment_content = ref({
-  name:""
-})
-const comments = ref([])
-const comments_dialog = ref(false)
-function viewComments(row){
+
+
+function viewComments(record_id){
   axios.post(main.url+'/api/viewRecordComments',
-      { 'recordid': row.recordId},
+      { 'recordid': record_id},
       { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
   ).then(res => {
     console.log(res.data)
+    view_comments_record_id.value = record_id
     comments_dialog.value = true
     comments.value = res.data.map(comment => ({
       ...comment,
@@ -336,12 +348,16 @@ function viewComments(row){
   });
 }
 
-const handleRowClick = (row, column, event) => {
-  record_id.value = row.recordId;
+const handleRowClick = (row) => {
+  if (record_id.value == row.recordId) {
+    record_id.value = -1;
+  } else {
+    record_id.value = row.recordId;
+  }
 };
 
 function rowStyle ({row, rowIndex}) {
-  if (record_id.value=== row.recordId) {
+  if (record_id.value == row.recordId) {
     // 此处返回选中行的样式对象，按需设置
     return {
       'background-color': 'rgb(94, 180, 251)',
@@ -350,18 +366,22 @@ function rowStyle ({row, rowIndex}) {
   }
 }
 
+function formatDate(date1) {
+  let date = new Date(date1);
+  let year = date.getFullYear();
+  let month = date.getMonth() + 1;
+  let day = date.getDate();
+  let hour = date.getHours();
+  let minute = date.getMinutes();
+  let second = date.getSeconds();
+  return year + '-' + month + '-' + day +'  ' + hour + ':' + minute + ':' + second;
+}
 
 </script>
 <template>
     <Report :toreportid="to_report_id" :myuserid="userid" :dialogFormVisible=vis @reportEnd="handleReportEnd" />
     <div class="container">
         <div class="background-image-Record"></div>
-
-        <!-- <button class="button-home" @click="goBackHome()">
-                <el-icon style="vertical-align: middle" size="30px">
-                    <HomeFilled />
-                </el-icon>
-            </button> -->
         <div v-if="start" class="record-container">
             <button class="button-share" @click="share">
                 <el-icon style="vertical-align: middle" size="30px">
@@ -370,39 +390,80 @@ function rowStyle ({row, rowIndex}) {
             </button>
             <button @click="EndGo" class="end-button">结束回放</button>   
             <div class="brd2">     
-            <div class="brd1">
-                <div class="chessboard-overlay"></div>
-                <div class="chessboard-container">
-                <Board :my_camp="my_camp" ref="board" :game_status="CONST.STATUS_ONING" @requireMove="Move" />
-                </div>
-                <button @click="Next" class="next_button">下一步</button>
-                <div class="avatar">
-                <!---------0号位---------->
-                <div v-for="(item,index) in camp_c" :key="index">
-                    <div :class="item">
-                        <Avatar :my_userid="userid" :userid="userids[index]" @reportUser="handleReport">
-                            <template #name>
-                                <p>{{ name[index] }}</p>
-                            </template>
-                            <template #avatar>
-                                <img :src="main.url+avatars[userids[index]]" alt="头像" />
-                            </template>
-                        </Avatar>
-                        </div>
-                    </div>
-                </div>
-            </div>
+              <div class="brd1">
+                  <div class="chessboard-overlay"></div>
+                  <div class="chessboard-container">
+                  <Board :my_camp="my_camp" ref="board" :game_status="CONST.STATUS_ONING" @requireMove="Move" />
+                  </div>
+                  <button @click="Next" class="next_button">下一步</button>
+                  <div class="avatar">
+                  <!---------0号位---------->
+                  <div v-for="(item,index) in camp_c" :key="index">
+                      <div :class="item">
+                          <Avatar :my_userid="userid" :userid="userids[index]" @reportUser="handleReport">
+                              <template #name>
+                                  <p>{{ name[index] }}</p>
+                              </template>
+                              <template #avatar>
+                                  <img :src="main.url+avatars[userids[index]]" alt="头像" />
+                              </template>
+                          </Avatar>
+                          </div>
+                      </div>
+                  </div>
+              </div>
             </div>
         </div>
         <div v-else>
-            <div>
-                <button @click="Get" class="button">开始回放</button>
-            </div>
+          <el-dialog v-model="comments_dialog" title="评论" width="800">
+            <el-table :data="comments" max-height="400" >
+              <el-table-column property="userId" label="用户ID" width="150" />
+              <el-table-column property="content" label="评论内容" width="200" />
+              <el-table-column prop="likeNum" label="点赞" >
+                <!-- Like button within the table column -->
+                <!-- 在表格列中添加点赞按钮 -->
+                <template #default="secondscope">
+                  <el-button v-if="secondscope.row.comment_liked == false" type="text" @click="likeComment(secondscope.row)">
+                    <el-icon size="40px" color="black">
+                      <Star style="font-size: 40px; color: black;" />
+                    </el-icon>
+                  </el-button>
+                  <el-button v-if="secondscope.row.comment_liked == true" type="text" @click="unlikeComment(secondscope.row)">
+                    <el-icon size="40px" color="black">
+                      <StarFilled style="font-size: 40px; color: black;" />
+                    </el-icon>
+                  </el-button>
+                  <div style="padding-left: 30px">{{ secondscope.row.likeNum }}</div>
+                </template>
+              </el-table-column>
+              <el-table-column property="commentTime" label="评论时间" width="200" sortable>
+                <template #default="secondscope">{{formatDate(secondscope.row.commentTime)}}</template>
+              </el-table-column>
+            </el-table>
+            <el-form :model="comment_content">
+              <el-form-item label="发表评论" label-width=140px>
+                <el-input v-model="comment_content.name" autocomplete="off" />
+              </el-form-item>
+            </el-form>
+            <template #footer>
+              <div class="dialog-footer">
+                <el-button @click="comments_dialog = false">关闭</el-button>
+                <el-button type="primary" @click="addComments(comment_content.name)">
+                  添加评论
+                </el-button>
+              </div>
+            </template>
+          </el-dialog>
+          <div>
+              <button @click="Get" class="start-button">开始回放</button>
+          </div>
             <div class="record-table">
-              <el-table :data="options" style="width: 100%;" @row-click="handleRowClick" :row-style="rowStyle">
-                <el-table-column prop="startTime" label="开W始时间" >
+              <el-table :data="options" style="width: 100%; border-radius: 7px; padding: 10px; top: -50px; height: 550px;">
+                <el-table-column prop="startTime" label="开始时间"  sortable>
+                  <template #default="scope">{{formatDate(scope.row.startTime)}}</template>
                 </el-table-column>
                 <el-table-column prop="endTime" label="结束时间" >
+                  <template #default="scope">{{formatDate(scope.row.endTime)}}</template>
                 </el-table-column>
                 <el-table-column prop="likeNum" label="点赞" >
                   <!-- Like button within the table column -->
@@ -427,53 +488,19 @@ function rowStyle ({row, rowIndex}) {
                       {{ firstscope.row.commentNum }}
                     </el-button>
 <!--                    这里加入展示评论的窗口-->
-                    <el-button type="text" @click="viewComments(firstscope.row)" >
+                    <el-button type="text" @click="viewComments(firstscope.row.recordId)" >
                       查看评论
                     </el-button>
-                    <el-dialog v-model="comments_dialog" title="评论" width="800">
-                      <el-table :data="comments">
-                        <el-table-column property="userId" label="用户ID" width="150" />
-                        <el-table-column property="content" label="评论内容" width="200" />
-                        <el-table-column prop="likeNum" label="点赞" >
-                          <!-- Like button within the table column -->
-                          <!-- 在表格列中添加点赞按钮 -->
-                          <template #default="secondscope">
-                            <el-button v-if="secondscope.row.comment_liked == false" type="text" @click="likeComment(secondscope.row)">
-                              <el-icon size="40px" color="black">
-                                <Star style="font-size: 40px; color: black;" />
-                              </el-icon>
-                            </el-button>
-                            <el-button v-if="secondscope.row.comment_liked == true" type="text" @click="unlikeComment(secondscope.row)">
-                              <el-icon size="40px" color="black">
-                                <StarFilled style="font-size: 40px; color: black;" />
-                              </el-icon>
-                            </el-button>
-                            <div style="padding-left: 30px">{{ secondscope.row.likeNum }}</div>
-                          </template>
-                        </el-table-column>
-                        <el-table-column property="commentTime" label="评论时间" width="200" />
-                      </el-table>
-                      <el-form :model="comment_content">
-                        <el-form-item label="发表评论" label-width=140px>
-                          <el-input v-model="comment_content.name" autocomplete="off" />
-                        </el-form-item>
-                      </el-form>
-                      <template #footer>
-                        <div class="dialog-footer">
-                          <el-button @click="comments_dialog = false">关闭</el-button>
-                          <el-button type="primary" @click="addComments(firstscope.row,comment_content.name)">
-                            添加评论
-                          </el-button>
-                        </div>
-                      </template>
-                    </el-dialog>
 
                   </template>
                 </el-table-column >
-                <el-table-column prop="record_id" label="选择">
+                <el-table-column prop="record_id" label="选择"
+                fixed="right">
                   <template #default="scope">
-                    <el-button>
-                      选择
+                    <el-button 
+                    :type= "record_id==scope.row.recordId ? 'success' : 'primary'"
+                    @click="handleRowClick(scope.row)">
+                      {{record_id!=scope.row.recordId ?'选择':'取消'}}
                     </el-button>
                   </template>
                 </el-table-column>
@@ -485,7 +512,7 @@ function rowStyle ({row, rowIndex}) {
 
 <style scoped>
 
-.background-image-Record {
+/* .background-image-Record {
     position: fixed;
     top: 0;
     left: 0;
@@ -494,12 +521,31 @@ function rowStyle ({row, rowIndex}) {
     background-image: url('@/assets/images/login/图1.jpg');
     background-size: cover;
     z-index: -1;
-}
+} */
 
 .container{
     width : 100%;
-    height: 500px;
 }
+
+
+.start-button {
+    font-size: 18px;
+    font-weight: bold;
+    color: #fff;
+    background-color: #ecb920;
+    border-radius: 10px;
+    position: absolute;
+    border: none;
+    padding: 10px;
+    display: inline-block;
+    top: 90px;
+    left:50%;
+}
+
+.start-button:hover {
+    background-color: #d29a19;
+}
+
 
 .record-container{
     position: fixed;
@@ -567,7 +613,7 @@ function rowStyle ({row, rowIndex}) {
 }
 
 .brd2{
-    top: 300px;
+    top: 50px;
     position: absolute;
     left: 50%;
     transform: translate(-50%, -50%);
