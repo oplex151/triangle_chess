@@ -32,6 +32,26 @@ job3:
     - echo 'my test job'
 
 job4:
+  stage: test
+  script:
+    - echo 'my test job'
+
+job5:
+  stage: test
+  script:
+    - echo 'my test job'
+
+job6:
+  stage: test
+  script:
+    - echo 'my test job'
+
+job7:
+  stage: test
+  script:
+    - echo 'my test job'
+
+job8:
   stage: deploy
   script:
     - echo 'my deploy job'
