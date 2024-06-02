@@ -32,6 +32,6 @@ job3:
     - echo 'my test job'
 
 job4:
-  stage: depoly
+  stage: deploy
   script:
-    - echo 'my depoly job'
+    - echo 'my deploy job'
