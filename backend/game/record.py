@@ -128,11 +128,11 @@ def likeGameRecord(record_id):
         cursor.execute(update_query, (record_id))
         db.commit()
         logger.info("Record {0} liked successfully".format(record_id))
-        return SUCCESS
+        return "{}",SUCCESS
     except Exception as e:
         db.rollback()
         logger.error("Failed to like record {0} due to\n{1}".format(record_id, str(e)))
-        return OTHER_ERROR
+        return "{}",OTHER_ERROR
 
 def unlikeGameRecord(record_id):
     # 取消点赞功能
@@ -141,11 +141,11 @@ def unlikeGameRecord(record_id):
         cursor.execute(update_query, (record_id))
         db.commit()
         logger.info("Record {0} unliked successfully".format(record_id))
-        return SUCCESS
+        return "{}",SUCCESS
     except Exception as e:
         db.rollback()
         logger.error("Failed to unlike record {0} due to\n{1}".format(record_id, str(e)))
-        return OTHER_ERROR
+        return "{}",OTHER_ERROR
 
 def addComment(record_id, user_id, content):
     # 添加评论功能
@@ -160,11 +160,11 @@ def addComment(record_id, user_id, content):
         db.commit()
 
         logger.info("Comment added to record {0} by user {1}".format(record_id, user_id))
-        return SUCCESS
+        return "{}",SUCCESS
     except Exception as e:
         db.rollback()
         logger.error("Failed to add comment to record {0} by user {1} due to\n{2}".format(record_id, user_id, str(e)))
-        return OTHER_ERROR
+        return "{}",OTHER_ERROR
 
 def likeComment(comment_id):
     # 点赞评论功能
@@ -173,11 +173,11 @@ def likeComment(comment_id):
         cursor.execute(update_query, (comment_id))
         db.commit()
         logger.info("Comment {0} liked successfully".format(comment_id))
-        return SUCCESS
+        return "{}",SUCCESS
     except Exception as e:
         db.rollback()
         logger.error("Failed to like comment {0} due to\n{1}".format(comment_id, str(e)))
-        return OTHER_ERROR
+        return "{}",OTHER_ERROR
 
 def unlikeComment(comment_id):
     # 取消点赞评论功能
@@ -186,11 +186,11 @@ def unlikeComment(comment_id):
         cursor.execute(update_query, (comment_id))
         db.commit()
         logger.info("Comment {0} unliked successfully".format(comment_id))
-        return SUCCESS
+        return "{}",SUCCESS
     except Exception as e:
         db.rollback()
         logger.error("Failed to unlike comment {0} due to\n{1}".format(comment_id, str(e)))
-        return OTHER_ERROR
+        return "{}",OTHER_ERROR
     
 def viewRecordComments(record_id):
     try:

@@ -5,8 +5,9 @@ import { useRouter } from 'vue-router';
 import Cookies from 'js-cookie'
 import VueSocketIO from 'vue-socket.io'
 import SocketIO from 'socket.io-client'
-import main from '@/main'
-import { User, HomeFilled, Share } from '@element-plus/icons-vue'
+import axios from 'axios';
+import main from '@/main';
+import { User, HomeFilled, Share,Star ,StarFilled} from '@element-plus/icons-vue'
 import { registerSockets, socket, removeSockets } from '@/sockets'
 import Board from '@/views/Game/board.vue'
 import game_info from '@/assets/jsons/game_info.json'
@@ -16,7 +17,7 @@ import * as CONST from '@/lib/const.js'
 
 const start = ref(false)
 const options = ref([])
-const value = ref('')
+const record_id = ref('')
 const loading = ref(true)
 const { proxy } = getCurrentInstance()
 const router = useRouter()
@@ -27,26 +28,28 @@ const step = ref(0)
 const board = ref(null)
 const map_state = ref(game_info)
 import useClipboard from 'vue-clipboard3';
-import axios from 'axios';
-
 
 const { toClipboard } = useClipboard()
 
-
 let status1 = ''
 
-const userids = computed(() => {
-    let names = [-1,-1,-1]    
-    for (let item=0 ; item <options.value.length; item++){
-        if(options.value[item]['recordId']==value.value){            
-            names[0] = options.value[item]['p1']
-            names[1] = options.value[item]['p2']
-            names[2] = options.value[item]['p3']
-            break
-        }
+const record_content = computed(() => {
+  for (let item=0 ; item < options.value.length; item++){
+    if(options.value[item]['recordId']==record_id.value){
+      return options.value[item]
     }
-    return names
+  }
+  return ''
 })
+
+const userids = computed(()=>{
+  let names = [-1,-1,-1]
+  names[0] = record_content.value['p1']
+  names[1] = record_content.value['p2']
+  names[2] = record_content.value['p3']
+  return names
+})
+
 const avatars = ref({})
 const name = computed(()=>{
     return userids.value
@@ -60,7 +63,13 @@ const EndGo = () => {
 }
 const sockets_methods = {
     gameRecord(data) {
-        options.value = data.record[0]
+        // options.value = data.record[0]
+        // console.log(options.value)
+        // loading.value = false
+        options.value = data.record[0].map(record => ({
+          ...record,
+          liked: false // 初始化 liked 属性为 false
+        }))
         console.log(options.value)
         loading.value = false
     },
@@ -138,10 +147,10 @@ onUnmounted(() => {
 
 });
 const Get = ref(() => {
-    // console.log(value.value)
-    my_camp.value = getCamp(value.value)
-    // console.log(value.value['recordId'])
-    socket.value.io.emit('viewMoveRecords', { 'record_id': value.value})
+    // console.log(record_id.value)
+    my_camp.value = getCamp(record_id.value)
+    // console.log(record_id.value['recordId'])
+    socket.value.io.emit('viewMoveRecords', { 'record_id': record_id.value})
 })
 
 const Move = (data) => {
@@ -220,8 +229,8 @@ const copy = async (anything) => {
   }
 }
 const share = () => {
-    if(value.value){
-        copy(main.self_url+'/publicShare?recordId='+value.value)
+    if(record_id.value){
+        copy(main.self_url+'/publicShare?recordId='+record_id.value)
         ElMessage.success('链接已复制到剪贴板')
     }
 
@@ -229,13 +238,125 @@ const share = () => {
 const camp_c = computed(() => {
     return [camp_0_style.value, camp_1_style.value, camp_2_style.value]
 })
+// 点赞
+function likeGameRecord(row) {
+  row.liked = true;
+  console.log("当前的记录id为：" + row.recordId);
+  axios.post(main.url+'/api/likeGameRecord',
+      { 'recordid': row.recordId },
+      { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+  ).then(response => {
+    ElMessage.success('点赞成功');
+    row.likeNum += 1; // 更新点赞数
+  }).catch(error => {
+    ElMessage.error('点赞失败');
+    console.error(error);
+  });
+}
+
+function unlikeGameRecord(row) {
+  row.liked = false;
+  console.log("当前的记录id为：" + row.recordId);
+  axios.post(main.url+'/api/unlikeGameRecord',
+      { 'recordid': row.recordId },
+      { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+  ).then(response => {
+    ElMessage.success('取消点赞');
+    row.likeNum -= 1; // 更新点赞数
+  }).catch(error => {
+    ElMessage.error('取消点赞失败');
+    console.error(error);
+  });
+}
+
+function likeComment(row){
+  row.comment_liked = true;
+  console.log("当前的记录id为：" + row.commentId);
+  axios.post(main.url+'/api/likeComment',
+      { 'commentid': row.commentId },
+      { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+  ).then(response => {
+    ElMessage.success('点赞成功');
+    row.likeNum += 1; // 更新点赞数
+  }).catch(error => {
+    ElMessage.error('点赞失败');
+    console.error(error);
+  });
+}
+
+function unlikeComment(row){
+  row.comment_liked = false;
+  console.log("当前的记录id为：" + row.commentId);
+  axios.post(main.url+'/api/unlikeComment',
+      { 'commentid': row.commentId },
+      { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+  ).then(response => {
+    ElMessage.success('取消点赞');
+    row.likeNum -= 1; // 更新点赞数
+  }).catch(error => {
+    ElMessage.error('取消点赞失败');
+    console.error(error);
+  });
+}
+
+function addComments(row,content) {
+  axios.post(main.url+'/api/addComment',
+      { 'recordid': row.recordId,"userid": userid,"content":content},
+      { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+  ).then(response => {
+    ElMessage.success('评论成功');
+    row.commentNum += 1; // 更新评论数
+    comment_content.value.name = '';
+    viewComments(row);
+  }).catch(error => {
+    ElMessage.error('评论失败');
+    console.error(error);
+  });
+}
+
+const comment_content = ref({
+  name:""
+})
+const comments = ref([])
+const comments_dialog = ref(false)
+function viewComments(row){
+  axios.post(main.url+'/api/viewRecordComments',
+      { 'recordid': row.recordId},
+      { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+  ).then(res => {
+    console.log(res.data)
+    comments_dialog.value = true
+    comments.value = res.data.map(comment => ({
+      ...comment,
+      comment_liked: false // 初始化 liked 属性为 false
+    }))
+  }).catch(error => {
+    ElMessage.error('查看失败');
+    console.error(error);
+  });
+}
+
+const handleRowClick = (row, column, event) => {
+  record_id.value = row.recordId;
+};
+
+function rowStyle ({row, rowIndex}) {
+  if (record_id.value=== row.recordId) {
+    // 此处返回选中行的样式对象，按需设置
+    return {
+      'background-color': 'rgb(94, 180, 251)',
+      'color': 'rgb(0, 0, 0)'
+    }
+  }
+}
+
 
 </script>
 <template>
     <Report :toreportid="to_report_id" :myuserid="userid" :dialogFormVisible=vis @reportEnd="handleReportEnd" />
     <div class="container">
         <div class="background-image-Record"></div>
-        
+
         <!-- <button class="button-home" @click="goBackHome()">
                 <el-icon style="vertical-align: middle" size="30px">
                     <HomeFilled />
@@ -243,12 +364,12 @@ const camp_c = computed(() => {
             </button> -->
         <button class="button-share" @click="share">
             <el-icon style="vertical-align: middle" size="30px">
-                    <Share />
-                </el-icon>
+                <Share />
+            </el-icon>
         </button>
         <div v-if="start">
-            <button @click="EndGo" class="button">结束回放</button>   
-            <div class="brd2">     
+            <button @click="EndGo" class="button end-record-button">结束回放</button>
+            <div class="brd2">
             <div class="brd1">
                 <div class="chessboard-overlay"></div>
                 <div class="chessboard-container">
@@ -269,7 +390,6 @@ const camp_c = computed(() => {
                         </Avatar>
                         </div>
                     </div>
-
                 </div>
             </div>
             </div>
@@ -278,12 +398,86 @@ const camp_c = computed(() => {
             <div>
                 <button @click="Get" class="button">开始回放</button>
             </div>
-            <div class="select_btn">
-                <el-select v-model="value" filterable placeholder="请输入对局" :loading="loading" popper-class="select_down"
-                    style="width: 240px">
-                    <el-option v-for="item in options" :label="item.startTime" :key="item.recordId" :value="item.recordId">
-                    </el-option>
-                </el-select>
+            <div class="record-table">
+              <el-table :data="options" style="width: 100%;" @row-click="handleRowClick" :row-style="rowStyle">
+                <el-table-column prop="startTime" label="开W始时间" >
+                </el-table-column>
+                <el-table-column prop="endTime" label="结束时间" >
+                </el-table-column>
+                <el-table-column prop="likeNum" label="点赞" >
+                  <!-- Like button within the table column -->
+                  <!-- 在表格列中添加点赞按钮 -->
+                  <template #default="scope">
+                    <el-button v-if="scope.row.liked == false" type="text" @click="likeGameRecord(scope.row)">
+                      <el-icon size="40px" color="black">
+                        <Star style="font-size: 40px; color: black;" />
+                      </el-icon>
+                    </el-button>
+                    <el-button v-if="scope.row.liked == true" type="text" @click="unlikeGameRecord(scope.row)">
+                      <el-icon size="40px" color="black">
+                        <StarFilled style="font-size: 40px; color: black;" />
+                      </el-icon>
+                    </el-button>
+                    <div style="padding-left: 30px">{{ scope.row.likeNum }}</div>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="comment" label="评论" >
+                  <template #default="firstscope">
+                    <el-button type="text">
+                      {{ firstscope.row.commentNum }}
+                    </el-button>
+<!--                    这里加入展示评论的窗口-->
+                    <el-button type="text" @click="viewComments(firstscope.row)" >
+                      查看评论
+                    </el-button>
+                    <el-dialog v-model="comments_dialog" title="评论" width="800">
+                      <el-table :data="comments">
+                        <el-table-column property="userId" label="用户ID" width="150" />
+                        <el-table-column property="content" label="评论内容" width="200" />
+                        <el-table-column prop="likeNum" label="点赞" >
+                          <!-- Like button within the table column -->
+                          <!-- 在表格列中添加点赞按钮 -->
+                          <template #default="secondscope">
+                            <el-button v-if="secondscope.row.comment_liked == false" type="text" @click="likeComment(secondscope.row)">
+                              <el-icon size="40px" color="black">
+                                <Star style="font-size: 40px; color: black;" />
+                              </el-icon>
+                            </el-button>
+                            <el-button v-if="secondscope.row.comment_liked == true" type="text" @click="unlikeComment(secondscope.row)">
+                              <el-icon size="40px" color="black">
+                                <StarFilled style="font-size: 40px; color: black;" />
+                              </el-icon>
+                            </el-button>
+                            <div style="padding-left: 30px">{{ secondscope.row.likeNum }}</div>
+                          </template>
+                        </el-table-column>
+                        <el-table-column property="commentTime" label="评论时间" width="200" />
+                      </el-table>
+                      <el-form :model="comment_content">
+                        <el-form-item label="发表评论" label-width=140px>
+                          <el-input v-model="comment_content.name" autocomplete="off" />
+                        </el-form-item>
+                      </el-form>
+                      <template #footer>
+                        <div class="dialog-footer">
+                          <el-button @click="comments_dialog = false">关闭</el-button>
+                          <el-button type="primary" @click="addComments(firstscope.row,comment_content.name)">
+                            添加评论
+                          </el-button>
+                        </div>
+                      </template>
+                    </el-dialog>
+
+                  </template>
+                </el-table-column >
+                <el-table-column prop="record_id" label="选择">
+                  <template #default="scope">
+                    <el-button>
+                      选择
+                    </el-button>
+                  </template>
+                </el-table-column>
+              </el-table>
             </div>
         </div>
     </div>
@@ -356,6 +550,7 @@ const camp_c = computed(() => {
 }
 
 .brd2{
+    top: 300px;
     position: absolute;
     left: 50%;
     transform: translate(-50%, -50%);
@@ -371,20 +566,6 @@ const camp_c = computed(() => {
     position: relative;
 }
 
-
-.el-select {
-    .el-select__wrapper {
-        background-color: bisque !important;
-    }
-}
-
-.select_down {
-    background-color: bisque !important;
-
-    .el-select-dropdown__item:hover {
-        background-color: beige;
-    }
-}
 .button-share{
     position: absolute;
     top: 80px;
@@ -400,6 +581,20 @@ const camp_c = computed(() => {
 
 .button-share:hover{
     background-color: #e0a61b;
+}
+
+.end-record-button{
+  position: relative; /* 确保按钮处于正常的层级 */
+  z-index: 1000; /* 提高按钮的层级 */
+}
+
+.record-table {
+  margin-top: 20px;
+}
+
+.selected-row {
+  background-color: rgb(94, 180, 251) !important;
+  color: rgb(0, 0, 0) !important;
 }
 
 </style>

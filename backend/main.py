@@ -482,12 +482,12 @@ def likeCommentApi():
     Returns:
         点赞成功200
     '''
-    params = {'recordid': int}
+    params = {'commentid': int}
     try:
-        recordid = getParams(params, request.form)
+        commentid = getParams(params, request.form)
     except:
         return "{message: 'parameter error'}", PARAM_ERROR
-    return likeComment(recordid)
+    return likeComment(commentid)
 
 @app.route('/api/unlikeComment', methods=['POST'])
 def unlikeCommentApi():
@@ -497,12 +497,12 @@ def unlikeCommentApi():
     Returns:
         取消点赞成功200
     '''
-    params = {'recordid': int}
+    params = {'commentid': int}
     try:
-        recordid = getParams(params, request.form)
+        commentid = getParams(params, request.form)
     except:
         return "{message: 'parameter error'}", PARAM_ERROR
-    return unlikeComment(recordid)
+    return unlikeComment(commentid)
 
 @app.route('/api/viewRecordComments', methods=['POST'])
 def viewRecordCommentsApi():
@@ -517,7 +517,9 @@ def viewRecordCommentsApi():
         recordid = getParams(params, request.form)
     except:
         return "{message: 'parameter error'}", PARAM_ERROR
-    return viewRecordComments(recordid)
+
+    comments, status = viewRecordComments(recordid)
+    return jsonify(comments), status
 
 @socketio.on('connect')
 def connect():
