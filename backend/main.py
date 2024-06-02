@@ -1283,8 +1283,8 @@ def sendMessage(data):
     emit('receiveMessage',{'username':sessions[userid],'message':message,'userid':userid},to=room_id,
             skip_sid=request.sid)
     
+threading.Thread(target=cycleMatch,args=[app] ,daemon=True, name='cycleMatch').start()  #bug uwsgi不执行main函数
+threading.Thread(target=cycleRank,args=[app] ,daemon=True, name='cycleRank').start()
 if __name__ == "__main__":
-    threading.Thread(target=cycleMatch,args=[app] ,daemon=True, name='cycleMatch').start()
-    threading.Thread(target=cycleRank,args=[app] ,daemon=True, name='cycleRank').start()
     socketio.run(app,debug=True,host='0.0.0.0',port=8888,allow_unsafe_werkzeug=True)
     print("Good bye!")

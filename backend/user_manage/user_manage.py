@@ -1,6 +1,7 @@
 from functools import wraps
 import os
 import pymysql
+from pathlib import Path
 import base64
 from io import BytesIO
 from PIL import Image
@@ -305,7 +306,11 @@ def uploadImage(userid:int, image:str):
     try:    
         img,ext = base64ToImage(image)
         image_path = '/static/'+str(userid)+ "."+ext
-        saveImage(img,os.environ.get('PROJECT_ROOT')+'/backend'+image_path,ext)
+        project_root = os.environ.get('PROJECT_ROOT')   #bug uwsgi的根目录不一样 
+        if project_root.endswith('bakcend'):
+            saveImage(img, os.environ.get('PROJECT_ROOT') + image_path,ext)
+        else:
+            saveImage(img, os.environ.get('PROJECT_ROOT') + '/backend' + image_path,ext)
         db.begin()
         update_query = "UPDATE {0} SET imagePath = {1} WHERE userId = {2};".format(USER_TABLE,"'"+image_path+"'",userid)
         cursor.execute(update_query)
@@ -313,7 +318,7 @@ def uploadImage(userid:int, image:str):
         res = {"image_path":image_path}
         logger.info("User {0} uploaded image successfully".format(userid))
     except Exception as e:
-        logger.error("Use0} failed to upload image due to\n{1}".format(userid,str(e)),exc_info=True)
+        logger.error("Use {0} failed to upload image due to\n{1}".format(userid,str(e)),exc_info=True)
         status = OTHER_ERROR if status is None else status
     finally:
         cursor.close()
