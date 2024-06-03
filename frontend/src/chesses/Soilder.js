@@ -18,18 +18,30 @@ export class Soilder extends Chess {
         if(this.camp == this.inWhichArea){
             // A边界(准备过河)
             if(getRow(this.position) == 1){
-                p.push(COL - (getCol(this.position) - 1) + AREABOT);
-                p.push(COL - (getCol(this.position) - 1) + AREAMID);
+                if(getCol(this.position) >= 5){
+                    p.push(COL - (getCol(this.position) - 1) + AREABOT);
+                }
+                if(getCol(this.position) <= 5){
+                    p.push(COL - (getCol(this.position) - 1) + AREAMID);
+                }
             }
             // B边界(准备过河)
             else if(getRow(this.position) == 6){
-                p.push(COL - (getCol(this.position) - 1));
-                p.push(COL - (getCol(this.position) - 1) + AREAMID);
+                if(getCol(this.position) >= 5){
+                    p.push(COL - (getCol(this.position) - 1) + AREAMID);
+                }
+                if(getCol(this.position) <= 5){
+                    p.push(COL - (getCol(this.position) - 1));
+                }
             }
             // C边界(准备过河)
             else if(getRow(this.position) == 11){
-                p.push(COL - (getCol(this.position) - 1) + AREABOT);
-                p.push(COL - (getCol(this.position) - 1));
+                if(getCol(this.position) >= 5){
+                    p.push(COL - (getCol(this.position) - 1));
+                }
+                if(getCol(this.position) <= 5){
+                    p.push(COL - (getCol(this.position) - 1) + AREABOT);
+                }
             }
             // 其他(不准备过河)
             else {
