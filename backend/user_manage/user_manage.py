@@ -1,5 +1,6 @@
 from functools import wraps
 import os
+import time
 import pymysql
 from pathlib import Path
 import base64
@@ -12,7 +13,7 @@ from dotenv import load_dotenv
 from flask import jsonify
 from backend.tools import setupLogger
 from backend.message import *
-from backend.global_var import rooms,sessions
+from backend.global_var import rooms,sessions,session_times
 
 DATA_BASE = "trianglechess" # 数据库名称
 USER_TABLE = "user"
@@ -68,7 +69,7 @@ def adminLogin(password, config_password):
 
 
 def login(username, password):
-    global sessions
+    global sessions, session_times
     db = pymysql.connect(host="127.0.0.1",user="root",password=db_password,database=DATA_BASE)
     cursor = db.cursor()
     res,status = {},None
@@ -86,7 +87,10 @@ def login(username, password):
                 return "{}",ALREADY_LOGIN
             logger.info("User {0} logged in successfully usring id {1}".format(username,result[1]))
             res = {"userid":result[1], "username":username}
+
             sessions[result[1]] = username
+            session_times[result[1]] = time.time()
+            
             status = SUCCESS
         elif result is not None and result[0] != password:
             logger.error("User {0} failed to login due to wrong password".format(username))
@@ -307,7 +311,7 @@ def uploadImage(userid:int, image:str):
         img,ext = base64ToImage(image)
         image_path = '/static/'+str(userid)+ "."+ext
         project_root = os.environ.get('PROJECT_ROOT')   #bug uwsgi的根目录不一样 
-        if project_root.endswith('bakcend'):
+        if project_root.endswith('backend'):
             saveImage(img, os.environ.get('PROJECT_ROOT') + image_path,ext)
         else:
             saveImage(img, os.environ.get('PROJECT_ROOT') + '/backend' + image_path,ext)

@@ -64,22 +64,18 @@ const EndGo = () => {
 }
 const sockets_methods = {
     gameRecord(data) {
-        // options.value = data.record[0]
-        // //console.log(options.value)
-        // loading.value = false
         options.value = data.record.map(record => ({
           ...record,
           liked: false // 初始化 liked 属性为 false
         }))
-        //console.log(options.value)
         loading.value = false
     },
     gameMoveRecord(data) {
-        //console.log(data)
+
         moves.value = data.record[0]
         loading.value = false
         start.value = true
-        //console.log(game_info)
+
         map_state.value = game_info
         // 使用nextTick等board初始化完成
         nextTick(() => {
@@ -91,13 +87,8 @@ const sockets_methods = {
         }
         )
         .then(res => {
-            //console.log(res.data)
             avatars.value = res.data
         })
-        .catch(err => {
-            //console.error(err)
-        })
-
     },
     processWrong(data) {
         status1 = data.status
@@ -126,14 +117,14 @@ onMounted(() => {
     }
     registerSockets(sockets_methods, socket.value, proxy);
     //console.log(socket.value)
-    socket.value.io.emit('viewGameRecords', { 'userid': userid })
+    socket.value.io.emit('viewGameRecords', { 'userid': -1 })
 });
-// function goBackHome() {
-//     removeSockets(sockets_methods, socket.value, proxy)
-//     socket.value.io.disconnect()
-//     socket.value = null
-//     router.push('/')
-// }
+function goBackHome() {
+    removeSockets(sockets_methods, socket.value, proxy)
+    socket.value.io.disconnect()
+    socket.value = null
+    router.push('/')
+}
 onUnmounted(() => {
     try {
         removeSockets(sockets_methods, socket.value, proxy);
@@ -143,16 +134,15 @@ onUnmounted(() => {
     }
     catch (err) {
         //console.log("Record Remove Socket Failed!")
-        //console.log(err)
     }
 
 });
 const Get = ref(() => {
     if (record_id.value == -1)
         return
-    // //console.log(record_id.value)
+    // console.log(record_id.value)
     my_camp.value = getCamp(record_id.value)
-    // //console.log(record_id.value['recordId'])
+    // console.log(record_id.value['recordId'])
     socket.value.io.emit('viewMoveRecords', { 'record_id': record_id.value})
 })
 
@@ -377,165 +367,141 @@ function formatDate(date1) {
   return year + '-' + month + '-' + day +'  ' + hour + ':' + minute + ':' + second;
 }
 
-function changeVisible(record_id, visible) {
-  axios.post(main.url+'/api/changeVisible',
-      { 'record_id': record_id, 'visible': visible },
-      { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
-  ).then(response => {
-    if (response.status == 200) {
-      options.value.find(item => item.recordId === record_id).visible = visible; // 更新评论数
-    }
-    else
-      ElMessage.error('修改失败');
-  }).catch(error => {
-    ElMessage.error('修改失败');
-    //console.error(error);
-  });
-}
-
 </script>
 <template>
     <Report :toreportid="to_report_id" :myuserid="userid" :dialogFormVisible=vis @reportEnd="handleReportEnd" />
-    <div class="container">
-        <div class="background-image-Record"></div>
-        <div v-if="start" class="record-container">
-            <button class="button-share" @click="share">
-                <el-icon style="vertical-align: middle" size="30px">
-                        <Share />
-                    </el-icon>
-            </button>
-            <button @click="EndGo" class="end-button">结束回放</button>   
-            <div class="brd2">     
-              <div class="brd1">
-                  <div class="chessboard-overlay"></div>
-                  <div class="chessboard-container">
-                  <Board :my_camp="my_camp" ref="board" :game_status="CONST.STATUS_ONING" @requireMove="Move" />
-                  </div>
-                  <button @click="Next" class="next_button">下一步</button>
-                  <div class="avatar">
-                  <!---------0号位---------->
-                  <div v-for="(item,index) in camp_c" :key="index">
-                      <div :class="item">
-                          <Avatar :my_userid="userid" :userid="userids[index]" @reportUser="handleReport">
-                              <template #name>
-                                  <p>{{ name[index] }}</p>
-                              </template>
-                              <template #avatar>
-                                  <img :src="main.url+avatars[userids[index]]" alt="头像" />
-                              </template>
-                          </Avatar>
-                          </div>
-                      </div>
-                  </div>
-              </div>
-            </div>
-        </div>
-        <div v-else>
-          <el-dialog v-model="comments_dialog" title="评论" width="800">
-            <el-table :data="comments" max-height="400" >
-              <el-table-column property="userId" label="用户ID" width="150" />
-              <el-table-column property="content" label="评论内容" width="200" />
-              <el-table-column prop="likeNum" label="点赞" >
-                <!-- Like button within the table column -->
-                <!-- 在表格列中添加点赞按钮 -->
-                <template #default="secondscope">
-                  <el-button v-if="secondscope.row.comment_liked == false" type="text" @click="likeComment(secondscope.row)">
-                    <el-icon size="40px" color="black">
-                      <Star style="font-size: 25px; color: black;" />
-                    </el-icon>
-                  </el-button>
-                  <el-button v-if="secondscope.row.comment_liked == true" type="text" @click="unlikeComment(secondscope.row)">
-                    <el-icon size="40px" color="black">
-                      <StarFilled style="font-size: 25px; color: black;" />
-                    </el-icon>
-                  </el-button>
-                  <div style="padding-left: 30px">{{ secondscope.row.likeNum }}</div>
-                </template>
-              </el-table-column>
-              <el-table-column property="commentTime" label="评论时间" width="200" sortable>
-                <template #default="secondscope">{{formatDate(secondscope.row.commentTime)}}</template>
-              </el-table-column>
-            </el-table>
-            <el-form :model="comment_content">
-              <el-form-item label="发表评论" label-width=140px>
-                <el-input v-model="comment_content.name" autocomplete="off" />
-              </el-form-item>
-            </el-form>
-            <template #footer>
-              <div class="dialog-footer">
-                <el-button @click="comments_dialog = false">关闭</el-button>
-                <el-button type="primary" @click="addComments(comment_content.name)">
-                  添加评论
-                </el-button>
-              </div>
-            </template>
-          </el-dialog>
-          <div>
-              <button @click="Get" class="start-button">开始回放</button>
-          </div>
-            <div class="record-table">
-              <el-table :data="options" style="width: 100%; border-radius: 7px; padding: 10px; top: -50px; height: 550px;">
-                <el-table-column prop="startTime" label="开始时间"  sortable>
-                  <template #default="scope">{{formatDate(scope.row.startTime)}}</template>
-                </el-table-column>
-                <el-table-column prop="endTime" label="结束时间" >
-                  <template #default="scope">{{formatDate(scope.row.endTime)}}</template>
-                </el-table-column>
-                <el-table-column prop="likeNum" label="点赞" >
-                  <!-- Like button within the table column -->
-                  <!-- 在表格列中添加点赞按钮 -->
-                  <template #default="scope">
-                    <el-button v-if="scope.row.liked == false" type="text" @click="likeGameRecord(scope.row)">
-                      <el-icon size="40px" color="black">
-                        <Star style="font-size: 25px; color: black;" />
-                      </el-icon>
-                    </el-button>
-                    <el-button v-if="scope.row.liked == true" type="text" @click="unlikeGameRecord(scope.row)">
-                      <el-icon size="40px" color="black">
-                        <StarFilled style="font-size: 25px; color: black;" />
-                      </el-icon>
-                    </el-button>
-                    <div style="padding-left: 30px">{{ scope.row.likeNum }}</div>
-                  </template>
-                </el-table-column>
-                <el-table-column prop="comment" label="评论" >
-                  <template #default="firstscope">
-                    <el-button type="text">
-                      {{ firstscope.row.commentNum }}
-                    </el-button>
-<!--                    这里加入展示评论的窗口-->
-                    <el-button type="text" @click="viewComments(firstscope.row.recordId)" >
-                      查看评论
-                    </el-button>
-
-                  </template>
-                </el-table-column >
-                <el-table-column prop="visible" label="对其他人可见">
-                  <template #default="scope">
-                    <el-button type="text" @click="changeVisible(scope.row.recordId, scope.row.visible==1?0:1)">
-                      {{ scope.row.visible==1?'公开':'私密' }}
-                    </el-button>
-                  </template>
-                </el-table-column>
-                <el-table-column prop="record_id" label="选择"
-                fixed="right">
-                  <template #default="scope">
-                    <el-button 
-                    :type= "record_id==scope.row.recordId ? 'success' : 'primary'"
-                    @click="handleRowClick(scope.row)">
-                      {{record_id!=scope.row.recordId ?'选择':'取消'}}
-                    </el-button>
-                  </template>
-                </el-table-column>
-              </el-table>
+    <button class="button-home" @click="goBackHome()">
+      <el-icon style="vertical-align: middle" size="30px">
+        <HomeFilled />
+      </el-icon>
+    </button>
+    <div class="background-image-Record"></div>
+    <div v-if="start" class="record-container">
+        <button class="button-share" @click="share">
+            <el-icon style="vertical-align: middle" size="30px">
+                    <Share />
+                </el-icon>
+        </button>
+        <button @click="EndGo" class="end-button">结束回放</button>   
+        <div class="brd2">     
+            <div class="brd1">
+                <div class="chessboard-overlay"></div>
+                <div class="chessboard-container">
+                <Board :my_camp="my_camp" ref="board" :game_status="CONST.STATUS_ONING" @requireMove="Move" />
+                </div>
+                <button @click="Next" class="next_button">下一步</button>
+                <div class="avatar">
+                <!---------0号位---------->
+                <div v-for="(item,index) in camp_c" :key="index">
+                    <div :class="item">
+                        <Avatar :my_userid="userid" :userid="userids[index]" @reportUser="handleReport">
+                            <template #name>
+                                <p>{{ name[index] }}</p>
+                            </template>
+                            <template #avatar>
+                                <img :src="main.url+avatars[userids[index]]" alt="头像" />
+                            </template>
+                        </Avatar>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
+    <div v-else class="record-table">
+        <el-dialog v-model="comments_dialog" title="评论" width="800">
+        <el-table :data="comments" max-height="400" >
+            <el-table-column property="userId" label="用户ID" width="150" />
+            <el-table-column property="content" label="评论内容" width="200" />
+            <el-table-column prop="likeNum" label="点赞" >
+            <!-- Like button within the table column -->
+            <!-- 在表格列中添加点赞按钮 -->
+            <template #default="secondscope">
+                <el-button v-if="secondscope.row.comment_liked == false" type="text" @click="likeComment(secondscope.row)">
+                <el-icon size="40px" color="black">
+                    <Star style="font-size: 25px; color: black;" />
+                </el-icon>
+                </el-button>
+                <el-button v-if="secondscope.row.comment_liked == true" type="text" @click="unlikeComment(secondscope.row)">
+                <el-icon size="40px" color="black">
+                    <StarFilled style="font-size: 25px; color: black;" />
+                </el-icon>
+                </el-button>
+                <div style="padding-left: 30px">{{ secondscope.row.likeNum }}</div>
+            </template>
+            </el-table-column>
+            <el-table-column property="commentTime" label="评论时间" width="200" sortable>
+            <template #default="secondscope">{{formatDate(secondscope.row.commentTime)}}</template>
+            </el-table-column>
+        </el-table>
+        <el-form :model="comment_content">
+            <el-form-item label="发表评论" label-width=140px>
+            <el-input v-model="comment_content.name" autocomplete="off" />
+            </el-form-item>
+        </el-form>
+        <template #footer>
+            <div class="dialog-footer">
+            <el-button @click="comments_dialog = false">关闭</el-button>
+            <el-button type="primary" @click="addComments(comment_content.name)">
+                添加评论
+            </el-button>
+            </div>
+        </template>
+        </el-dialog>
+        <div v-for="(_,index) in options">
+            <div v-if="index%3==0">
+                <div v-for="i in (index+3<=options.length-1 ? 3 : options.length-index)" style="display: inline-block;">
+                    <div class="record-card">
+                        <!-- {{options[i-1+index]}} -->
+                        <div class="record-id">
+                            {{options[i-1+index].recordId}}
+                        </div>
+                        <div style="display: inline-flex; text-align: center; ">
+                            <div class="record-time">
+                                开始时间：
+                                {{formatDate(options[i-1+index].startTime)}}
+                            </div>
+                            <div class="record-time">
+                                结束时间：
+                                {{formatDate(options[i-1+index].endTime)}}
+                            </div>
+                        </div>
+                        <div style="display: inline-flex; text-align: center; margin-top: 20px; position: relative; left:20%;">
+                            <button class="like-btn"
+                            @click="options[i-1+index].liked ? unlikeGameRecord(options[i-1+index]) : likeGameRecord(options[i-1+index])">
+                                <el-icon>
+                                <Star style="font-size: 20px;" 
+                                :color="options[i-1+index].liked ? '#ecb920' : 'gray'"/>
+                                </el-icon>
+                                <div style="margin-left: 20px; color: #000!important; font-size: 10px;">{{ options[i-1+index].likeNum }}</div>
+                            </button>
+                            
+                       
+                            <button class="comment-btn" @click="viewComments(options[i-1+index].recordId)" >
+                                查看评论
+                            </button>
+
+                        </div>
+                        <div class="comment-num">
+                            {{ options[i-1+index].commentNum }}
+                        </div>
+                        <div class="start-button"
+                        @click="()=>{record_id = options[i-1+index].recordId
+                            Get();
+                        }">
+                            开始回放
+                        </div>
+                    </div>
+                </div   >
+            </div>
+        </div>
+    </div>
+
 </template>
 
 <style scoped>
 
-/* .background-image-Record {
+.background-image-Record {
     position: fixed;
     top: 0;
     left: 0;
@@ -544,30 +510,13 @@ function changeVisible(record_id, visible) {
     background-image: url('@/assets/images/login/图1.jpg');
     background-size: cover;
     z-index: -1;
-} */
+} 
 
 .container{
     width : 100%;
 }
 
 
-.start-button {
-    font-size: 18px;
-    font-weight: bold;
-    color: #fff;
-    background-color: #ecb920;
-    border-radius: 10px;
-    position: absolute;
-    border: none;
-    padding: 10px;
-    display: inline-block;
-    top: 90px;
-    left:50%;
-}
-
-.start-button:hover {
-    background-color: #d29a19;
-}
 
 
 .record-container{
@@ -598,11 +547,11 @@ function changeVisible(record_id, visible) {
     color: #fff;
     background-color: #ecb920;
     border-radius: 10px;
-    position: relative;
+    position: absolute;
     border: none;
+    top:5%;
+    left: 50%;
     padding: 10px;
-    right: 30%;
-    top: 5%;
     z-index: 9999;
 }
 
@@ -617,9 +566,9 @@ function changeVisible(record_id, visible) {
     background-color: #ecb920;
     border-radius: 10px;
     border: none;
-    position: relative;
-    margin-right: 30px;
-    top: 360px;
+    position: absolute;
+    left: 600px;
+    top: 430px;
 }
 
 .next_button:hover {
@@ -653,9 +602,9 @@ function changeVisible(record_id, visible) {
 }
 
 .button-share{
-    position: relative;
-    top:5%;
-    left: 50%;
+    width: 70px;
+    display: block;
+    position: absolute;
     background-color: #ecb920;
     border: none;
     padding: 10px 20px;
@@ -675,12 +624,102 @@ function changeVisible(record_id, visible) {
 }
 
 .record-table {
+  padding-bottom: 30px;
   margin-top: 20px;
+  background-color: #fdeec4;
+  border-radius: 10px;
+  margin-top: 50px;
+  text-align: center;
 }
 
 .selected-row {
   background-color: rgb(94, 180, 251) !important;
   color: rgb(0, 0, 0) !important;
+}
+
+.record-card {
+  display: inline-block;
+  height: 300px;
+  max-width: 400px;
+  margin-top: 20px;
+  margin-right: 20px;
+  margin-left: 20px;
+  padding: 20px;
+  border-radius: 10px;
+  background-color: #fff;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.record-id{
+    font-size: 24px;
+    font-weight: bold;
+    margin-top: 20px;
+}
+
+.record-time{
+    font-size: 14px;
+    margin-top: 10px;
+    margin-left: 10px;
+    color: #42413e;
+}
+
+.like-btn{
+    position:relative;
+    margin-left: 10px;
+    font-size: 20px;
+    height: 40px;
+    width: 40px;
+    color: #ecb920;
+    background-color: #fff;
+    border: none;
+    left: 70%;
+}
+
+.comment-btn{
+    position:relative;
+    margin-left: 10px;
+    font-size: 16px;
+    color: #fff;
+    background-color:#f2c252; 
+    border-radius: 10px;
+    padding: 10px;
+    font-weight: bold;
+    border: none;
+    right: 100%;
+    margin-right: 45px;
+}
+.comment-btn:hover{
+    background-color: #f0dc9f;
+}
+
+.start-button {
+    font-size: 18px;
+    font-weight: bold;
+    color: #fff;
+    background-color: #ecb920;
+    border-radius: 10px;
+    position: relative;
+    border: none;
+    padding: 10px;
+    display: block;
+    width: 100px;
+    left:38%;
+    margin-top: 20px
+}
+
+.start-button:hover {
+    background-color: #f0dc9f;
+}
+
+.comment-num{
+    position: relative;
+    display: inline-block;
+    font-size: 12px;
+    color: #000;
+    background-color: #ffffff;
+    padding: 5px 10px;
+    right: 43%;
+    top: 10px;
 }
 
 </style>

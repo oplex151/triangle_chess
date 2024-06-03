@@ -41,6 +41,9 @@ watchEffect(() => {
   }
 });
 
+const num = 8 //失效时间是几小时
+const expire_time= new Date(new Date().getTime() + num * 60 * 60 * 1000);
+
 const login = () => {
   if (uname.value === '' || password.value === '') {
     errorMessage.value = '用户名或密码不能为空';
@@ -55,8 +58,8 @@ const login = () => {
     }
   ).then(res => {
     if (res.status == 200) {
-      Cookies.set('userid',res.data.userid);
-      Cookies.set('username',res.data.username);
+      Cookies.set('userid',res.data.userid,{expires:expire_time});
+      Cookies.set('username',res.data.username,{expires:expire_time});
       infoMessage.value = '登录成功';
       router.push('/');
     }

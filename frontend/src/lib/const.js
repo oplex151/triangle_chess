@@ -31,6 +31,8 @@ export const NOT_FRIEND = 532;
 
 export const NO_APPEALS = 541;
 
+export const SESSION_EXPIRED = 550;
+
 export const MOVE_NO_PIECE = 601;
 export const MOVE_OUT_OF_BOARD = 602;
 export const MOVE_INVALID = 603;

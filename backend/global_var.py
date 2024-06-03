@@ -1,9 +1,11 @@
+import datetime
 import queue
 from backend.game import RoomManager
 
 # 全局变量
 global rooms
 global sessions
+global session_times
 global sid2uid
 global match_queue
 global rank_queue
@@ -49,6 +51,7 @@ class UniqueQueue(queue.Queue):
 
 rooms:list[RoomManager] = []
 sessions:dict[int, str] = {}
+session_times:dict[int, float] = {}
 match_queue:UniqueQueue = UniqueQueue()
 sid2uid:dict[str, int] = {}
 rank_queue:UniqueQueue = UniqueQueue()

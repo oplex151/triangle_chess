@@ -35,6 +35,8 @@ NOT_FRIEND = 532 #"Not friend"
 NOT_ADMIN = 540 #"Not admin"
 NO_APPEALS = 541 #"No appeals"
 
+SESSION_EXPIRED = 550 #"Session expired"
+
 MOVE_NO_PIECE = 601 #"Move failed: No piece to move"
 MOVE_OUT_OF_BOARD = 602 #"Move failed: Move out of board"
 MOVE_INVALID = 603 #"Move failed: Invalid way to move"
