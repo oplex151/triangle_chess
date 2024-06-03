@@ -31,6 +31,7 @@ ROOM_NOT_ENOUGH = 523 #"Room not enough"
 ALLREADY_FRIEND = 530 #"Already friend"
 NO_FRIENDS = 531 #"No friends"
 NOT_FRIEND = 532 #"Not friend"
+ALLREADY_APPLIED = 533 #"Already applied"
 
 NOT_ADMIN = 540 #"Not admin"
 NO_APPEALS = 541 #"No appeals"
