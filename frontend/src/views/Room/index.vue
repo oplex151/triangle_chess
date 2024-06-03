@@ -53,12 +53,6 @@ const my_name = computed(() => {
   }
   return ''
 })
-// const i_am_holder = computed(() => {
-//   if (room_info.value) {
-//     return room_info.value.holder.userid == Cookies.get('userid')
-//   }
-//   return false
-// })  
 
 const sockets_methods = {
   createRoomSuccess(data){
@@ -67,7 +61,6 @@ const sockets_methods = {
     room_info.value = data.room_info
     avatars.value[Cookies.get('userid')] = data.avatar
     ElMessage.success('创建房间成功')
-
   },
   joinRoomSuccess(data){
     if (data.userid == Cookies.get('userid')){
@@ -256,10 +249,6 @@ function createGame() {
     })
 }
 function goBackHome(){
-  // if (Cookies.get('room_id')){
-  //   leaveRoom()
-  // }
-  // 不知道到底需不需要离开房间
   removeSockets(sockets_methods, socket.value, proxy)
   Cookies.remove('room_id')
   Cookies.remove('room_info')
@@ -648,12 +637,12 @@ const handleReport = (id) => {
 
 
 .user{
+  position: relative;
   margin: 20px;
   padding-top: 10px;
   padding-bottom: 10px;
-  margin-right: 200px;
   height: 60px;
-  display: flex;
+  display: inline-flex;
   color: #ecb920;
 }
 
