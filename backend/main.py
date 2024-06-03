@@ -30,6 +30,33 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 # 日志工具
 logger = setupLogger()
 
+def gate(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        global session_times,sessions
+        try:
+            if len(args) == 0:  #http
+                userid = request.form.get('userid')
+            else:  #websocket
+                userid = args[0].get('userid')
+            if not isinstance(userid,int) and userid is not None:
+                userid = int(userid)
+            if userid is None:
+                raise ValueError
+            if  userid not in sessions.keys():
+                raise TimeoutError
+            session_times[userid] = time.time() # 更新session时间
+            return func(*args, **kwargs)
+        except Exception as e:
+            logger.error(e,exc_info=True)
+            if len(args) == 0:  #http
+                return "{message: 'session expired!'}",SESSION_EXPIRED
+            else:  #websocket
+                emit('processWrong',{'status':SESSION_EXPIRED},to=request.sid,namespace='/')
+                return
+    return wrapper
+
+
 def protectedAdmin(token):
     try:
         payload = jwt.decode(token, app.config['SECRET_KEY'],algorithms=['HS256'])
@@ -79,6 +106,7 @@ def registerApi():
     return register(username, password, email, phone_num, gender)
 
 @app.route('/api/uploadImage', methods=['POST'])
+@gate
 def uploadImageApi():
     '''
     Description: 上传图片
@@ -97,6 +125,7 @@ def uploadImageApi():
 
 
 @app.route('/api/changeUserInfo', methods=['POST'])
+@gate
 def changeUserInfoApi():
     '''
     Description: 修改用户信息
@@ -117,6 +146,7 @@ def changeUserInfoApi():
     return changeUserInfo(userid, username, email, phone_num, gender)
 
 @app.route('/api/changePassword', methods=['POST'])
+@gate
 def changePasswordApi():
     '''
     Description: 修改密码
@@ -229,6 +259,7 @@ def releaseUserApi():
         return "{message: 'not admin'}",NOT_ADMIN
 
 @app.route('/api/logout', methods=['POST'])
+@gate
 def logoutApi():
     '''
     Description: 登出
@@ -245,6 +276,7 @@ def logoutApi():
     return logout(userid)
 
 @app.route('/api/getUserInfo', methods=['POST'])
+@gate
 def getUserInfoApi():
     '''
     Description: 获取用户信息
@@ -261,6 +293,7 @@ def getUserInfoApi():
     return getUserInfo(userid)
 
 @app.route('/api/addFriend', methods=['POST'])
+@gate
 def addFriendApi():
     '''
     Args:
@@ -292,6 +325,7 @@ def getFriendsApi():
     return getFriendsInfo(userid)
 
 @app.route('/api/deleteFriend',methods=['POST'])
+@gate
 def deleteFriendApi():
     '''
     Args:
@@ -308,6 +342,7 @@ def deleteFriendApi():
     return deleteFriend(userid, friend_id)
 
 @app.route('/api/getRankScore',methods=['POST'])
+@gate
 def getRankScoreApi():
     '''
     Args:
@@ -324,6 +359,7 @@ def getRankScoreApi():
     
 
 @app.route('/api/addAppeals', methods=['POST'])
+@gate
 def addAppealsApi():
     '''
     Args:
@@ -381,6 +417,7 @@ def handleAppealApi():
 
 
 @app.route('/api/getUserAppeal', methods=['POST'])
+@gate
 def getUserAppealApi():
     '''
     Args:
@@ -417,16 +454,6 @@ def getAvatarsApi():
 
 
 
-
-
-
-
-
-
-
-
-
-
 @app.route('/api/likeGameRecord', methods=['POST'])
 def likeGameRecordApi():
     '''
@@ -458,6 +485,7 @@ def unlikeGameRecordApi():
     return unlikeGameRecord(recordid)
 
 @app.route('/api/addComment', methods=['POST'])
+@gate
 def addCommentApi():
     '''
     Args:
@@ -580,6 +608,7 @@ def disconnect():
     logger.info("User {0} disconnect".format(request.sid))
 
 @socketio.event
+@gate
 def createRoom(data):
     '''
     Description: 创建房间
@@ -621,6 +650,7 @@ def createRoom(data):
         sid2uid[request.sid] = userid
 
 @socketio.event
+@gate
 def joinRoom(data):
     '''
     Description: 加入房间
@@ -742,6 +772,7 @@ def leaveRoom(data):
         emit('processWrong',{'status':NOT_IN_ROOM},to=request.sid)
 
 @app.route('/api/game/create', methods=['POST'])
+@gate
 def createGameApi():
     '''
     Args:
@@ -808,6 +839,7 @@ def initGame():
 
 
 @socketio.event
+@gate
 def movePiece(data):
     '''
     Args:
@@ -911,6 +943,7 @@ def roomOver(game:GameTable, room:RoomManager, userid:int):
             logger.error("May remove in other way. Remove room error due to {0}".format(str(e)), exc_info=True)
 
 @socketio.event
+@gate
 def watchGame(data):
     """
     请求观战，前提是游戏已经开始
@@ -949,6 +982,7 @@ def watchGame(data):
         
 
 @socketio.event
+@gate
 def requestSurrender(data):
     """
     接收玩家投降请求的数据。
@@ -990,6 +1024,7 @@ def requestSurrender(data):
 
 
 @socketio.event
+@gate
 def requestDraw(data):
     """
     接收玩家发起求和请求的数据。
@@ -1023,6 +1058,7 @@ def requestDraw(data):
         return 
     
 @socketio.event
+@gate
 def respondDraw(data):
     """
     接收玩家回应求和请求的数据。
@@ -1177,6 +1213,7 @@ def cycleRank(app):
             time.sleep(1)
 
 @socketio.event
+@gate
 def startMatch(data):
     """
     接收玩家开始匹配请求
@@ -1195,6 +1232,7 @@ def startMatch(data):
     logger.info(f"User {userid} join match queue: sid {request.sid}")
 
 @socketio.event
+@gate
 def startRank(data):
     """
     接收玩家开始排位匹配请求
@@ -1311,6 +1349,24 @@ def sendMessage(data):
     emit('receiveMessage',{'username':sessions[userid],'message':message,'userid':userid},to=room_id,
             skip_sid=request.sid)
     
+
+def subtractSesion():
+    """
+    定时清理过期session
+    """
+    global sessions,session_times
+    while True:
+        li = list(sessions.keys())
+        for key in li:
+            try:
+                if time.time() - session_times[key] > 60*60*1:  # 1小时
+                    sessions.pop(key)
+                    session_times.pop(key)
+            except Exception as e:
+                logger.error("Failed to delete session due to {0}".format(str(e)), exc_info=True)
+        time.sleep(60*60)
+
+threading.Thread(target=subtractSesion,daemon=True, name='subtractSesion').start()
 threading.Thread(target=cycleMatch,args=[app] ,daemon=True, name='cycleMatch').start()  #bug uwsgi不执行main函数
 threading.Thread(target=cycleRank,args=[app] ,daemon=True, name='cycleRank').start()
 if __name__ == "__main__":
