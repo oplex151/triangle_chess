@@ -51,6 +51,7 @@ onBeforeMount(() =>{
             Cookies.remove('room_id');
             Cookies.remove('room_info');
             Cookies.remove('username');
+            // session过期，清除cookie后跳转到登录页面
             router.push('/');
         }
         else {

@@ -80,9 +80,8 @@ const addFriend = () => {
     }
     ).then(res => {
         if (res.status == 200) {
-            //console.log(res.data)
-            ElMessage.success('添加好友成功')
-            isfriend.value = true
+            console.log(res.data)
+            ElMessage.success('好友信息已发送')
         } else {
             //console.log('error')
             ElMessage.error('添加好友失败')
