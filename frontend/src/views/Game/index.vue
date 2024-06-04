@@ -94,6 +94,20 @@ onMounted(() => {
     }
   }).catch(error => {
     console.log(error)
+    if(error.response.status == 550){ //Session expired
+      Cookies.remove('room_id')
+      Cookies.remove('userid')
+      Cookies.remove('room_info')
+      Cookies.remove('username')
+      Cookies.remove('camp')
+      ElMessage({
+        message: '会话过期，请重新登录',
+        grouping: true,
+        type: 'error',
+        showClose: true
+      })
+      router.replace('/login')
+    }
   })
   console.log(socket.value)
   let userids = room_info.users.map(user => {
@@ -110,6 +124,20 @@ onMounted(() => {
   })
   .catch(err => {
       console.error(err)
+    if(err.response.status == 550){ //Session expired
+      Cookies.remove('room_id')
+      Cookies.remove('userid')
+      Cookies.remove('room_info')
+      Cookies.remove('username')
+      Cookies.remove('camp')
+      ElMessage({
+        message: '会话过期，请重新登录',
+        grouping: true,
+        type: 'error',
+        showClose: true
+      })
+      router.replace('/login')
+    }
   })
 });
 
@@ -302,6 +330,21 @@ const sockets_methods = {
     }
     else if (status1 == CONST.USER_NOT_LOGIN) {
       ElMessage.error('用户未登录')
+      router.replace('/login')
+    }
+    else if(status1 == CONST.SESSION_EXPIRED){
+      Cookies.remove('room_id')
+      Cookies.remove('userid')
+      Cookies.remove('room_info')
+      Cookies.remove('camp')
+      Cookies.remove('username')
+
+      ElMessage({
+        message: '会话过期，请重新登录',
+        grouping: true,
+        type: 'error',
+        showClose: true
+      })
       router.replace('/login')
     }
   }

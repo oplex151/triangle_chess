@@ -12,6 +12,7 @@ import Board from '@/views/Game/board.vue'
 import game_info from '@/assets/jsons/game_info.json'
 import Report from '@/components/views/Report.vue'
 import Avatar from '@/components/views/Avatar.vue'
+import * as CONST from "@/lib/const.js";
 
 const start = ref(false)
 const options = ref([])
@@ -69,6 +70,20 @@ const sockets_methods = {
     processWrong(data) {
         status1 = data.status
         ElMessage.error("Error due to " + status1)
+        if(status1 == CONST.SESSION_EXPIRED){ //Session expired
+          Cookies.remove('room_id')
+          Cookies.remove('userid')
+          Cookies.remove('room_info')
+          Cookies.remove('username')
+          Cookies.remove('camp')
+          ElMessage({
+            message: '会话过期，请重新登录',
+            grouping: true,
+            type: 'error',
+            showClose: true
+          })
+          router.replace('/login')
+        }
     },
 }
 const getCamp = (game_head) => {

@@ -61,6 +61,20 @@ const sockets_methods = {
       case CONST.OTHER_ERROR:
         ElMessage.error('其他错误')
         break
+      case CONST.SESSION_EXPIRED:
+        Cookies.remove('room_id')
+        Cookies.remove('userid')
+        Cookies.remove('room_info')
+        Cookies.remove('username')
+        Cookies.remove('camp')
+        ElMessage({
+          message: '会话过期，请重新登录',
+          grouping: true,
+          type: 'error',
+          showClose: true
+        })
+        router.replace('/login')
+        break;
       default:
         ElMessage.error('未知错误')
     }

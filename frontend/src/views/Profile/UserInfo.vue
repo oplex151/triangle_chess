@@ -6,7 +6,8 @@ import { onMounted, ref } from 'vue';
 import { getRankLevel } from '@/config/rank';
 import { ElMessage } from 'element-plus';
 import FaceGenerator from '../FaceGen/FaceGenerator.vue';
-
+import router from '@/router';
+import * as CONST from "@/lib/const.js";
  
 
 const userinfo= ref({
@@ -52,6 +53,20 @@ function getUserInfo() {
         }
     }).catch(error => {
         console.log(error);
+        if(error.response.status == CONST.SESSION_EXPIRED){ //Session expired
+          Cookies.remove('room_id')
+          Cookies.remove('userid')
+          Cookies.remove('room_info')
+          Cookies.remove('username')
+          Cookies.remove('camp')
+          ElMessage({
+            message: '会话过期，请重新登录',
+            grouping: true,
+            type: 'error',
+            showClose: true
+          })
+          router.replace('/login')
+        }
     });
 }
 
@@ -110,6 +125,20 @@ function uploadImg () {
         }
     }).catch(error => {
         console.log(error)
+        if(error.response.status == CONST.SESSION_EXPIRED){ //Session expired
+          Cookies.remove('room_id')
+          Cookies.remove('userid')
+          Cookies.remove('room_info')
+          Cookies.remove('username')
+          Cookies.remove('camp')
+          ElMessage({
+            message: '会话过期，请重新登录',
+            grouping: true,
+            type: 'error',
+            showClose: true
+          })
+          router.replace('/login')
+        }
     })
 }
 
@@ -172,6 +201,20 @@ function saveEdit () {
     }).catch(error => {
         console.log(error)
         cancelEdit()
+        if(error.response.status == CONST.SESSION_EXPIRED){ //Session expired
+          Cookies.remove('room_id')
+          Cookies.remove('userid')
+          Cookies.remove('room_info')
+          Cookies.remove('username')
+          Cookies.remove('camp')
+          ElMessage({
+            message: '会话过期，请重新登录',
+            grouping: true,
+            type: 'error',
+            showClose: true
+          })
+          router.replace('/login')
+        }
     })
 }
 

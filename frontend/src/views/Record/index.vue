@@ -96,12 +96,40 @@ const sockets_methods = {
         })
         .catch(err => {
             //console.error(err)
+            if(err.response.status == CONST.SESSION_EXPIRED){ //Session expired
+              Cookies.remove('room_id')
+              Cookies.remove('userid')
+              Cookies.remove('room_info')
+              Cookies.remove('username')
+              Cookies.remove('camp')
+              ElMessage({
+                message: '会话过期，请重新登录',
+                grouping: true,
+                type: 'error',
+                showClose: true
+              })
+              router.replace('/login')
+            }
         })
 
     },
     processWrong(data) {
         status1 = data.status
         ElMessage.error("Error due to " + status1)
+        if(status1 == CONST.SESSION_EXPIRED){ //Session expired
+          Cookies.remove('room_id')
+          Cookies.remove('userid')
+          Cookies.remove('room_info')
+          Cookies.remove('username')
+          Cookies.remove('camp')
+          ElMessage({
+            message: '会话过期，请重新登录',
+            grouping: true,
+            type: 'error',
+            showClose: true
+          })
+          router.replace('/login')
+        }
     },
 }
 const getCamp = (game_head) => {
@@ -260,6 +288,20 @@ function likeGameRecord(row) {
   }).catch(error => {
     ElMessage.error('点赞失败');
     //console.error(error);
+    if(error.response.status == CONST.SESSION_EXPIRED){ //Session expired
+      Cookies.remove('room_id')
+      Cookies.remove('userid')
+      Cookies.remove('room_info')
+      Cookies.remove('username')
+      Cookies.remove('camp')
+      ElMessage({
+        message: '会话过期，请重新登录',
+        grouping: true,
+        type: 'error',
+        showClose: true
+      })
+      router.replace('/login')
+    }
   });
 }
 
@@ -275,6 +317,20 @@ function unlikeGameRecord(row) {
   }).catch(error => {
     ElMessage.error('取消点赞失败');
     //console.error(error);
+    if(error.response.status == CONST.SESSION_EXPIRED){ //Session expired
+      Cookies.remove('room_id')
+      Cookies.remove('userid')
+      Cookies.remove('room_info')
+      Cookies.remove('username')
+      Cookies.remove('camp')
+      ElMessage({
+        message: '会话过期，请重新登录',
+        grouping: true,
+        type: 'error',
+        showClose: true
+      })
+      router.replace('/login')
+    }
   });
 }
 
@@ -290,6 +346,20 @@ function likeComment(row){
   }).catch(error => {
     ElMessage.error('点赞失败');
     //console.error(error);
+    if(error.response.status == CONST.SESSION_EXPIRED){ //Session expired
+      Cookies.remove('room_id')
+      Cookies.remove('userid')
+      Cookies.remove('room_info')
+      Cookies.remove('username')
+      Cookies.remove('camp')
+      ElMessage({
+        message: '会话过期，请重新登录',
+        grouping: true,
+        type: 'error',
+        showClose: true
+      })
+      router.replace('/login')
+    }
   });
 }
 
@@ -305,6 +375,20 @@ function unlikeComment(row){
   }).catch(error => {
     ElMessage.error('取消点赞失败');
     //console.error(error);
+    if(error.response.status == CONST.SESSION_EXPIRED){ //Session expired
+      Cookies.remove('room_id')
+      Cookies.remove('userid')
+      Cookies.remove('room_info')
+      Cookies.remove('username')
+      Cookies.remove('camp')
+      ElMessage({
+        message: '会话过期，请重新登录',
+        grouping: true,
+        type: 'error',
+        showClose: true
+      })
+      router.replace('/login')
+    }
   });
 }
 
@@ -325,6 +409,20 @@ function addComments(content) {
   }).catch(error => {
     ElMessage.error('评论失败');
     //console.error(error);
+    if(error.response.status == CONST.SESSION_EXPIRED){ //Session expired
+      Cookies.remove('room_id')
+      Cookies.remove('userid')
+      Cookies.remove('room_info')
+      Cookies.remove('username')
+      Cookies.remove('camp')
+      ElMessage({
+        message: '会话过期，请重新登录',
+        grouping: true,
+        type: 'error',
+        showClose: true
+      })
+      router.replace('/login')
+    }
   });
 }
 
@@ -345,6 +443,20 @@ function viewComments(record_id){
   }).catch(error => {
     ElMessage.error('查看失败');
     //console.error(error);
+    if(error.response.status == CONST.SESSION_EXPIRED){ //Session expired
+      Cookies.remove('room_id')
+      Cookies.remove('userid')
+      Cookies.remove('room_info')
+      Cookies.remove('username')
+      Cookies.remove('camp')
+      ElMessage({
+        message: '会话过期，请重新登录',
+        grouping: true,
+        type: 'error',
+        showClose: true
+      })
+      router.replace('/login')
+    }
   });
 }
 
@@ -390,6 +502,20 @@ function changeVisible(record_id, visible) {
   }).catch(error => {
     ElMessage.error('修改失败');
     //console.error(error);
+    if(error.response.status == CONST.SESSION_EXPIRED){ //Session expired
+      Cookies.remove('room_id')
+      Cookies.remove('userid')
+      Cookies.remove('room_info')
+      Cookies.remove('username')
+      Cookies.remove('camp')
+      ElMessage({
+        message: '会话过期，请重新登录',
+        grouping: true,
+        type: 'error',
+        showClose: true
+      })
+      router.replace('/login')
+    }
   });
 }
 

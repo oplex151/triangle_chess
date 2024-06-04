@@ -83,6 +83,20 @@ const sockets_methods = {
       })
       .catch(err => {
         console.error(err)
+        if(err.response.status == CONST.SESSION_EXPIRED){ //Session expired
+          Cookies.remove('room_id')
+          Cookies.remove('userid')
+          Cookies.remove('room_info')
+          Cookies.remove('username')
+          Cookies.remove('camp')
+          ElMessage({
+            message: '会话过期，请重新登录',
+            grouping: true,
+            type: 'error',
+            showClose: true
+          })
+          router.replace('/login')
+        }
       })
     }
     else{
@@ -123,6 +137,20 @@ const sockets_methods = {
         ElMessage.error('用户未登录')
         router.push('/login')
         break
+      case CONST.SESSION_EXPIRED: //Session expired
+        Cookies.remove('room_id')
+        Cookies.remove('userid')
+        Cookies.remove('room_info')
+        Cookies.remove('username')
+        Cookies.remove('camp')
+        ElMessage({
+          message: '会话过期，请重新登录',
+          grouping: true,
+          type: 'error',
+          showClose: true
+        })
+        router.replace('/login')
+        break;
       default:
         console.error(data.status)
         ElMessage.error('未知错误')
@@ -205,6 +233,20 @@ onMounted(() => {
     })
     .catch(err => {
       console.error(err)
+      if(err.response.status == CONST.SESSION_EXPIRED){ //Session expired
+        Cookies.remove('room_id')
+        Cookies.remove('userid')
+        Cookies.remove('room_info')
+        Cookies.remove('username')
+        Cookies.remove('camp')
+        ElMessage({
+          message: '会话过期，请重新登录',
+          grouping: true,
+          type: 'error',
+          showClose: true
+        })
+        router.replace('/login')
+      }
     })
   }
   else{
@@ -246,7 +288,22 @@ function createGame() {
     { 'room_id': room_id.value, 'userid': Cookies.get('userid') },
     {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    })
+    }).catch(error => {
+      if(error.response.status == CONST.SESSION_EXPIRED){ //Session expired
+        Cookies.remove('room_id')
+        Cookies.remove('userid')
+        Cookies.remove('room_info')
+        Cookies.remove('username')
+        Cookies.remove('camp')
+        ElMessage({
+          message: '会话过期，请重新登录',
+          grouping: true,
+          type: 'error',
+          showClose: true
+        })
+        router.replace('/login')
+      }
+  })
 }
 function goBackHome(){
   removeSockets(sockets_methods, socket.value, proxy)

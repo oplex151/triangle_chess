@@ -33,6 +33,8 @@ import type { ComponentSize, FormInstance, FormRules } from 'element-plus'
 import { ElMessage } from 'element-plus'
 import axios from 'axios';
 import main from '@/main';
+import Cookies from "js-cookie";
+import router from '@/router';
 const formSize = ref<ComponentSize>('default')
 
 const props = defineProps({
@@ -79,8 +81,22 @@ const Confirm = () => {
     }
     })
     .catch(error => {
-        ElMessage.success('发送出错')
-        console.log(error)
+        ElMessage.error('发送出错')
+        console.log(error.response.status)
+        if(error.response.status == 550){ //Session expired
+          Cookies.remove('room_id')
+          Cookies.remove('userid')
+          Cookies.remove('room_info')
+          Cookies.remove('username')
+          Cookies.remove('camp')
+          ElMessage({
+            message: '会话过期，请重新登录',
+            grouping: true,
+            type: 'error',
+            showClose: true
+          })
+          router.replace('/login')
+        }
     });
     resetForm(ruleFormRef.value)  
     emit('reportEnd')

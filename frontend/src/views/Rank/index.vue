@@ -12,6 +12,7 @@ import { onMounted, ref, onUnmounted, computed, getCurrentInstance } from 'vue';
 import { User, HomeFilled } from '@element-plus/icons-vue'
 import axios from 'axios';
 import {getRankLevel} from '@/config/rank.js'
+import * as CONST from "@/lib/const.js";
 const { proxy } = getCurrentInstance()
 const router = useRouter()
 const room_id = ref(null)
@@ -54,6 +55,20 @@ onMounted(() => {
                 },}
         )}
     }).catch(err => {
+      if(err.response.status == CONST.SESSION_EXPIRED){ //Session expired
+        Cookies.remove('room_id')
+        Cookies.remove('userid')
+        Cookies.remove('room_info')
+        Cookies.remove('username')
+        Cookies.remove('camp')
+        ElMessage({
+          message: '会话过期，请重新登录',
+          grouping: true,
+          type: 'error',
+          showClose: true
+        })
+        router.replace('/login')
+      }
     ElMessageBox.alert(
         '网络错误，现在无法进行排位模式。请稍后再试。',
         {
@@ -62,7 +77,8 @@ onMounted(() => {
                 goBackHome()
             },
         }
-    )})
+    )
+    })
 });
 
 const rankname = computed(()=>{
@@ -96,6 +112,20 @@ const sockets_methods = {
     },
     processWrong(data) {
         ElMessage.error('匹配失败，请重新匹配' + data.status)
+        if(data.status == CONST.SESSION_EXPIRED){ //Session expired
+          Cookies.remove('room_id')
+          Cookies.remove('userid')
+          Cookies.remove('room_info')
+          Cookies.remove('username')
+          Cookies.remove('camp')
+          ElMessage({
+            message: '会话过期，请重新登录',
+            grouping: true,
+            type: 'error',
+            showClose: true
+          })
+          router.replace('/login')
+        }
     },
 }
 

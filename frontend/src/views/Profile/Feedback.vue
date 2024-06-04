@@ -5,7 +5,7 @@ import Cookies from 'js-cookie'
 import axios from 'axios'
 import { ElMessage } from 'element-plus';
 import * as CONST from '@/lib/const.js'
-
+import router from '@/router';
 
 
 const user_apeals = ref([])
@@ -34,6 +34,20 @@ function getUserAppeal() {
     }).catch(error => {
         if (error.response.status == CONST.NO_APPEALS) {
             ElMessage.info("没有申诉记录")
+        }
+        else if(error.response.status == CONST.SESSION_EXPIRED){ //Session expired
+          Cookies.remove('room_id')
+          Cookies.remove('userid')
+          Cookies.remove('room_info')
+          Cookies.remove('username')
+          Cookies.remove('camp')
+          ElMessage({
+            message: '会话过期，请重新登录',
+            grouping: true,
+            type: 'error',
+            showClose: true
+          })
+          router.replace('/login')
         }
         else{
             ElMessage.error('Error getting user appeals')
