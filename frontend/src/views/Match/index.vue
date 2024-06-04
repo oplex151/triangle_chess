@@ -67,6 +67,7 @@ const sockets_methods={
           Cookies.remove('room_info')
           Cookies.remove('username')
           Cookies.remove('camp')
+          sessionStorage.removeItem('fromGame')
           ElMessage({
             message: '会话过期，请重新登录',
             grouping: true,

@@ -278,10 +278,13 @@ def getUserInfo(userid:int,targets:dict=None):
     return jsonify(dic),status
 
 
-def getSomeUserAvatar(userids:list[int]):
+def getSomeUserAvatar(userids:list[int]|int):
     db = pymysql.connect(host="127.0.0.1",user="root",password=db_password,database=DATA_BASE)
     cursor = db.cursor()
     dic, status = {}, None
+    # 特判只有一个人的getSomeUserAvatar
+    if userids.__class__ == int:
+        userids = [userids]
     try:
         # 首先就检查用户名是否已经存在
         db.begin()

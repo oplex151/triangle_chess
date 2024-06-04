@@ -58,6 +58,8 @@ const login = () => {
     }
   ).then(res => {
     if (res.status == 200) {
+
+      
       Cookies.set('userid',res.data.userid,{expires:expire_time});
       Cookies.set('username',res.data.username,{expires:expire_time});
       infoMessage.value = '登录成功';

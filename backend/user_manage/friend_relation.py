@@ -95,7 +95,7 @@ def confirmFriend(user_id, friend_id, confirm_message:int):
         if not result:
             raise Exception("No such friend request")
         # 然后同意好友关系
-        if confirm_message>0:            
+        if confirm_message:            
             sql = f"UPDATE {FRIEND_TABLE} SET confirm = 1 WHERE userId = {friend_id} AND friendId = {user_id}"
         else:
             sql = f"DELETE FROM {FRIEND_TABLE} WHERE userId = {friend_id} AND friendId = {user_id}"
@@ -141,9 +141,11 @@ def getFriendsInfo(user_id,confirm=CONFRIMED):
     db = pymysql.connect(host="127.0.0.1",user="root",password=password,database=DATA_BASE)
     cursor = db.cursor()
     result,status = {},OTHER_ERROR
+    if confirm == None:
+        confirm = CONFRIMED
     try:
         # 获取用户的好友列表
-        logger.debug(user_id)
+        # logger.debug(user_id)
         friends = getFriends(user_id,confirm)
         if not friends:
             return jsonify({'friends':[]}),SUCCESS

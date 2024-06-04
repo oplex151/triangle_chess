@@ -78,7 +78,6 @@ const sockets_methods = {
       }
       )
       .then(res => {
-        console.log(res.data)
         avatars.value = res.data
       })
       .catch(err => {

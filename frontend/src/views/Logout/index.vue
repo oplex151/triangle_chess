@@ -24,6 +24,7 @@ onBeforeMount(() =>{
             Cookies.remove('room_id');
             Cookies.remove('room_info');
             Cookies.remove('username');
+            sessionStorage.removeItem('fromGame')
             router.push('/');
         }         
     }).catch(err => {
@@ -38,6 +39,7 @@ onBeforeMount(() =>{
             Cookies.remove('room_id');
             Cookies.remove('room_info');
             Cookies.remove('username');
+            sessionStorage.removeItem('fromGame')
             router.push('/');
         }
         else if (err.response.status == CONST.SESSION_EXPIRED){
@@ -51,6 +53,7 @@ onBeforeMount(() =>{
             Cookies.remove('room_id');
             Cookies.remove('room_info');
             Cookies.remove('username');
+            sessionStorage.removeItem('fromGame')
             // session过期，清除cookie后跳转到登录页面
             router.push('/');
         }
@@ -65,6 +68,7 @@ onBeforeMount(() =>{
             Cookies.remove('room_id');
             Cookies.remove('room_info');
             Cookies.remove('username');
+            sessionStorage.removeItem('fromGame')
             router.push('/');
         }
     });

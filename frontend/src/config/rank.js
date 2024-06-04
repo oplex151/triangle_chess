@@ -24,7 +24,10 @@ export function getRankLevel(num){
   else if (num < 7) {
     return '王者';
   }
-  else {
+  else if (num >= 7){
     return '超神';
+  }
+  else {
+    return '无';
   }
 }

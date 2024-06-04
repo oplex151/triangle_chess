@@ -13,6 +13,7 @@ import UserInfo from './UserInfo.vue'
 import Record from '@/views/Record/index.vue'
 import Apeal from '@/views/Apeal/index.vue'
 import Feedback from './Feedback.vue'
+import FriendDrawer from '@/components/views/FriendDrawer.vue';
 
 
 const router = useRouter()
@@ -62,6 +63,9 @@ function handleSelect(index: string) {
     <el-container class="layout-container">
       <el-header class="header">
         <div class="toolbar">
+          <div class="friend-drawer">
+            <FriendDrawer/>
+          </div>
           <span>{{Cookies.get('username')}}</span>
         </div>
       </el-header>
@@ -187,5 +191,8 @@ function handleSelect(index: string) {
   border-radius: 5px;
   background-color: #fdeec4;
 }
-
+.friend-drawer{
+  display: flex ;
+  margin-right: 20px;
+}
 </style>

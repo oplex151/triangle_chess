@@ -333,12 +333,15 @@ def getFriendsApi():
     Returns:
         好友列表 详见数据库friend表
     '''
-    params = {'userid':int}
+    params = {'userid':int, 'confirm':int}
     try:
-        userid = getParams(params,request.form)
+        userid,confirm = getParams(params,request.form,['confirm'])
     except:
         return "{message: 'parameter error'}",PARAM_ERROR
-    return getFriendsInfo(userid)
+    # 为confirm 赋默认值
+    if confirm == None:
+        confirm = 1
+    return getFriendsInfo(userid,confirm)
 
 @app.route('/api/deleteFriend',methods=['POST'])
 @gate
@@ -356,6 +359,24 @@ def deleteFriendApi():
     except:
         return "{message: 'parameter error'}",PARAM_ERROR
     return deleteFriend(userid, friend_id)
+
+@app.route('/api/confirmFriend',methods=['POST'])
+@gate
+def confirmFriendApi():
+    '''
+    Args:
+        userid: 用户id
+        friend_id: 好友id
+        
+    Returns:
+        确认好友成功200
+    '''
+    params = {'userid':int, 'friend_id':int,'confirm':int}
+    try:
+        userid,friend_id,confirm= getParams(params,request.form,['confirm'])
+    except:
+        return "{message: 'parameter error'}",PARAM_ERROR
+    return confirmFriend(userid, friend_id,confirm)
 
 @app.route('/api/getRankScore',methods=['POST'])
 @gate
@@ -457,13 +478,13 @@ def getAvatarsApi():
         用户头像列表 详见数据库avatar表
     '''
     params = {'userids':str}
-    logger.debug("getavatars:"+str(request.form))
-    logger.debug(request.form.getlist('userids[]'))
+    # logger.debug("getavatars:"+str(request.form))
+    # logger.debug(request.form.getlist('userids[]'))
     try:
         userids = getParams(params,request.form)
     except:
         return "{message: 'parameter error'}",PARAM_ERROR
-    logger.debug("gettavatars:"+str(userids))
+    # logger.debug("gettavatars:"+str(userids))
     userids = eval(userids)
     avatars,status = getSomeUserAvatar(userids)
     return jsonify(avatars),status
@@ -653,7 +674,7 @@ def createRoom(data):
                 +f"this room's users: {new_room.users}")
     
     avatar,_ = getSomeUserAvatar([userid])
-    logger.debug(f"avatar: {avatar}")
+    # logger.debug(f"avatar: {avatar}")
     try:
         avatar = avatar[userid]
     except KeyError:

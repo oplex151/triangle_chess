@@ -8,8 +8,8 @@ import * as CONST from '@/lib/const.js'
 import { ElMessage } from 'element-plus';
 import { getRankLevel } from '@/config/rank';
 
-const emits = defineEmits(['reportUser'])
-const props = defineProps(['userid', 'my_userid'])
+const emits = defineEmits(['reportUser','deleteFriend'])
+const props = defineProps(['userid', 'my_userid', 'is_friend'])
 
 const reportUser = () => {
     emits('reportUser', props.userid);
@@ -33,7 +33,10 @@ const user_info = ref({})
 */
 onMounted (() => {
     //console.log('mounted')
-    axios.post(main.url + '/api/getFriends', 
+    if (props.is_friend) {
+        isfriend.value = true
+    }
+    else axios.post(main.url + '/api/getFriends', 
         {
             'userid': props.my_userid
         },
@@ -124,6 +127,7 @@ const deleteFriend = () => {
         else
             ElMessage.error('删除好友失败')
     })
+    emits('deleteFriend', props.userid)
 }   
 </script>
 
