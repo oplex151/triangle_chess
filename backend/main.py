@@ -276,7 +276,6 @@ def logoutApi():
     return logout(userid)
 
 @app.route('/api/getUserInfo', methods=['POST'])
-@gate
 def getUserInfoApi():
     '''
     Description: 获取用户信息
@@ -291,6 +290,23 @@ def getUserInfoApi():
     except:
         return "{message: 'parameter error'}",PARAM_ERROR
     return getUserInfo(userid)
+
+@app.route('/api/getRankInfo', methods=['POST'])
+def getRankInfoApi():
+    '''
+    Description: 获取排行榜信息
+    Args:
+        userid: 用户id
+    Returns:
+        排行榜信息 详见数据库rank表
+    '''
+    params = {'userid':int}
+    try:
+        userid = getParams(params,request.form)
+    except:
+        return "{message: 'parameter error'}",PARAM_ERROR
+    return getUserInfo(userid,['username','rank','score'])
+    
 
 @app.route('/api/addFriend', methods=['POST'])
 @gate

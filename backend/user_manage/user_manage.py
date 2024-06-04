@@ -241,7 +241,8 @@ def logout(userid:int):
         return "{}",USER_NOT_LOGIN
 
 
-def getUserInfo(userid:int):
+def getUserInfo(userid:int,targets:dict=None):
+    table_column = ['userid', 'username', 'password', 'rank','score', 'gender', 'phone_num', 'email', 'image_path', 'banned']
     db = pymysql.connect(host="127.0.0.1",user="root",password=db_password,database=DATA_BASE)
     cursor = db.cursor()
     dic, status = {}, None
@@ -254,14 +255,19 @@ def getUserInfo(userid:int):
         if data is None:
             logger.error("User {0} not exists".format(userid))
             return None,USER_NOT_EXIST
-        dic["userid"] = data[0]
-        dic["username"] = data[1]
-        dic['rank'] = data[3]
-        dic['score'] = data[4]
-        dic['gender'] = data[5]
-        dic['phone_num'] = data[6]
-        dic['email'] = data[7]
-        dic['image_path'] = data[8]
+        if targets:
+            for key in targets:
+                if key in table_column:
+                    dic[key] = data[table_column.index(key)]
+        else:     
+            dic["userid"] = data[0]
+            dic["username"] = data[1]
+            dic['rank'] = data[3]
+            dic['score'] = data[4]
+            dic['gender'] = data[5]
+            dic['phone_num'] = data[6]
+            dic['email'] = data[7]
+            dic['image_path'] = data[8]
         status = SUCCESS
     except Exception as e:
         logger.error("User {0} failed to get user info due to\n{1}".format(userid,str(e)),exc_info=True)

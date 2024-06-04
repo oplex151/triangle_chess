@@ -600,9 +600,7 @@ const handleReport = (id) => {
   cursor: pointer;
   margin-left: 20px;
 }
-.avas{
-  min-width: 400px;
-}
+
 .button-create-game:hover {
   background-color: #bbe62d;
 }
