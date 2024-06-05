@@ -5,6 +5,8 @@
 ```
 #### 前端依赖
 
+请先到vue官网安装vue的开发环境
+
 npm i
 
 #### 重新部署前端
@@ -20,6 +22,8 @@ source /envs/nb/bin/activate
 
 #### 后端依赖
 
+python版本3.10.14
+
 pip install -r requirements.txt
 pip install uswgi （本地运行不需要）
 
@@ -29,11 +33,11 @@ pip install uswgi （本地运行不需要）
 
 
 ### 数据库
-source /project/backend/database/trianglechess.sql
+source  [project_root]/backend/database/trianglechess.sql
 
 或者
 
-cd /backend/database
+cd [project_root]/backend/database
 mysql -uroot -p -D trianglechess --default-character-set=utf8 < trianglechess.sql
 
 如果编码有问题
@@ -53,6 +57,8 @@ systemctl status nginx
 #### `nginx`配置文件位置
 
 /etc/nginx/sites-available/default
+
+配置方法见/frontend/nginx.cfg
 
 
 
