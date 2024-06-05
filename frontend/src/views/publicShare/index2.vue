@@ -6,12 +6,10 @@ import Cookies from 'js-cookie'
 import VueSocketIO from 'vue-socket.io'
 import SocketIO from 'socket.io-client'
 import main from '@/main'
-import { User, HomeFilled, Share } from '@element-plus/icons-vue'
 import { registerSockets, socket, removeSockets } from '@/sockets'
-import Board from '@/views/Game/board.vue'
 import game_info from '@/assets/jsons/game_info.json'
-import Report from '@/components/views/Report.vue'
 import Avatar from '@/components/views/Avatar.vue'
+import * as CONST from "@/lib/const.js";
 
 const start = ref(false)
 const options = ref([])
@@ -50,15 +48,15 @@ const EndGo = () => {
 const sockets_methods = {
     gameRecord(data) {
         options.value = data.record[0]
-        console.log(options.value)
+        //console.log(options.value)
         loading.value = false
     },
     gameMoveRecord(data) {
-        console.log(data)
+        //console.log(data)
         moves.value = data.record[0]
         loading.value = false
         start.value = true
-        console.log(game_info)
+        //console.log(game_info)
         map_state.value = game_info
         // 使用nextTick等board初始化完成
         nextTick(() => {
@@ -69,6 +67,20 @@ const sockets_methods = {
     processWrong(data) {
         status1 = data.status
         ElMessage.error("Error due to " + status1)
+        if(status1 == CONST.SESSION_EXPIRED){ //Session expired
+          Cookies.remove('room_id')
+          Cookies.remove('userid')
+          Cookies.remove('room_info')
+          Cookies.remove('username')
+          Cookies.remove('camp')
+          ElMessage({
+            message: '会话过期，请重新登录',
+            grouping: true,
+            type: 'error',
+            showClose: true
+          })
+          router.replace('/login')
+        }
     },
 }
 const getCamp = (game_head) => {
@@ -92,7 +104,7 @@ onMounted(() => {
         })
     }
     registerSockets(sockets_methods, socket.value, proxy);
-    console.log(socket.value)
+    //console.log(socket.value)
     socket.value.io.emit('viewGameRecords', { 'userid': userid })
 });
 function goBackHome() {
@@ -109,20 +121,20 @@ onUnmounted(() => {
         socket.value.io.disconnect()
     }
     catch (err) {
-        console.log("Record Remove Socket Failed!")
-        console.log(err)
+        //console.log("Record Remove Socket Failed!")
+        //console.log(err)
     }
 
 });
 const Get = ref(() => {
-    console.log(value.value)
+    //console.log(value.value)
     my_camp.value = getCamp(value.value)
-    console.log(value.value['recordId'])
+    //console.log(value.value['recordId'])
     socket.value.io.emit('viewMoveRecords', { 'record_id': value.value['recordId'] })
 })
 
 const Move = (data) => {
-    console.log(data)
+    //console.log(data)
 }
 
 const Next = () => {
@@ -139,7 +151,7 @@ const Next = () => {
     data.x2 = parseInt(data.pos2[0])
     data.y2 = parseInt(data.pos2[1])
     data.z2 = parseInt(data.pos2[2])
-    console.log(data)
+    //console.log(data)
     step.value += 1
     board.value.moveSuccess(data)
 }
@@ -190,67 +202,18 @@ const camp_0_style = computed(() => {
 });
 </script>
 <template>
-    <Report :toreportid="to_report_id" :myuserid="userid" :dialogFormVisible=vis @reportEnd="handleReportEnd" />
-    <!-- <div class="background-image"></div> -->
-
-    <button class="button-home" @click="goBackHome()">
-            <el-icon style="vertical-align: middle" size="30px">
-                <HomeFilled />
-            </el-icon>
-        </button>
-    <button class="button-share">
-        <el-icon style="vertical-align: middle" size="30px">
-                <Share />
-            </el-icon>
-    </button>
-    <div v-if="start">
-        <button @click="EndGo" class="end_button">结束回放</button>
-        <div class="brd">
-            <Board :my_camp="my_camp" ref="board" @requireMove="Move" />
-            <button @click="Next" class="next_button">下一步</button>
-        </div>
-        <div class="avatar">
-            <!---------0号位---------->
-            <Avatar :my_userid="userid" :userid="userids[0]" @reportUser="handleReport" :class="camp_0_style">
-                <template #name>
-                    <p>{{ name[0] }}</p>
-                </template>
-                <template #avatar>
-                    {{ name[0] }}
-                </template>
-            </Avatar>
-            <!---------1号位---------->
-            <Avatar :my_userid="userid" :userid="userids[1]" @reportUser="handleReport" :class="camp_1_style">
-                <template #name>
-                    <p>{{ name[1] }}</p>
-                </template>
-                <template #avatar>
-                    {{ name[1] }}
-                </template>
-            </Avatar>
-            <!---------2号位---------->
-            <Avatar :my_userid="userid" :userid="userids[2]"  @reportUser="handleReport" :class="camp_2_style">
-                <template #name>
-                    <p>{{ name[2] }}</p>
-                </template>
-                <template #avatar>
-                    {{ name[2] }}
-                </template>
-            </Avatar>
-        </div>
-    </div>
-    <div v-else>
-        <div class="select_btn">
-            <el-select v-model="value" filterable placeholder="请输入对局" :loading="loading" popper-class="select_down"
-                style="width: 240px">
-                <el-option v-for="item in options" :label="item.startTime" :key="item.recordId" :value="item">
-                </el-option>
-            </el-select>
-        </div>
-        <div>
-            <button @click="Get" class="button">开始回放</button>
-        </div>
-    </div>
+            <div v-for="(item,index) in camp_c" :key="index">
+                <div :class="item">
+                    <Avatar :my_userid="userid" :userid="userids[index]" @reportUser="handleReport">
+                        <template #name>
+                            <p>{{ name[index] }}</p>
+                        </template>
+                        <template #avatar>
+                            <img :src="main.url+avatars[userids[index]]" alt="头像" />
+                        </template>
+                    </Avatar>
+                </div>
+            </div>
 </template>
 
 <style>

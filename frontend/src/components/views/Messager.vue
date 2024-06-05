@@ -76,6 +76,11 @@ const sendMessage = () => {
 }
 
 .messageshow {
+    border-style:solid;
+    border-width: 5px;
+    border-color: #ecb920;;
+    overflow-y: scroll;
+    padding: 10px;
     margin-top: 0px ;
     background-color: rgb(255, 246, 235) !important;
     margin-bottom: 10px;
@@ -85,8 +90,6 @@ const sendMessage = () => {
     height: 500px;
     height: var(--message-height);
     text-align: left;
-    border-color: #000;
-    border-width: 10px;
 }
 
 .messageshow li {

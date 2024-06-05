@@ -26,19 +26,24 @@ export class Warhosre extends Chess {
                 ROW = ROWTOP
                 break;
         }
-
         // UP 向上
         if (getRow(this.position) <= ROW - 2 && !this.haveChess(this.position + COL)) {
             // 移动
             // 列出点位
             let p1 = this.position + COL * 2 + 1;
             let p2 = this.position + COL * 2 - 1;
-            // 如果行数是第一行 把p2传进来
-            if (getCol(this.position) === 1) p.push(p2);
-            // 如果行数是第九行 把p1传进来
-            else if (getCol(this.position) === COL) p.push(p1);
-            // 否则返回p1 p2
-            else p.push(p1, p2);
+            // 如果列数是第一行 把p1传进来
+            if (getCol(this.position) != 1)
+            {
+                p.push(p2);
+                //console.log("上右")
+            }
+            // 如果列数是第九行 把p1传进来
+            if (getCol(this.position) != COL)
+            {
+                p.push(p1);
+                //console.log("上左")
+            }
         }
         // down 加上蹩马腿判断
         // 本棋盘
@@ -48,11 +53,16 @@ export class Warhosre extends Chess {
             let p1 = this.position - COL * 2 + 1;
             let p2 = this.position - COL * 2 - 1;
             // 如果行数是第一行 把p2传进来
-            if (getCol(this.position) === 1) p.push(p2);
+            if (getCol(this.position) != 1) {
+                p.push(p2);
+                //console.log("下右")
+
+            }
             // 如果行数是第九行 把p1传进来
-            else if (getCol(this.position) === COL) p.push(p1);
-            // 否则返回p1 p2
-            else p.push(p1, p2);
+            if (getCol(this.position) != COL) {
+                p.push(p1);
+                //console.log("下左")
+            }
         }
         // 其他棋盘
         else {
@@ -70,27 +80,61 @@ export class Warhosre extends Chess {
                     if(getRow(this.position) == 1 + ROW - ROWBOT){
                         if(!this.haveChess((2 - (getRow(this.position) - (ROW - ROWBOT))) * COL - getCol(this.position) + 1 + ROWBOT * COL)){
                             if(getCol(this.position) !== 1){
-                                p.push(p1);
+                                if(getCol(this.position) >= 6){
+                                    p.push(p1);
+                                    //console.log("第一阵营到第二阵营：纵左")
+                                }
                             }
                             if (getCol(this.position) !== COL){
-                                p.push(p2);
+                                if(getCol(this.position) >= 5){
+                                    p.push(p2);
+                                    //console.log("第一阵营到第二阵营：纵右")
+
+                                }
                             }
                         }
                         if (!this.haveChess((2 - (getRow(this.position) - (ROW - ROWBOT))) * COL - getCol(this.position) + 1 + ROWMID * COL)){
                             if(getCol(this.position) !== 1){
-                                p.push(p3);
+                                if(getCol(this.position) <= 5){
+                                    p.push(p3);
+                                    //console.log("第一阵营到第三阵营：纵左")
+
+                                }
                             }
                             if (getCol(this.position) !== COL){
-                                p.push(p4);
+                                if(getCol(this.position) <= 4) {
+                                    //console.log("第一阵营到第三阵营：纵左")
+
+                                    p.push(p4);
+                                }
                             }
                         }
                     }
-                    else{
+                    else if(!this.haveChess(this.position - COL)){
                         if(getCol(this.position) !== 1){
-                            p.push(p1,p3);
+                            if(getCol(this.position) >= 6){
+                                p.push(p1);
+                                //console.log("第一阵营到第二阵营：纵左")
+                                //console.log("ROW - ROWBOT:"+(ROW - ROWBOT))
+
+                            }
+                            if(getCol(this.position) <= 5){
+                                p.push(p3);
+                                //console.log("第一阵营到第三阵营：纵左")
+
+                            }
                         }
                         if (getCol(this.position) !== COL){
-                            p.push(p2,p4);
+                            if(getCol(this.position) >= 5) {
+                                p.push(p2);
+                                //console.log("第一阵营到第二阵营：纵右")
+
+                            }
+                            if(getCol(this.position) <= 4) {
+                                p.push(p4);
+                                //console.log("第一阵营到第三阵营：纵左")
+
+                            }
                         }
                     }
                     break;
@@ -103,27 +147,45 @@ export class Warhosre extends Chess {
                     if(getRow(this.position) == 1 + ROW - ROWBOT){
                         if(!this.haveChess((2 - (getRow(this.position) - (ROW - ROWBOT))) * COL - getCol(this.position) + 1)){
                             if(getCol(this.position) !== 1){
-                                p.push(p1);
+                                if(getCol(this.position) <= 5){
+                                    p.push(p1);
+                                }
                             }
                             if (getCol(this.position) !== COL){
-                                p.push(p2);
+                                if(getCol(this.position) <= 4){
+                                    p.push(p2);
+                                }
                             }
                         }
                         if (!this.haveChess((2 - (getRow(this.position) - (ROW - ROWBOT))) * COL - getCol(this.position) + 1 + ROWMID * COL)){
                             if(getCol(this.position) !== 1){
-                                p.push(p3);
+                                if(getCol(this.position) >= 6){
+                                    p.push(p3);
+                                }
                             }
                             if (getCol(this.position) !== COL){
-                                p.push(p4);
+                                if(getCol(this.position) >= 5) {
+                                    p.push(p4);
+                                }
                             }
                         }
                     }
-                    else{
+                    else if(!this.haveChess(this.position - COL)){
                         if(getCol(this.position) !== 1){
-                            p.push(p1,p3);
+                            if(getCol(this.position) <= 5){
+                                p.push(p1);
+                            }
+                            if(getCol(this.position) >= 6){
+                                p.push(p3);
+                            }
                         }
                         if (getCol(this.position) !== COL){
-                            p.push(p2,p4);
+                            if(getCol(this.position) <= 4){
+                                p.push(p2);
+                            }
+                            if(getCol(this.position) >= 5) {
+                                p.push(p4);
+                            }
                         }
                     }
                     break;
@@ -136,27 +198,45 @@ export class Warhosre extends Chess {
                     if(getRow(this.position) == 1 + ROW - ROWBOT){
                         if(!this.haveChess((2 - (getRow(this.position) - (ROW - ROWBOT))) * COL - getCol(this.position) + 1 + ROWBOT * COL)){
                             if(getCol(this.position) !== 1){
-                                p.push(p1);
+                                if(getCol(this.position) <= 5){
+                                    p.push(p1);
+                                }
                             }
                             if (getCol(this.position) !== COL){
-                                p.push(p2);
+                                if(getCol(this.position) <= 4){
+                                    p.push(p2);
+                                }
                             }
                         }
-                        if (!this.haveChess((2 - (getRow(this.position) - (ROW - ROWBOT))) * COL + 1 + COL - getCol(this.position) + 1)){
+                        if (!this.haveChess((2 - (getRow(this.position) - (ROW - ROWBOT))) * COL - getCol(this.position) + 1)){
                             if(getCol(this.position) !== 1){
-                                p.push(p3);
+                                if(getCol(this.position) >= 6){
+                                    p.push(p3);
+                                }
                             }
                             if (getCol(this.position) !== COL){
-                                p.push(p4);
+                                if(getCol(this.position) >= 5) {
+                                    p.push(p4);
+                                }
                             }
                         }
                     }
-                    else{
+                    else if(!this.haveChess(this.position - COL)){
                         if(getCol(this.position) !== 1){
-                            p.push(p1,p3);
+                            if(getCol(this.position) <= 5){
+                                p.push(p1);
+                            }
+                            if(getCol(this.position) >= 6){
+                                p.push(p3);
+                            }
                         }
                         if (getCol(this.position) !== COL){
-                            p.push(p2,p4);
+                            if(getCol(this.position) <= 4){
+                                p.push(p2);
+                            }
+                            if(getCol(this.position) >= 5) {
+                                p.push(p4);
+                            }
                         }
                     }
                     break;
@@ -174,38 +254,64 @@ export class Warhosre extends Chess {
                 // 如果列数是第一列 把p1传进来
                 // if (getRow(this.position) === 0 + ROW - ROWBOT) p.push(p1);
                 // // 如果列数是第九列 把p2传进来
-                if (getRow(this.position) === ROW) p.push(p2);
+                if (getRow(this.position) != ROW) p.push(p1);
                 // 否则返回p1 p2
-                else p.push(p1, p2);
+                p.push(p2);
             }
             else{
                 switch (ROW){
                     case ROWBOT:
                         p1 = this.position - 2 + COL;
+                        p2 = (1 - (getRow(this.position) - (ROW - ROWBOT))) * COL + 2 + COL - getCol(this.position) + 1 + ROWBOT * COL;
+                        p3 = (1 - (getRow(this.position) - (ROW - ROWBOT))) * COL + 2 + COL - getCol(this.position) + 1 + ROWMID * COL;
 
-                        p2 = (1 - (getRow(this.position) - (ROW - ROWBOT))) * COL - 2 + COL - getCol(this.position) + 1 + ROWBOT * COL;
-                        p3 = (1 - (getRow(this.position) - (ROW - ROWBOT))) * COL - 2 + COL - getCol(this.position) + 1 + ROWMID * COL;
-                        p.push(p1, p2, p3);
+                        if(getCol(this.position) >= 7){
+                            p.push(p2);
+                            //console.log("第一阵营到第二阵营：左")
+                        }
+                        if(getCol(this.position) <= 5){
+                            //console.log("第一阵营到第三阵营：左")
+                            p.push(p3);
+                        }
+                        p.push(p1);
                         break;
                     case ROWMID:
                         p1 = this.position - 2 + COL ;
+                        p2 = (1 - (getRow(this.position) - (ROW - ROWBOT))) * COL + 2 + COL - getCol(this.position) + 1 ;
+                        p3 = (1 - (getRow(this.position) - (ROW - ROWBOT))) * COL + 2 + COL - getCol(this.position) + 1 + ROWMID * COL;
 
-                        p2 = (1 - (getRow(this.position) - (ROW - ROWBOT))) * COL - 2 + COL - getCol(this.position) + 1 ;
-                        p3 = (1 - (getRow(this.position) - (ROW - ROWBOT))) * COL - 2 + COL - getCol(this.position) + 1 + ROWMID * COL;
-                        p.push(p1, p2 ,p3);
+                        if(getCol(this.position) <= 5){
+                            //console.log("第二阵营到第一阵营：左")
+                            p.push(p2);
+                        }
+                        if(getCol(this.position)  >= 7){
+                            //console.log("第二阵营到第三阵营：左")
+                            p.push(p3);
+                        }
+                        p.push(p1);
+
                         break;
                     case ROWTOP:
                         p1 = this.position - 2 + COL;
+                        p2 = (1 - (getRow(this.position) - (ROW - ROWBOT))) * COL + 2 + COL - getCol(this.position) + 1 + ROWBOT * COL;
+                        p3 = (1 - (getRow(this.position) - (ROW - ROWBOT))) * COL + 2 + COL - getCol(this.position) + 1 ;
 
-                        p2 = (1 - (getRow(this.position) - (ROW - ROWBOT))) * COL - 2 + COL - getCol(this.position) + 1 + ROWBOT * COL;
-                        p3 = (1 - (getRow(this.position) - (ROW - ROWBOT))) * COL - 2 + COL - getCol(this.position) + 1 ;
-                        p.push(p1, p2 ,p3);
+                        if(getCol(this.position) <= 5){
+                            //console.log("第三阵营到第二阵营：左")
+                            p.push(p2);
+                        }
+                        if(getCol(this.position) >= 7) {
+                            //console.log("第三阵营到第一阵营：左")
+                            p.push(p3);
+                        }
+                        p.push(p1);
+
                         break;
                 }
             }
         }
         // right 加上蹩马腿判断
-        if (getCol(this.position) <= COL - 3 && !this.haveChess(this.position + 1)) {
+        if (getCol(this.position) <= COL - 2 && !this.haveChess(this.position + 1)) {
             // 移动
             // 列出点位
             let p1,p2,p3 = 0;
@@ -224,24 +330,54 @@ export class Warhosre extends Chess {
                 switch (ROW){
                     case ROWBOT:
                         p1 = this.position + 2 + COL;
+                        p2 = (1 - (getRow(this.position) - (ROW - ROWBOT))) * COL - 2 + COL - getCol(this.position) + 1 + ROWBOT * COL;
+                        p3 = (1 - (getRow(this.position) - (ROW - ROWBOT))) * COL - 2 + COL - getCol(this.position) + 1 + ROWMID * COL;
+                        if(getCol(this.position) >= 5){
+                            //console.log("第一阵营到第二阵营：右")
 
-                        p2 = (1 - (getRow(this.position) - (ROW - ROWBOT))) * COL + 2 + COL - getCol(this.position) + 1 + ROWBOT * COL;
-                        p3 = (1 - (getRow(this.position) - (ROW - ROWBOT))) * COL + 2 + COL - getCol(this.position) + 1 + ROWMID * COL;
-                        p.push(p1, p2, p3);
+                            p.push(p2);
+                        }
+                        if(getCol(this.position) <= 3){
+                            //console.log("第一阵营到第三阵营：右")
+
+                            p.push(p3);
+                        }
+
+                        p.push(p1);
                         break;
                     case ROWMID:
                         p1 = this.position + 2 + COL ;
+                        p2 = (1 - (getRow(this.position) - (ROW - ROWBOT))) * COL - 2 + COL - getCol(this.position) + 1 ;
+                        p3 = (1 - (getRow(this.position) - (ROW - ROWBOT))) * COL - 2 + COL - getCol(this.position) + 1 + ROWMID * COL;
+                        if(getCol(this.position) <= 3){
+                            //console.log("第二阵营到第一阵营：右")
 
-                        p2 = (1 - (getRow(this.position) - (ROW - ROWBOT))) * COL + 2 + COL - getCol(this.position) + 1 ;
-                        p3 = (1 - (getRow(this.position) - (ROW - ROWBOT))) * COL + 2 + COL - getCol(this.position) + 1 + ROWMID * COL;
-                        p.push(p1, p2 ,p3);
+                            p.push(p2);
+                        }
+                        if(getCol(this.position) >= 5){
+                            //console.log("第二阵营到第三阵营：右")
+
+                            p.push(p3);
+                        }
+
+                        p.push(p1);
                         break;
                     case ROWTOP:
                         p1 = this.position + 2 + COL;
+                        p2 = (1 - (getRow(this.position) - (ROW - ROWBOT))) * COL - 2 + COL - getCol(this.position) + 1 + ROWBOT * COL;
+                        p3 = (1 - (getRow(this.position) - (ROW - ROWBOT))) * COL - 2 + COL - getCol(this.position) + 1 ;
+                        if(getCol(this.position) <= 3){
+                            //console.log("第三阵营到第二阵营：右")
 
-                        p2 = (1 - (getRow(this.position) - (ROW - ROWBOT))) * COL + 2 + COL - getCol(this.position) + 1 + ROWBOT * COL;
-                        p3 = (1 - (getRow(this.position) - (ROW - ROWBOT))) * COL + 2 + COL - getCol(this.position) + 1 ;
-                        p.push(p1, p2 ,p3);
+                            p.push(p2);
+                        }
+                        if(getCol(this.position) >= 5){
+                            //console.log("第三阵营到第一阵营：右")
+
+                            p.push(p3);
+                        }
+
+                        p.push(p1);
                         break;
                 }
             }

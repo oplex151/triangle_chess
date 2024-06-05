@@ -13,6 +13,8 @@ from backend.tools import setupLogger
 
 logger = setupLogger()
 
+MAX_WATCHERS = 3
+
 class UserDict(Dict):
     userid:int
     username:str
@@ -192,6 +194,8 @@ class GameTable:
         Returns:
             bool: 是否添加成功
         '''
+        if len(self.viewers) >= MAX_WATCHERS:
+            return False
         if user['userid'] in [u['userid'] for u in self.users]:
             return False
         else:
@@ -270,13 +274,16 @@ class GameTable:
         
         # 初始化回应求和请求的玩家列表
         self.draw_respondents = set()
+        self.draw_agree = set()
+        self.draw_respondents.add(userid)
+        self.draw_agree.add(True)
 
     def respondDraw(self, userid:int, agree:bool):
         '''
         Description: 处理求和回应
         '''
         # 如果用户不是求和请求的回应对象之一，忽略
-        if self.draw_requester is None or userid == self.draw_requester or self.lives[userid] == False:
+        if self.draw_requester is None or userid == self.draw_requester or self.lives[self._getUserIndex(userid)] == False:
             return
         
         # 添加回应的用户
@@ -404,6 +411,8 @@ class RoomManager:
         self.game_table = None
 
     def addUser(self, user: Union[UserDict, list[UserDict]]):
+        if len(self.users) >= 3+MAX_WATCHERS:
+            return False
         if isinstance(user, list):
             for u in user:
                 if u not in self.users:
@@ -411,6 +420,7 @@ class RoomManager:
         else:
             if user not in self.users:
                 self.users.append(user)
+        return True
         
     
     def removeUser(self, userid:int, force=False):
@@ -425,13 +435,17 @@ class RoomManager:
                 if self.game_table and leaved_user['userid'] in [u['userid'] for u in self.game_table.viewers]:
                     # 观战者离开直接送出游戏
                     self.game_table.viewers.remove(leaved_user)
+                    logger.info(f"viewer {userid} leave room ")
+
                 elif force and self.game_table and leaved_user['userid'] in [u['userid'] for u in self.game_table.users]:
                     # 强制退出房间和游戏
                     self.game_table.users.remove(leaved_user)
                 return True
         else:
             return False
-            
+
+    def isHolder(self, userid:int) -> bool:
+        return self.holder['userid'] == userid
 
     def getRoomInfo(self):
         '''

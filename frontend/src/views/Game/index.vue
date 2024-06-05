@@ -19,7 +19,7 @@ import Messager from '@/components/views/Messager.vue';
 
 import useClipboard from 'vue-clipboard3';
 
-let my_camp = Cookies.get('camp')
+const my_camp = ref(Cookies.get('camp'))
 const { toClipboard } = useClipboard()
 
 
@@ -35,40 +35,26 @@ const vis = ref(false)
 const to_report_id = ref(-1)
 const room_info = JSON.parse(Cookies.get('room_info'))
 
+const game_status = ref(CONST.STATUS_ONING)
+const draw_responser = ref([])
+
 const o_message = ref([])
 const i_message = ref('')
-const my_name = computed(() => {
-  if (room_info.value) {
-    for (let user of room_info.value.users) {
-      if (user.userid == Cookies.get('userid')) {
-        return user.username
-      }
-    }
-  }
-  return ''
-})
-// const names = computed(() => {
-//   if (room_info.value) {
-//     let names = []
-//     for (let user of room_info.value.users) {
-//       names.push(user.username)
-//     }
-//     return names
-//   }
-//   return []
-// })
+
+const my_name = Cookies.get('username')
+const avatars = ref({})
 
 const copy = async (anything) => {
   try {
     await toClipboard(anything)
-    console.log('Copied to clipboard')
+    //console.log('Copied to clipboard')
   } catch (e) {
-    console.error(e)
+    //console.error(e)
   }
 }
 
 const sendMessage = (message) => {
-  console.log(message)
+  //console.log(message)
   socket.value.io.emit('sendMessage', {
     'userid': userid,
     'message': i_message.value
@@ -99,7 +85,7 @@ onMounted(() => {
     }
   ).then(res => {
     if (res.status == 200) {
-      console.log(res.data)
+      //console.log(res.data)
       board.value.initMap(res.data.game_info)
     }
     else {
@@ -107,9 +93,52 @@ onMounted(() => {
       return
     }
   }).catch(error => {
-    console.log(error)
+    //console.log(error)
+    if(error.response.status == 550){ //Session expired
+      Cookies.remove('room_id')
+      Cookies.remove('userid')
+      Cookies.remove('room_info')
+      Cookies.remove('username')
+      Cookies.remove('camp')
+      ElMessage({
+        message: '会话过期，请重新登录',
+        grouping: true,
+        type: 'error',
+        showClose: true
+      })
+      router.replace('/login')
+    }
   })
-  console.log(socket.value)
+  //console.log(socket.value)
+  let userids = room_info.users.map(user => {
+    return user.userid;
+  }) 
+  axios.post(main.url + '/api/getAvatars', {'userids': userids.join(',')},
+  {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+  }
+  )
+  .then(res => {
+      //console.log(res.data)
+      avatars.value = res.data
+  })
+  .catch(err => {
+      //console.error(err)
+    if(err.response.status == 550){ //Session expired
+      Cookies.remove('room_id')
+      Cookies.remove('userid')
+      Cookies.remove('room_info')
+      Cookies.remove('username')
+      Cookies.remove('camp')
+      ElMessage({
+        message: '会话过期，请重新登录',
+        grouping: true,
+        type: 'error',
+        showClose: true
+      })
+      router.replace('/login')
+    }
+  })
 });
 
 const sockets_methods = {
@@ -141,17 +170,32 @@ const sockets_methods = {
       Cookies.remove('room_id')
       Cookies.remove('room_info')
       ElMessage.success('离开房间成功')
+      if (Cookies.get('camp') == -1) {
+        Cookies.remove('game_id')
+        Cookies.remove('camp')
+        removeSockets(sockets_methods, socket.value, proxy);
+        socket.value.io.disconnect()
+        socket.value = null
+        router.replace('/')
+        return
+      }
     }
-    else {
+      else {
       ElMessage.success('玩家' + data.username + '离开房间')
     }
   },
   gameEnd(data) {
-    ElMessage.info('游戏结束' + "获胜者为" + data.winner_name)
+    if (data.winner_name == null){
+      winner_name.value = '无';
+      ElMessage.info("游戏结束" + "无获胜者")
+    }
+    else{
+      winner_name.value = data.winner_name;
+      ElMessage.info('游戏结束' + "获胜者为" + winner_name.value)
+    }
 
     // 模态框位置(待加入)
     step_count.value = data.step_count;
-    winner_name.value = data.winner_name;
     match_duration.value = data.match_duration;
     record_id.value = data.record_id;
     // 从后端接收到了比赛持续时间的整数值
@@ -176,7 +220,6 @@ const sockets_methods = {
     )
     .then((action) => {
       if (action === 'confirm') {
-          
           copy(main.self_url + '/publicShare?recordId=' + record_id.value)
           ElMessage({
             type: 'info',
@@ -184,18 +227,10 @@ const sockets_methods = {
           })
         }
     })
-    .catch((action) => {
-        if (action === 'cancel') {
-            ElMessage({
-              type: 'info',
-              message: `action: ${action}`,
-            })
-          }
-
-        }
-      )
+    .catch((action) => {})
+    //console.log(data.room_info)
     // 匹配模式退回主页面
-    console.log(data.room_type)
+    //console.log(data.room_type)
     if (data.room_type == 1) {
       Cookies.remove('game_id')
       Cookies.remove('camp')
@@ -217,9 +252,11 @@ const sockets_methods = {
     }
     // 创房间模式
     else {
+      // Cookies.set('room_info',data.room_info)
       Cookies.remove('game_id')
       Cookies.remove('camp')
       removeSockets(sockets_methods, socket.value, proxy);
+      sessionStorage.setItem('fromGame', 'true')
       router.replace('/room')
       return
     }
@@ -237,6 +274,50 @@ const sockets_methods = {
       ElMessage.info('用户' + data.username + '投降')
     }
   },
+  waitForOthers(data){
+    draw_responser.value.push({ 'userid': data.userid, 'username': data.username ,'agree':data.agree})
+  },
+  drawRequest(data) {
+    if (my_camp.value>=0){
+      if (lives[my_camp.value]) {
+        draw_responser.value.push({ 'userid': data.userid, 'username': data.username ,'agree':true})
+        game_status.value = CONST.STATUS_DRAWING
+        let agree = false
+        ElMessageBox.confirm(
+          `玩家${data.username}希望求和，您是否同意？`,
+          {
+            cancelButtonText: '否',
+            confirmButtonText: '是'
+          }
+        )
+        .then((action) => {
+          if (action === 'confirm') 
+            agree = true
+          else 
+            agree = false
+          //console.log(agree)
+          socket.value.io.emit('respondDraw', {
+            'userid': Cookies.get('userid'),
+            'agree': agree
+          })
+        }).catch((action) => {
+          //console.log(agree)
+          socket.value.io.emit('respondDraw', {
+            'userid': Cookies.get('userid'),
+            'agree': agree
+          })
+        })
+      }
+    }
+  },
+  gameOngoing(data){
+    draw_responser.value.push({ 'userid': data.userid, 'username': data.username ,'agree':false})
+    ElMessage.info('游戏继续')
+    setTimeout(() => {
+      game_status.value = CONST.STATUS_ONING
+      draw_responser.value = []
+    }, 1000)
+  },
   processWrong(data) {
     let status1 = data.status
     ElMessage.error("Error due to " + status1)
@@ -251,12 +332,27 @@ const sockets_methods = {
       ElMessage.error('用户未登录')
       router.replace('/login')
     }
+    else if(status1 == CONST.SESSION_EXPIRED){
+      Cookies.remove('room_id')
+      Cookies.remove('userid')
+      Cookies.remove('room_info')
+      Cookies.remove('camp')
+      Cookies.remove('username')
+
+      ElMessage({
+        message: '会话过期，请重新登录',
+        grouping: true,
+        type: 'error',
+        showClose: true
+      })
+      router.replace('/login')
+    }
   }
 }
 
 function requestSurrender() {
-  if(Cookies.get('userid') >= 0)
-    if(lives[my_camp])
+  if(my_camp.value >= 0)
+    if(lives[my_camp.value])
       socket.value.io.emit('requestSurrender', {
         'userid': Cookies.get('userid')
       })
@@ -268,6 +364,29 @@ function requestSurrender() {
   }
 }
 
+function leaveRoom() {
+  socket.value.io.emit('leaveRoom', { 'room_id': Cookies.get('room_id'), 'userid': Cookies.get('userid') })
+  //console.log("点击了退出房间")
+  i_message.value = ''
+  o_message.value = []
+}
+
+function requestDraw(){
+  if(my_camp.value >= 0){
+    if(lives[my_camp.value]){
+      socket.value.io.emit('requestDraw', {
+        'userid': Cookies.get('userid')
+      })
+      game_status.value = CONST.STATUS_DRAWING
+      draw_responser.value.push({ 'userid': userid, 'username': my_name ,'agree':true})
+    }
+    else{
+      ElMessage.error('你已经输了，不能求和')
+    }
+  }
+  else
+    ElMessage.error('你不是本游戏的玩家，不能求和')
+}
 
 const Move = (data) => {
   data.userid = userid
@@ -279,16 +398,16 @@ const handleReportEnd = (id) => {
   vis.value = false;
 }
 const handleReport = () => {
-  console.log(id);
+  //console.log(id);
   to_report_id.value = id;
-  console.log(to_report_id.value);
+  //console.log(to_report_id.value);
   vis.value = true;
 }
 const camp_1_style = computed(() => {
-  if (my_camp == 1) {
+  if (my_camp.value == 1) {
     return 'board'
   }
-  else if (my_camp == 0) {
+  else if (my_camp.value == 0) {
     return 'board-tilt-right'
   }
   else {
@@ -296,10 +415,10 @@ const camp_1_style = computed(() => {
   }
 });
 const camp_2_style = computed(() => {
-  if (my_camp == 1) {
+  if (my_camp.value == 1) {
     return 'board-tilt-right'
   }
-  else if (my_camp == 0) {
+  else if (my_camp.value == 0) {
     return 'board-tilt-left'
   }
   else {
@@ -307,10 +426,10 @@ const camp_2_style = computed(() => {
   }
 });
 const camp_0_style = computed(() => {
-  if (my_camp == 1) {
+  if (my_camp.value == 1) {
     return 'board-tilt-left'
   }
-  else if (my_camp == 0) {
+  else if (my_camp.value == 0) {
     return 'board'
   }
   else {
@@ -320,20 +439,37 @@ const camp_0_style = computed(() => {
 </script>
 
 <template>
-  <Messager :o_message="o_message" v-model:i_message="i_message" @sendMessage="sendMessage" class="messager"/>
+  <Messager :o_message="o_message" v-model:i_message="i_message" @sendMessage="sendMessage" class="messager" v-if="my_camp >= 0"/>
 
   <div class="background-image"></div>
   <div class="chessboard-overlay"></div>
-  <div>
+  <div v-if="my_camp >= 0">
     <button class="surrender-button" @click="requestSurrender">投降</button>
   </div>
-    <div  :class="camp_0_style">
+  <div v-if="my_camp >= 0">
+    <button class="surrender-button" @click="requestDraw">求和</button>
+  </div>
+  <div v-if="my_camp == -1">
+    <button class="leave-button" @click="leaveRoom">退出房间</button>
+  </div>
+
+  <div class="wait-draw-info" v-if="game_status == CONST.STATUS_DRAWING">
+    <div v-for="user in draw_responser" :key="user.userid">
+      <div class="wait-draw-user-agree" v-if="user.agree">
+        {{user.username}}
+      </div>
+      <div class="wait-draw-user" v-else>
+        {{user.username}}
+      </div>
+    </div>
+  </div>
+  <div  :class="camp_0_style">
     <Avatar :my_userid=userid :userid=room_info.users[0].userid @reportUser="handleReport">
       <template #name>
         <p>{{room_info.users[0].username}}</p>
       </template>
       <template #avatar>
-        {{ room_info.users[0].username }}
+        <img :src="main.url+avatars[room_info.users[0].userid]" alt="头像" />
       </template>
     </Avatar>
   </div>
@@ -344,7 +480,7 @@ const camp_0_style = computed(() => {
         <p>{{room_info.users[1].username}}</p>
       </template>
       <template #avatar>
-        {{ room_info.users[1].username }}
+        <img :src="main.url+avatars[room_info.users[1].userid]" alt="头像" />
       </template>
     </Avatar>
     </div>
@@ -355,11 +491,11 @@ const camp_0_style = computed(() => {
         <p>{{room_info.users[2].username}}</p>
       </template>
       <template #avatar>
-        {{ room_info.users[2].username }}
+        <img :src="main.url+avatars[room_info.users[2].userid]" alt="头像" />
       </template>
     </Avatar>
     </div>
-    <Board ref="board" :my_camp ="my_camp" @requireMove="Move" />
+    <Board ref="board" :my_camp ="my_camp" :game_status="game_status" @requireMove="Move" />
     <Report :toreportid=to_report_id :myuserid="userid" :dialogFormVisible=vis @reportEnd="handleReportEnd" />
 </template>
 
@@ -386,6 +522,38 @@ const camp_0_style = computed(() => {
   background-size: cover;
   opacity: 1.0; /* Adjust opacity as needed */
   z-index: -1;
+}
+
+.wait-draw-info{
+  margin-top: 20px;
+  margin-left: 40px;
+  position: relative;
+  font-size:20px;
+  color: #fff;
+  display: inline-flex;
+  padding: 10px;
+  background-color: #d3a61f;
+  border-radius: 10px;
+}
+
+.wait-draw-user{
+  max-width: 100px;
+  min-width: 60px;
+  margin: 10px 10px;
+  padding: 5px;
+  border-radius: 5px;
+  background-color: #f56e34;
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+}
+
+.wait-draw-user-agree{
+  max-width: 100px;
+  min-width: 60px;
+  margin: 10px 10px;
+  padding: 5px;
+  border-radius: 5px;
+  background-color: #a7d413;
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
 }
 
 .board{
@@ -430,6 +598,32 @@ const camp_0_style = computed(() => {
   box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2), 0 12px 40px 0 rgba(0, 0, 0, 0.19);
   /* Add more shadows */
 }
+
+.leave-button {
+  background-color: #ecb920;
+  border: none;
+  color: white;
+  padding: 15px 32px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  margin: 20px 30px;
+  transition-duration: 0.4s;
+  cursor: pointer;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+  z-index: 99;
+  /* Add shadows */
+}
+
+.leave-button:hover {
+  background-color: #b48d17;
+  color: white;
+  box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2), 0 12px 40px 0 rgba(0, 0, 0, 0.19);
+  /* Add more shadows */
+}
+
 .messager{
   position:absolute;
   top:200px;
