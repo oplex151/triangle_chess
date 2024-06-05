@@ -1,8 +1,5 @@
 <script setup>
 import { ref, reactive } from 'vue'
-import { ElMessage } from 'element-plus'
-import { useRouter } from 'vue-router'
-import Cookies from 'js-cookie'
 import Report from '@/components/views/Report.vue'
 import Avatar from '@/components/views/Avatar.vue'
 

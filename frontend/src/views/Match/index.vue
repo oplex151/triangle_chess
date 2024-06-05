@@ -7,9 +7,11 @@ import Cookies from 'js-cookie';
 import { registerSockets, socket, registerSocketsForce,removeSockets} from '@/sockets'
 import {ElMessage} from "element-plus";
 import { useRouter } from 'vue-router';
+import { lives, resetLives } from '@/chesses/Live';
 import { onMounted, ref ,onUnmounted,computed,getCurrentInstance,onBeforeUnmount} from 'vue';
 import Board from '@/views/Game/board.vue'
 import { User, HomeFilled } from '@element-plus/icons-vue'
+import * as CONST from "@/lib/const.js";
 
 const {proxy} = getCurrentInstance()
 const router = useRouter()
@@ -27,7 +29,7 @@ onMounted(()=>{
     // socket.value.io.emit('joinRoom',{'userid':userid,'room_id':Cookies.get('room_id')})
   }
   registerSockets(sockets_methods,socket.value,proxy);
-  console.log(socket.value)
+  //console.log(socket.value)
 });
 
 //需要注册的监听时间，离开页面记得销毁
@@ -47,8 +49,10 @@ const sockets_methods={
                 camp = i
             }
         }
+        resetLives()
         if (camp>=-1){
             Cookies.set('camp',camp)
+            //console.log(Cookies.get('camp'))
             ElMessage.success('游戏开始,你是'+ (camp>0?(camp>1?'金方玩家':'黑方玩家'):(camp==0?'红方玩家':'观战者')))
         }
         removeSockets(sockets_methods, socket.value, proxy)
@@ -56,6 +60,22 @@ const sockets_methods={
     },
     processWrong(data){
         ElMessage.error('匹配失败，请重新匹配'+data.status)
+
+        if(data.status == CONST.SESSION_EXPIRED){ //Session expired
+          Cookies.remove('room_id')
+          Cookies.remove('userid')
+          Cookies.remove('room_info')
+          Cookies.remove('username')
+          Cookies.remove('camp')
+          sessionStorage.removeItem('fromGame')
+          ElMessage({
+            message: '会话过期，请重新登录',
+            grouping: true,
+            type: 'error',
+            showClose: true
+          })
+          router.replace('/login')
+        }
     },
 }
 

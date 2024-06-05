@@ -1,15 +1,12 @@
 <script setup>
-import main from '@/main'
 import { camps, initChess } from '@/lib/game';
 import { GEBI } from '@/utils/utils';
-import Cookies from 'js-cookie';
-import { registerSockets, socket } from '@/sockets'
 import { XYZToPosition, PositionToXYZ } from '@/lib/convert'
-import router from '@/router';
-import { ElMessage } from "element-plus";
+import * as CONST from '@/lib/const.js'
 import { lives, changeLives } from '@/chesses/Live';
 import { onMounted, ref, onUnmounted, computed, getCurrentInstance } from 'vue';
 import { COL, ROWTOP, ROWMID, AREABOT, ROWBOT } from '@/config/config';
+import main from "@/main"
 
 
 const map = new Map();
@@ -25,9 +22,13 @@ const xyz = ref([0, 0, 0])
 const xyzn = ref([0, 0, 0])
 const my_camp_str = ['红方', '黑方', '金方']
 
-const props = defineProps(['my_camp'])
+const props = defineProps(
+  {
+    my_camp:{default:0},
+    game_status:{default:CONST.STATUS_ONING},
+  }
+)
 const emit = defineEmits(['requireMove'])
-const backgroundImageUrls = ref([]);
 
 //核心财产
 const chessPoints = [
@@ -46,7 +47,7 @@ function mapChessToPoint(row, col) {
     return { top: y, left: x };
   } else {
     // Handle out of bounds error
-    console.error('Row or column out of bounds:', row, col);
+    //console.error('Row or column out of bounds:', row, col);
     return { top: 0, left: 0 }; // Return default values or handle error as needed
   }
 }
@@ -101,6 +102,9 @@ const camp_0_style = computed(() => {
   }
 });
 const action = (position) => {
+  //console.log(props.game_status)
+  if (props.game_status != CONST.STATUS_ONING)
+    return
   // 未选中
   if (!isPocus.value) {
     if (!hoverChess) return;
@@ -154,40 +158,43 @@ const moveChess = (chess, to) => {
   return true;
 };
 const initMap = (game_info) => {
-  console.log("initMap执行开始")
+  //console.log("initMap执行开始")
   // 设置轮到谁走
   camp.value = game_info.turn
   // 设置活着的玩家
   changeLives(game_info.lives)
-  // console.log("111111111111")
+  // //console.log("111111111111")
   initChess(game_info)
   for (const [k, camp] of Object.entries(camps)) {
     camp.get().forEach((chess) => {
       GEBI(`${chess.position}`).innerText = chess.name;
       switch (chess.camp) {
         case 0:
-          // GEBI(`${chess.position}`).classList.add('camp0');
-          chess.image = "src/assets/images/game/chess/realChess/" + chess.name + "白.png";
+          GEBI(`${chess.position}`).classList.add('camp0');
+          //chess.image = "@/assets/images/game/chess/realChess/" + chess.name + "白.png";
+          chess.image = main.url + "/static/game/chess/realChess/" + chess.name + "白.png";   //bug 图片路径访问不到
           break;
 
         case 1:
-          // GEBI(`${chess.position}`).classList.add('camp1');
-          chess.image = "src/assets/images/game/chess/realChess/" + chess.name + "黑.png";
+          GEBI(`${chess.position}`).classList.add('camp1');
+          //chess.image = "@/assets/images/game/chess/realChess/" + chess.name + "黑.png";
+          chess.image = main.url + "/static/game/chess/realChess/" + chess.name + "黑.png";
           break;
         case 2:
-          // GEBI(`${chess.position}`).classList.add('camp2');
-          chess.image = "src/assets/images/game/chess/realChess/" + chess.name + "金.png";
+          GEBI(`${chess.position}`).classList.add('camp2');
+          //chess.image = "@/assets/images/game/chess/realChess/" + chess.name + "金.png";
+          chess.image = main.url + "/static/game/chess/realChess/" + chess.name + "金.png";
           break;
       }
       GEBI(`${chess.position}`).classList.add('chess-background');  // 添加自定义class
       GEBI(`${chess.position}`).style.background = `url(${chess.image}) center center / contain no-repeat`;
       GEBI(`${chess.position}`).style.backgroundSize = '53px'; // 将背景图片大小设置为 53px，宽度和高度均为 53px
       // element.style.backgroundImage = `url(${chess.image})`;  // 设置背景图片
-      console.log(chess.image);
+      //console.log(chess.image);
       map.set(chess.position, chess);
     });
   }
-  console.log("initMap执行结束")
+  //console.log("initMap执行结束")
 
 };
 
@@ -235,7 +242,7 @@ defineExpose({
   <div class="Game">
     <div class="camp">
       目前行动: {{ camp == 1 ? '黑方' : (camp == 0 ? '红方' : '金方') }}
-      我的阵营: {{ props.my_camp >= 0 ? my_camp_str[props.my_camp] : '观战者' }}
+      我的阵营: {{ props.my_camp >= 0 ? my_camp_str[props.my_camp] : (props.my_camp == -1 ? '观战者' :'未知') }}
     </div>
     <!--2号-->
     <div :class="camp_2_style">
@@ -281,25 +288,15 @@ defineExpose({
 .camp {
   position: relative;
   top: 40px;
-  left: 8%;
-  font-size: 24px;
+  left: 40px;
+  font-size: 18px;
   color: #e9b526;
+  display: inline-block;
+  border-radius: 5px;
+  padding: 7px;
+  max-width: 150px;
+  background-color: antiquewhite;
 }
-
-// 红方阵营
-// .camp0 {
-//   //background-color: transparent !important;
-// }
-
-// // 黑方阵营
-// .camp1 {
-//   //background-color: transparent !important;
-// }
-
-// // 金方阵营
-// .camp2 {
-//   //background-color: transparent !important;
-// }
 
 
 //定义一个动画时间戳
@@ -418,13 +415,6 @@ defineExpose({
 
 }
 
-.board :deep(.chess) {
-  rotate: 180deg !important;
-  // 某些浏览器（例如小智双核）不支持 ::v-deep 伪元素选择器，这个我也没办法，只能这样了
-  // 御三家firefox,chrome,edge都支持
-}
-
-// = 1
 .board-tilt-left {
   position: absolute;
   top: 178px;
