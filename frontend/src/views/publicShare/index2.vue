@@ -6,11 +6,8 @@ import Cookies from 'js-cookie'
 import VueSocketIO from 'vue-socket.io'
 import SocketIO from 'socket.io-client'
 import main from '@/main'
-import { User, HomeFilled, Share } from '@element-plus/icons-vue'
 import { registerSockets, socket, removeSockets } from '@/sockets'
-import Board from '@/views/Game/board.vue'
 import game_info from '@/assets/jsons/game_info.json'
-import Report from '@/components/views/Report.vue'
 import Avatar from '@/components/views/Avatar.vue'
 import * as CONST from "@/lib/const.js";
 
@@ -51,15 +48,15 @@ const EndGo = () => {
 const sockets_methods = {
     gameRecord(data) {
         options.value = data.record[0]
-        console.log(options.value)
+        //console.log(options.value)
         loading.value = false
     },
     gameMoveRecord(data) {
-        console.log(data)
+        //console.log(data)
         moves.value = data.record[0]
         loading.value = false
         start.value = true
-        console.log(game_info)
+        //console.log(game_info)
         map_state.value = game_info
         // 使用nextTick等board初始化完成
         nextTick(() => {
@@ -107,7 +104,7 @@ onMounted(() => {
         })
     }
     registerSockets(sockets_methods, socket.value, proxy);
-    console.log(socket.value)
+    //console.log(socket.value)
     socket.value.io.emit('viewGameRecords', { 'userid': userid })
 });
 function goBackHome() {
@@ -124,20 +121,20 @@ onUnmounted(() => {
         socket.value.io.disconnect()
     }
     catch (err) {
-        console.log("Record Remove Socket Failed!")
-        console.log(err)
+        //console.log("Record Remove Socket Failed!")
+        //console.log(err)
     }
 
 });
 const Get = ref(() => {
-    console.log(value.value)
+    //console.log(value.value)
     my_camp.value = getCamp(value.value)
-    console.log(value.value['recordId'])
+    //console.log(value.value['recordId'])
     socket.value.io.emit('viewMoveRecords', { 'record_id': value.value['recordId'] })
 })
 
 const Move = (data) => {
-    console.log(data)
+    //console.log(data)
 }
 
 const Next = () => {
@@ -154,7 +151,7 @@ const Next = () => {
     data.x2 = parseInt(data.pos2[0])
     data.y2 = parseInt(data.pos2[1])
     data.z2 = parseInt(data.pos2[2])
-    console.log(data)
+    //console.log(data)
     step.value += 1
     board.value.moveSuccess(data)
 }

@@ -55,7 +55,7 @@ const name = computed(()=>{
     return userids.value
 })
 const EndGo = () => {
-    //console.log('EndGo')
+    ////console.log('EndGo')
     start.value = false
     moves.value = []
     step.value = 0
@@ -132,7 +132,7 @@ onMounted(() => {
         })
     }
     registerSockets(sockets_methods, socket.value, proxy);
-    //console.log(socket.value)
+    ////console.log(socket.value)
     socket.value.io.emit('viewGameRecords', { 'userid': -1 })
 });
 function goBackHome() {
@@ -146,24 +146,24 @@ onUnmounted(() => {
         removeSockets(sockets_methods, socket.value, proxy);
         socket.value.io.disconnect()
         socket.value = null
-        //console.log("Record Remove Socket Success!")
+        ////console.log("Record Remove Socket Success!")
     }
     catch (err) {
-        //console.log("Record Remove Socket Failed!")
+        ////console.log("Record Remove Socket Failed!")
     }
 
 });
 const Get = ref(() => {
     if (record_id.value == -1)
         return
-    // console.log(record_id.value)
+    // //console.log(record_id.value)
     my_camp.value = getCamp(record_id.value)
-    // console.log(record_id.value['recordId'])
+    // //console.log(record_id.value['recordId'])
     socket.value.io.emit('viewMoveRecords', { 'record_id': record_id.value})
 })
 
 const Move = (data) => {
-    //console.log(data)
+    ////console.log(data)
 }
 
 const Next = () => {
@@ -180,7 +180,7 @@ const Next = () => {
     data.x2 = parseInt(data.pos2[0])
     data.y2 = parseInt(data.pos2[1])
     data.z2 = parseInt(data.pos2[2])
-    //console.log(data)
+    ////console.log(data)
     step.value += 1
     board.value.moveSuccess(data)
 }
@@ -232,9 +232,9 @@ const camp_0_style = computed(() => {
 const copy = async (anything) => {
   try {
     await toClipboard(anything)
-    //console.log('Copied to clipboard')
+    ////console.log('Copied to clipboard')
   } catch (e) {
-    //console.error(e)
+    ////console.error(e)
   }
 }
 const share = () => {
@@ -256,7 +256,7 @@ const comments_dialog = ref(false)
 // 点赞
 function likeGameRecord(row) {
   row.liked = true;
-  //console.log("当前的记录id为：" + row.recordId);
+  ////console.log("当前的记录id为：" + row.recordId);
   axios.post(main.url+'/api/likeGameRecord',
       { 'recordid': row.recordId },
       { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
@@ -265,7 +265,7 @@ function likeGameRecord(row) {
     row.likeNum += 1; // 更新点赞数
   }).catch(error => {
     ElMessage.error('点赞失败');
-    //console.error(error);
+    ////console.error(error);
     if(error.response.status == CONST.SESSION_EXPIRED){ //Session expired
       Cookies.remove('room_id')
       Cookies.remove('userid')
@@ -285,7 +285,7 @@ function likeGameRecord(row) {
 
 function unlikeGameRecord(row) {
   row.liked = false;
-  //console.log("当前的记录id为：" + row.recordId);
+  ////console.log("当前的记录id为：" + row.recordId);
   axios.post(main.url+'/api/unlikeGameRecord',
       { 'recordid': row.recordId },
       { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
@@ -294,7 +294,7 @@ function unlikeGameRecord(row) {
     row.likeNum -= 1; // 更新点赞数
   }).catch(error => {
     ElMessage.error('取消点赞失败');
-    //console.error(error);
+    ////console.error(error);
     if(error.response.status == CONST.SESSION_EXPIRED){ //Session expired
       Cookies.remove('room_id')
       Cookies.remove('userid')
@@ -314,7 +314,7 @@ function unlikeGameRecord(row) {
 
 function likeComment(row){
   row.comment_liked = true;
-  //console.log("当前的记录id为：" + row.commentId);
+  ////console.log("当前的记录id为：" + row.commentId);
   axios.post(main.url+'/api/likeComment',
       { 'commentid': row.commentId },
       { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
@@ -323,7 +323,7 @@ function likeComment(row){
     row.likeNum += 1; // 更新点赞数
   }).catch(error => {
     ElMessage.error('点赞失败');
-    //console.error(error);
+    ////console.error(error);
     if(error.response.status == CONST.SESSION_EXPIRED){ //Session expired
       Cookies.remove('room_id')
       Cookies.remove('userid')
@@ -343,7 +343,7 @@ function likeComment(row){
 
 function unlikeComment(row){
   row.comment_liked = false;
-  //console.log("当前的记录id为：" + row.commentId);
+  ////console.log("当前的记录id为：" + row.commentId);
   axios.post(main.url+'/api/unlikeComment',
       { 'commentid': row.commentId },
       { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
@@ -352,7 +352,7 @@ function unlikeComment(row){
     row.likeNum -= 1; // 更新点赞数
   }).catch(error => {
     ElMessage.error('取消点赞失败');
-    //console.error(error);
+    ////console.error(error);
     if(error.response.status == CONST.SESSION_EXPIRED){ //Session expired
       Cookies.remove('room_id')
       Cookies.remove('userid')
@@ -386,7 +386,7 @@ function addComments(content) {
       ElMessage.error('评论失败');
   }).catch(error => {
     ElMessage.error('评论失败');
-    //console.error(error);
+    ////console.error(error);
     if(error.response.status == CONST.SESSION_EXPIRED){ //Session expired
       Cookies.remove('room_id')
       Cookies.remove('userid')
@@ -411,7 +411,7 @@ function viewComments(record_id){
       { 'recordid': record_id},
       { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
   ).then(res => {
-    //console.log(res.data)
+    ////console.log(res.data)
     view_comments_record_id.value = record_id
     comments_dialog.value = true
     comments.value = res.data.map(comment => ({
@@ -420,7 +420,7 @@ function viewComments(record_id){
     }))
   }).catch(error => {
     ElMessage.error('查看失败');
-    //console.error(error);
+    ////console.error(error);
     if(error.response.status == CONST.SESSION_EXPIRED){ //Session expired
       Cookies.remove('room_id')
       Cookies.remove('userid')
@@ -616,9 +616,6 @@ function formatDate(date1) {
     width : 100%;
 }
 
-
-
-
 .record-container{
     position: fixed;
     top: 0;
@@ -748,6 +745,11 @@ function formatDate(date1) {
   border-radius: 10px;
   background-color: #fff;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.record-card:hover {
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+  transform: scale(1.02);
 }
 
 .record-id{

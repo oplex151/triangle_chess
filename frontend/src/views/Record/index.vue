@@ -7,7 +7,7 @@ import VueSocketIO from 'vue-socket.io'
 import SocketIO from 'socket.io-client'
 import axios from 'axios';
 import main from '@/main';
-import { User, HomeFilled, Share,Star ,StarFilled} from '@element-plus/icons-vue'
+import { Share,Star ,StarFilled} from '@element-plus/icons-vue'
 import { registerSockets, socket, removeSockets } from '@/sockets'
 import Board from '@/views/Game/board.vue'
 import game_info from '@/assets/jsons/game_info.json'

@@ -36,13 +36,13 @@ export class Warhosre extends Chess {
             if (getCol(this.position) != 1)
             {
                 p.push(p2);
-                console.log("上右")
+                //console.log("上右")
             }
             // 如果列数是第九行 把p1传进来
             if (getCol(this.position) != COL)
             {
                 p.push(p1);
-                console.log("上左")
+                //console.log("上左")
             }
         }
         // down 加上蹩马腿判断
@@ -55,13 +55,13 @@ export class Warhosre extends Chess {
             // 如果行数是第一行 把p2传进来
             if (getCol(this.position) != 1) {
                 p.push(p2);
-                console.log("下右")
+                //console.log("下右")
 
             }
             // 如果行数是第九行 把p1传进来
             if (getCol(this.position) != COL) {
                 p.push(p1);
-                console.log("下左")
+                //console.log("下左")
             }
         }
         // 其他棋盘
@@ -82,13 +82,13 @@ export class Warhosre extends Chess {
                             if(getCol(this.position) !== 1){
                                 if(getCol(this.position) >= 6){
                                     p.push(p1);
-                                    console.log("第一阵营到第二阵营：纵左")
+                                    //console.log("第一阵营到第二阵营：纵左")
                                 }
                             }
                             if (getCol(this.position) !== COL){
                                 if(getCol(this.position) >= 5){
                                     p.push(p2);
-                                    console.log("第一阵营到第二阵营：纵右")
+                                    //console.log("第一阵营到第二阵营：纵右")
 
                                 }
                             }
@@ -97,13 +97,13 @@ export class Warhosre extends Chess {
                             if(getCol(this.position) !== 1){
                                 if(getCol(this.position) <= 5){
                                     p.push(p3);
-                                    console.log("第一阵营到第三阵营：纵左")
+                                    //console.log("第一阵营到第三阵营：纵左")
 
                                 }
                             }
                             if (getCol(this.position) !== COL){
                                 if(getCol(this.position) <= 4) {
-                                    console.log("第一阵营到第三阵营：纵左")
+                                    //console.log("第一阵营到第三阵营：纵左")
 
                                     p.push(p4);
                                 }
@@ -114,25 +114,25 @@ export class Warhosre extends Chess {
                         if(getCol(this.position) !== 1){
                             if(getCol(this.position) >= 6){
                                 p.push(p1);
-                                console.log("第一阵营到第二阵营：纵左")
-                                console.log("ROW - ROWBOT:"+(ROW - ROWBOT))
+                                //console.log("第一阵营到第二阵营：纵左")
+                                //console.log("ROW - ROWBOT:"+(ROW - ROWBOT))
 
                             }
                             if(getCol(this.position) <= 5){
                                 p.push(p3);
-                                console.log("第一阵营到第三阵营：纵左")
+                                //console.log("第一阵营到第三阵营：纵左")
 
                             }
                         }
                         if (getCol(this.position) !== COL){
                             if(getCol(this.position) >= 5) {
                                 p.push(p2);
-                                console.log("第一阵营到第二阵营：纵右")
+                                //console.log("第一阵营到第二阵营：纵右")
 
                             }
                             if(getCol(this.position) <= 4) {
                                 p.push(p4);
-                                console.log("第一阵营到第三阵营：纵左")
+                                //console.log("第一阵营到第三阵营：纵左")
 
                             }
                         }
@@ -267,10 +267,10 @@ export class Warhosre extends Chess {
 
                         if(getCol(this.position) >= 7){
                             p.push(p2);
-                            console.log("第一阵营到第二阵营：左")
+                            //console.log("第一阵营到第二阵营：左")
                         }
                         if(getCol(this.position) <= 5){
-                            console.log("第一阵营到第三阵营：左")
+                            //console.log("第一阵营到第三阵营：左")
                             p.push(p3);
                         }
                         p.push(p1);
@@ -281,11 +281,11 @@ export class Warhosre extends Chess {
                         p3 = (1 - (getRow(this.position) - (ROW - ROWBOT))) * COL + 2 + COL - getCol(this.position) + 1 + ROWMID * COL;
 
                         if(getCol(this.position) <= 5){
-                            console.log("第二阵营到第一阵营：左")
+                            //console.log("第二阵营到第一阵营：左")
                             p.push(p2);
                         }
                         if(getCol(this.position)  >= 7){
-                            console.log("第二阵营到第三阵营：左")
+                            //console.log("第二阵营到第三阵营：左")
                             p.push(p3);
                         }
                         p.push(p1);
@@ -297,11 +297,11 @@ export class Warhosre extends Chess {
                         p3 = (1 - (getRow(this.position) - (ROW - ROWBOT))) * COL + 2 + COL - getCol(this.position) + 1 ;
 
                         if(getCol(this.position) <= 5){
-                            console.log("第三阵营到第二阵营：左")
+                            //console.log("第三阵营到第二阵营：左")
                             p.push(p2);
                         }
                         if(getCol(this.position) >= 7) {
-                            console.log("第三阵营到第一阵营：左")
+                            //console.log("第三阵营到第一阵营：左")
                             p.push(p3);
                         }
                         p.push(p1);
@@ -333,12 +333,12 @@ export class Warhosre extends Chess {
                         p2 = (1 - (getRow(this.position) - (ROW - ROWBOT))) * COL - 2 + COL - getCol(this.position) + 1 + ROWBOT * COL;
                         p3 = (1 - (getRow(this.position) - (ROW - ROWBOT))) * COL - 2 + COL - getCol(this.position) + 1 + ROWMID * COL;
                         if(getCol(this.position) >= 5){
-                            console.log("第一阵营到第二阵营：右")
+                            //console.log("第一阵营到第二阵营：右")
 
                             p.push(p2);
                         }
                         if(getCol(this.position) <= 3){
-                            console.log("第一阵营到第三阵营：右")
+                            //console.log("第一阵营到第三阵营：右")
 
                             p.push(p3);
                         }
@@ -350,12 +350,12 @@ export class Warhosre extends Chess {
                         p2 = (1 - (getRow(this.position) - (ROW - ROWBOT))) * COL - 2 + COL - getCol(this.position) + 1 ;
                         p3 = (1 - (getRow(this.position) - (ROW - ROWBOT))) * COL - 2 + COL - getCol(this.position) + 1 + ROWMID * COL;
                         if(getCol(this.position) <= 3){
-                            console.log("第二阵营到第一阵营：右")
+                            //console.log("第二阵营到第一阵营：右")
 
                             p.push(p2);
                         }
                         if(getCol(this.position) >= 5){
-                            console.log("第二阵营到第三阵营：右")
+                            //console.log("第二阵营到第三阵营：右")
 
                             p.push(p3);
                         }
@@ -367,12 +367,12 @@ export class Warhosre extends Chess {
                         p2 = (1 - (getRow(this.position) - (ROW - ROWBOT))) * COL - 2 + COL - getCol(this.position) + 1 + ROWBOT * COL;
                         p3 = (1 - (getRow(this.position) - (ROW - ROWBOT))) * COL - 2 + COL - getCol(this.position) + 1 ;
                         if(getCol(this.position) <= 3){
-                            console.log("第三阵营到第二阵营：右")
+                            //console.log("第三阵营到第二阵营：右")
 
                             p.push(p2);
                         }
                         if(getCol(this.position) >= 5){
-                            console.log("第三阵营到第一阵营：右")
+                            //console.log("第三阵营到第一阵营：右")
 
                             p.push(p3);
                         }

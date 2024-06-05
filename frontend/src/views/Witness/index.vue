@@ -2,14 +2,13 @@
 import VueSocketIO from 'vue-socket.io'
 import SocketIO from 'socket.io-client'
 import main from '@/main'
-import { onMounted, ref, getCurrentInstance ,computed} from 'vue'
+import { onMounted, ref, getCurrentInstance} from 'vue'
 import { registerSockets, socket, registerSocketsForce, removeSockets } from '@/sockets'
-import axios from 'axios'
 import Cookies from 'js-cookie'
 import { useRouter } from 'vue-router';
-import { ElDivider, ElInput, ElMessage } from 'element-plus'
+import { ElDivider, ElMessage } from 'element-plus'
 import * as CONST from '@/lib/const.js'
-import { User, HomeFilled } from '@element-plus/icons-vue'
+import { HomeFilled } from '@element-plus/icons-vue'
 
 const { proxy } = getCurrentInstance()
 const router = useRouter()
@@ -35,7 +34,7 @@ const sockets_methods = {
     }
     if (camp>=-1){
       Cookies.set('camp',camp)
-      console.log(Cookies.get('camp'))
+      //console.log(Cookies.get('camp'))
       ElMessage.success('你是'+(camp>0?(camp>1?'金方玩家':'黑方玩家'):(camp==0?'红方玩家':'观战者')))
     }
     removeSockets(sockets_methods, socket.value, proxy)
@@ -97,7 +96,7 @@ function establishConnection() {
     })
   }
   registerSocketsForce(sockets_methods, socket.value, proxy)
-  console.log(socket.value)
+  //console.log(socket.value)
 }
 function watchGame() {
   socket.value.io.emit('watchGame', { 'room_id': new_room_id.value, 'userid': Cookies.get('userid') })

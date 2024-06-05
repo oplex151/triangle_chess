@@ -44,15 +44,15 @@ const name = computed(()=>{
 const sockets_methods = {
     gameRecord(data) {
         options.value = data.record[0]
-        console.log(options.value)
+        //console.log(options.value)
         loading.value = false
     },
     gameMoveRecord(data) {
-        console.log(data)
+        //console.log(data)
         moves.value = data.record[0]
         loading.value = false
         start.value = true
-        console.log(game_info)
+        //console.log(game_info)
         map_state.value = game_info
         // 使用nextTick等board初始化完成
         nextTick(() => {
@@ -88,9 +88,9 @@ onMounted(() => {
         })
     }
     registerSockets(sockets_methods, socket.value, proxy);
-    console.log(socket.value)
+    //console.log(socket.value)
     my_camp.value = -1
-    console.log(route.query.recordId)
+    //console.log(route.query.recordId)
     socket.value.io.emit('viewMoveRecords', { 'record_id': route.query.recordId })
 });
 function goBackHome() {
@@ -107,15 +107,15 @@ onUnmounted(() => {
         socket.value.io.disconnect()
     }
     catch (err) {
-        console.log("Record Remove Socket Failed!")
-        console.log(err)
+        //console.log("Record Remove Socket Failed!")
+        //console.log(err)
     }
 
 });
 
 
 const Move = (data) => {
-    console.log(data)
+    //console.log(data)
 }
 
 const Next = () => {
@@ -132,7 +132,7 @@ const Next = () => {
     data.x2 = parseInt(data.pos2[0])
     data.y2 = parseInt(data.pos2[1])
     data.z2 = parseInt(data.pos2[2])
-    console.log(data)
+    //console.log(data)
     step.value += 1
     board.value.moveSuccess(data)
 }
@@ -178,9 +178,9 @@ const camp_0_style = computed(() => {
 const copy = async (anything) => {
     try {
         await toClipboard(anything)
-        console.log('Copied to clipboard')
+        //console.log('Copied to clipboard')
     } catch (e) {
-        console.error(e)
+        //console.error(e)
     }
 }
 const share = () => {

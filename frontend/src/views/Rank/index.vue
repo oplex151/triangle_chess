@@ -7,9 +7,9 @@ import Cookies from 'js-cookie';
 import { registerSockets, socket, registerSocketsForce, removeSockets } from '@/sockets'
 import { ElMessage ,ElMessageBox} from "element-plus";
 import { useRouter } from 'vue-router';
-import { lives, resetLives } from '@/chesses/Live';
+import { resetLives } from '@/chesses/Live';
 import { onMounted, ref, onUnmounted, computed, getCurrentInstance } from 'vue';
-import { User, HomeFilled } from '@element-plus/icons-vue'
+import { HomeFilled } from '@element-plus/icons-vue'
 import axios from 'axios';
 import {getRankLevel} from '@/config/rank.js'
 import * as CONST from "@/lib/const.js";
@@ -32,7 +32,7 @@ onMounted(() => {
         // socket.value.io.emit('joinRoom',{'userid':userid,'room_id':Cookies.get('room_id')})
     }
     registerSockets(sockets_methods, socket.value, proxy);
-    console.log(socket.value)
+    //console.log(socket.value)
 
     axios.post(main.url + '/api/getRankScore', {
         'userid': userid,
@@ -42,7 +42,7 @@ onMounted(() => {
         }
     ).then(res => {
         if (res.status == 200) {
-            console.log(res.data)
+            //console.log(res.data)
             totalscore.value = res.data.totalscore
             rank.value = res.data.rank
         } else {

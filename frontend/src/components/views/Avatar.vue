@@ -32,7 +32,7 @@ const user_info = ref({})
  * p.s.这个并不是最终版本的好友功能，最后可能会用一个新的isFriends api 来代替现在的getFriends.
 */
 onMounted (() => {
-    //console.log('mounted')
+    ////console.log('mounted')
     if (props.is_friend) {
         isfriend.value = true
     }
@@ -45,7 +45,7 @@ onMounted (() => {
         }
     ).then(res => {
         if (res.status == 200) {
-            //console.log(res.data)
+            ////console.log(res.data)
             for (const id in res.data.friends) {
                 let friend = res.data.friends[id]
                 if (friend.userid == props.userid) {
@@ -69,7 +69,7 @@ onMounted (() => {
 //////////////////////////////////end////////////////////
 const addFriend = () => {
 
-    //console.log('add friend')
+    ////console.log('add friend')
     if (props.userid == props.my_userid) {
         ElMessage.error('不能添加自己为好友')
         return
@@ -83,10 +83,10 @@ const addFriend = () => {
     }
     ).then(res => {
         if (res.status == 200) {
-            //console.log(res.data)
+            ////console.log(res.data)
             ElMessage.success('好友信息已发送')
         } else {
-            //console.log('error')
+            ////console.log('error')
             ElMessage.error('添加好友失败')
         }
     }).catch(err => {
@@ -95,12 +95,12 @@ const addFriend = () => {
             isfriend.value = true
             return
         }
-        //console.log(err)
+        ////console.log(err)
         ElMessage.error('添加好友失败')
     })
 }
 const deleteFriend = () => {
-    console.log('delete friend')
+    //console.log('delete friend')
     axios.post(main.url + '/api/deleteFriend', {
         'userid': props.my_userid,
         'friend_id': props.userid
@@ -110,16 +110,16 @@ const deleteFriend = () => {
     }
     ).then(res => {
         if (res.status == 200) {
-            //console.log(res.data)
+            ////console.log(res.data)
             ElMessage.success('删除好友成功')
             isfriend.value = false
         
         } else {
-            //console.log('error')
+            ////console.log('error')
             ElMessage.error('删除好友失败')
         }
     }).catch(err => {
-        console.log(err)
+        //console.log(err)
         if (err.response.status == CONST.NOT_FRIEND) {
             ElMessage.error('已经不是好友了')
             isfriend.value = false

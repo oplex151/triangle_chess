@@ -51,14 +51,12 @@ def saveImage(image,path,ext):
         image.save(path)
 
 def hash_token(password):
-    # 使用SHA-256算法加密密码
     return hashlib.sha256(password.encode()).hexdigest()
 
 def validate_token(plain_password, hashed_password):
     return hash_token(plain_password) == hashed_password
 
 def adminLogin(password, config_password):
-    #if not protected_route(request.headers.get('Authorization').split(' ')[1]):
     res = {} 
     if password == 'sanguoxiangqi':
         token = jwt.encode({'role':'admin','exp': datetime.datetime.utcnow() + datetime.timedelta(hours=1)}, config_password)
@@ -84,6 +82,7 @@ def login(username, password):
                 return "{}",BANNED_USER
             if result[1] in sessions:
                 logger.error("User {0} already logged in".format(username))
+                session_times[result[1]] -= 60*30
                 return "{}",ALREADY_LOGIN
             logger.info("User {0} logged in successfully usring id {1}".format(username,result[1]))
             res = {"userid":result[1], "username":username}

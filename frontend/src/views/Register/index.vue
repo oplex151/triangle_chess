@@ -83,7 +83,7 @@ const submitForm = (formEl: FormInstance | undefined) => {
     if (!formEl) return
     formEl.validate((valid) => {
         if (valid) {
-            console.log('submit!')
+            //console.log('submit!')
             disableForm.value = true
             axios.post(main.url + '/api/register', {
                 'username': RegisterForm.username,
@@ -111,14 +111,14 @@ const submitForm = (formEl: FormInstance | undefined) => {
                     errorMessage.value = '未知错误'
                 }
             }).catch(err => {
-                console.log(err);
+                //console.log(err);
                 errorMessage.value = err;
                 disableForm.value = false
 
             });
             disableForm.value = false
         } else {
-            console.log('error submit!');
+            //console.log('error submit!');
             errorMessage.value = '注册表单出错!'
             disableForm.value = false
             return false

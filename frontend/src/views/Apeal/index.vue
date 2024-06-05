@@ -77,12 +77,12 @@ const Confirm = () => {
     } 
     else {
         ElMessage.success('发送出错,反正是发过去了')
-        console.log(res)
+        //console.log(res)
     }
     })
     .catch(error => {
         ElMessage.error('发送出错')
-        console.log(error.response.status)
+        //console.log(error.response.status)
         if(error.response.status == 550){ //Session expired
           Cookies.remove('room_id')
           Cookies.remove('userid')

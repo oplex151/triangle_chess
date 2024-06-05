@@ -10,7 +10,7 @@ import { onBeforeMount } from 'vue'
 const router = useRouter();
 
 onBeforeMount(() =>{
-    console.log(Cookies.get('userid'));
+    //console.log(Cookies.get('userid'));
     axios.post(main.url+ '/api/logout', {
     'userid': Cookies.get('userid'),
     },
