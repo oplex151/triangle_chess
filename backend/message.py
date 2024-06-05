@@ -12,6 +12,9 @@ NAME_ALREADY_EXIST = 509 #"Name already exist"
 REGISTER_EXIST_USER = 503 #"Register failed: User already exists"
 REGISTER_FAILED = 504 #"Register failed: Internal server error"
 WRONG_OLD_PASSWORD = 513 #"Wrong old password"
+BANNED_USER = 514 #"Banned user"
+USER_ALREADY_BANNED = 515 #"User already banned"
+ROOM_FULL = 516 #"Room full"
 
 PARAM_ERROR = 505 #"Parameter error"
 
@@ -28,9 +31,12 @@ ROOM_NOT_ENOUGH = 523 #"Room not enough"
 ALLREADY_FRIEND = 530 #"Already friend"
 NO_FRIENDS = 531 #"No friends"
 NOT_FRIEND = 532 #"Not friend"
+ALLREADY_APPLIED = 533 #"Already applied"
 
 NOT_ADMIN = 540 #"Not admin"
 NO_APPEALS = 541 #"No appeals"
+
+SESSION_EXPIRED = 550 #"Session expired"
 
 MOVE_NO_PIECE = 601 #"Move failed: No piece to move"
 MOVE_OUT_OF_BOARD = 602 #"Move failed: Move out of board"

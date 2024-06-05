@@ -1,3 +1,4 @@
+from enum import Enum
 import os
 import pymysql
 from dotenv import load_dotenv
@@ -15,13 +16,18 @@ password = os.getenv("MYSQL_PASSWORD")
 
 logger = setupLogger()
 
-def addAppeals(userid, appeal_type, content):
+
+class AppealType(Enum):
+    report = 0
+    normal = 1
+
+def addAppeals(userid, appeal_type, content, fromid):
     db = pymysql.connect(host="127.0.0.1",user="root",password=password,database=DATA_BASE)
     cursor = db.cursor()
     # 插入申诉信息到数据库
     try:
-        insert_query = "INSERT INTO {0} (userid, type, content) VALUES (%s, %s, %s);".format(APPEAL_TABLE)
-        cursor.execute(insert_query, (userid, appeal_type, content))
+        insert_query = "INSERT INTO {0} (userId, type, content, fromId) VALUES (%s, %s, %s, %s);".format(APPEAL_TABLE)
+        cursor.execute(insert_query, (userid, appeal_type, content, fromid))
     except Exception as e:
         db.rollback()
         logger.error("add appeal error: "+str(e))
@@ -39,15 +45,19 @@ def isAdmin(adminid):
     # 暂设只有userid小于10是管理员
     return adminid < 10
 
-def getAppeals(userid):    
+def getAppeals(userid=None):    
     db = pymysql.connect(host="127.0.0.1",user="root",password=password,database=DATA_BASE)
     cursor = db.cursor()
     # 查询数据库中某个用户的申诉
     try:
         db.begin()
         cursor.connection.ping(reconnect=True) 
-        select_query = "SELECT userId, type, content FROM {0} WHERE userId = %s;".format(APPEAL_TABLE)
-        cursor.execute(select_query, (userid))
+        if userid is None:
+            select_query = "SELECT * FROM {0};".format(APPEAL_TABLE)
+            cursor.execute(select_query)
+        else:
+            select_query = "SELECT * FROM {0} WHERE fromId = %s;".format(APPEAL_TABLE)
+            cursor.execute(select_query, (userid))
         appeals = cursor.fetchall() 
     except Exception as e:
         logger.error(e,exc_info=True)
@@ -56,31 +66,32 @@ def getAppeals(userid):
         db.close()
     return appeals if appeals else None
 
-def getAppealsInfo(userid, adminid):
-    # 检查是否是管理员用户
-    if isAdmin(adminid) is False:
-        return "{}", NOT_ADMIN
-    
+def getAppealsInfo(userid):
     db = pymysql.connect(host="127.0.0.1",user="root",password=password,database=DATA_BASE)
     cursor = db.cursor()
-    result = {}
+    res = {}
     try:
-        # 获取用户的好友列表
-        logger.debug(userid)
-        appeals = getAppeals(userid)
+        appeals = getAppeals(userid) # 获取申诉信息
         if not appeals:
             return "{}",NO_APPEALS
-        appeals_info = []
+        res = []
         for appeal in appeals:
-            userid, appeal_type, content = appeal
+            appealid, userid, appeal_type, content, timestamp, fromid, dealed, feedback = appeal
             sql =(f"SELECT userName FROM {USER_TABLE} WHERE userId = {userid}") # sql可以优化
             cursor.execute(sql)
             result = cursor.fetchone()
             if result:
                 username = result[0]
-                appeals_info.append({"userid":userid,"username":username,"type":appeal_type,"content":content})
-        logger.debug(appeals_info)
-        result = {'appeals':appeals_info}
+                res.append({"appealid":appealid,
+                            "userid":userid,
+                            "username":username,
+                            "type":appeal_type,
+                            "timestamp":timestamp,
+                            "content":content,
+                            "fromid":fromid,
+                            "dealed":dealed,
+                            "feedback":feedback if dealed else ""})
+        logger.debug(res)
         status = SUCCESS
     except Exception as e:
         logger.error(e)
@@ -88,4 +99,20 @@ def getAppealsInfo(userid, adminid):
     finally:
         cursor.close()
         db.close()
-    return jsonify(result),status
+    return jsonify(res),status
+
+def handleAppeal(appealid, feedback):
+    db = pymysql.connect(host="127.0.0.1",user="root",password=password,database=DATA_BASE)
+    cursor = db.cursor()
+    try:
+        update_query = "UPDATE {0} SET dealed = 1, feedback = %s WHERE appealId = %s;".format(APPEAL_TABLE)
+        cursor.execute(update_query, (feedback, appealid))
+        db.commit()
+        status = SUCCESS
+    except Exception as e:
+        logger.error(e)
+        status = OTHER_ERROR
+    finally:
+        cursor.close()
+        db.close()
+    return "{}",status

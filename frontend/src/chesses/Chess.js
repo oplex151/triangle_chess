@@ -2,6 +2,7 @@ import { COL, ROWMID, ROWTOP, ROWBOT } from "@/config/config";
 import { GEBI, getCol, getRow } from "@/utils/utils";
 import { lives } from "./Live";
 import {ElMessage} from "element-plus";
+import main from "@/main"
 
 export class Chess {
     constructor(position, camp, inWhichArea) {
@@ -60,16 +61,19 @@ export class Chess {
         switch (this.camp) {
             case 0:
                 point.classList.add('camp0');
-                this.image = "src/assets/images/game/chess/realChess/" + this.name + "白.png";
+                //this.image = "@/assets/images/game/chess/realChess/" + this.name + "白.png";
+                this.image = main.url + "/static/game/chess/realChess/" + this.name + "白.png";
                 break;
 
             case 1:
                 point.classList.add('camp1');
-                this.image = "src/assets/images/game/chess/realChess/" + this.name + "黑.png";
+                //this.image = "@/assets/images/game/chess/realChess/" + this.name + "黑.png";
+                this.image = main.url + "/static/game/chess/realChess/" + this.name + "黑.png";
                 break;
             case 2:
                 point.classList.add('camp2');
-                this.image = "src/assets/images/game/chess/realChess/" + this.name + "金.png";
+                //this.image = "@/assets/images/game/chess/realChess/" + this.name + "金.png";
+                this.image = main.url + "/static/game/chess/realChess/" + this.name + "金.png";
                 break;
         }
         point.classList.add('chess-background');  // 添加自定义class

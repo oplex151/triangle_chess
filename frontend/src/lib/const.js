@@ -16,6 +16,8 @@ export const PARAM_ERROR = 505;
 export const NOT_JOIN_GAME = 510;
 export const GAME_CREATE_FAILED = 511;
 export const NOT_YOUR_TURN = 512;
+export const BANNED_USER = 514;
+export const ROOM_FULL = 516;
 
 export const ROOM_NOT_EXIST = 520 ;
 export const ALREADY_IN_ROOM = 521;
@@ -27,8 +29,17 @@ export const ALREADY_FRIEND = 530; // already friend,拼写不一样
 export const NO_FRIENDS = 531;
 export const NOT_FRIEND = 532;
 
+export const NO_APPEALS = 541;
+
+export const SESSION_EXPIRED = 550;
+
 export const MOVE_NO_PIECE = 601;
 export const MOVE_OUT_OF_BOARD = 602;
 export const MOVE_INVALID = 603;
 
 export const GAME_END = 701;
+
+
+//游戏状态机
+export const STATUS_ONING = 1
+export const STATUS_DRAWING = 2

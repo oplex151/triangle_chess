@@ -21,7 +21,7 @@
                 </el-radio-group>
             </el-form-item>
             <el-form-item label="详细原因" prop="detail">
-                    <el-input v-model="ruleForm.detail" />
+                <el-input v-model="ruleForm.detail" />
             </el-form-item>
         </el-form>
         <template #footer>
@@ -72,32 +72,31 @@ const rules = reactive < FormRules < RuleForm >> ({
 })
 
 const Confirm = () => {
-    ElMessage.success(props.toreportid + ' 已被您('+props.myuserid+')举报，原因：' + ruleForm.reason + ' ' + ruleForm.detail)
-    axios.post(main.url+ '/api/report', {
-        userid:props.toreportid,
-        reason:ruleForm.reason,
-        detail:ruleForm.detail,
-        reporter:props.myuserid
+
+    axios.post(main.url+ '/api/addAppeals', {
+        'userid':props.toreportid,
+        'type': 0,  //report
+        'content':ruleForm.reason +':'+ruleForm.detail,
+        'fromid':props.myuserid
     },
     {
         headers: {'Content-Type':'application/x-www-form-urlencoded'},
     }
     ).then(res => {
     if (res.status == 200) {
-        ElMessage.success(props.toreportid + ' 已被您举报，原因：' + ruleForm.reason + ' ' + ruleForm.detail)
-
+        ElMessage.success((props.toreportid + ' 已被您('+props.myuserid+')举报，原因：' + ruleForm.reason + ' ' + ruleForm.detail))
     } 
     else {
-        ElMessage.success('举报出错,反正是发过去了')
-        console.log(res)
-        
+        ElMessage.success('举报出错')
+        //console.log(res)        
     }
+    resetForm(ruleFormRef.value)  
     })
     .catch(error => {
         ElMessage.success('举报出错')
-        console.log(error)
+        //console.log(error)
+        resetForm(ruleFormRef.value)  
     });
-    resetForm(ruleFormRef.value)  
     emit('reportEnd')
 }
 const handleSubmit = (ruleFormRef : FormInstance |undefined) => {

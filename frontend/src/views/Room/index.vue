@@ -9,6 +9,7 @@ import Cookies from 'js-cookie'
 import { useRouter } from 'vue-router';
 import { ElDivider, ElInput, ElMessage } from 'element-plus'
 import * as CONST from '@/lib/const.js'
+import { resetLives } from '@/chesses/Live';
 import { User, HomeFilled } from '@element-plus/icons-vue'
 
 import Avatar from '@/components/views/Avatar.vue'
@@ -24,6 +25,8 @@ const o_message = ref([])
 
 const to_report_id= ref(0)
 const vis = ref(false)
+
+const avatars = ref({})
 // 格式提示：
 // room_info:{
 //   room_id:xxx,
@@ -50,19 +53,13 @@ const my_name = computed(() => {
   }
   return ''
 })
-const i_am_holder = computed(() => {
-  if (room_info.value) {
-    return room_info.value.holder.userid == Cookies.get('userid')
-  }
-  return false
-})  
 
 const sockets_methods = {
   createRoomSuccess(data){
     Cookies.set('room_id',data.room_id)
     room_id.value = data.room_id
     room_info.value = data.room_info
-
+    avatars.value[Cookies.get('userid')] = data.avatar
     ElMessage.success('创建房间成功')
   },
   joinRoomSuccess(data){
@@ -71,10 +68,40 @@ const sockets_methods = {
       room_id.value = data.room_id
       room_info.value = data.room_info
       ElMessage.success('加入房间成功')
+      avatars.value[data.userid] = data.avatar
+      let userids = data.room_info.users.map(user => {
+        return user.userid;
+      })      
+      axios.post(main.url + '/api/getAvatars', {'userids': userids.join(',')},
+      {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      }
+      )
+      .then(res => {
+        avatars.value = res.data
+      })
+      .catch(err => {
+        //console.error(err)
+        if(err.response.status == CONST.SESSION_EXPIRED){ //Session expired
+          Cookies.remove('room_id')
+          Cookies.remove('userid')
+          Cookies.remove('room_info')
+          Cookies.remove('username')
+          Cookies.remove('camp')
+          ElMessage({
+            message: '会话过期，请重新登录',
+            grouping: true,
+            type: 'error',
+            showClose: true
+          })
+          router.replace('/login')
+        }
+      })
     }
     else{
       room_info.value = data.room_info
       ElMessage.success('玩家'+data.username+'加入房间')
+      avatars.value[data.userid] = data.avatar
     }
   },
   processWrong(data){
@@ -102,28 +129,54 @@ const sockets_methods = {
       case CONST.GAME_CREATE_FAILED:
         ElMessage.error('游戏创建失败:未知错误')
         break
+      case CONST.ROOM_FULL:
+        ElMessage.error('房间已满')
+        break
       case CONST.USER_NOT_LOGIN:
         ElMessage.error('用户未登录')
         router.push('/login')
         break
+      case CONST.SESSION_EXPIRED: //Session expired
+        Cookies.remove('room_id')
+        Cookies.remove('userid')
+        Cookies.remove('room_info')
+        Cookies.remove('username')
+        Cookies.remove('camp')
+        ElMessage({
+          message: '会话过期，请重新登录',
+          grouping: true,
+          type: 'error',
+          showClose: true
+        })
+        router.replace('/login')
+        break;
       default:
-        console.error(data.status)
+        //console.error(data.status)
         ElMessage.error('未知错误')
     }
   },
   leaveRoomSuccess(data){
-    if (data.userid == Cookies.get('userid')){
+    if (data.userid == -1){
+      Cookies.remove('room_id')
+      Cookies.remove('room_info')
+      room_id.value = null
+      room_info.value = null
+      ElMessage.success('房主离开，房间解散！')
+    }
+    else if (data.userid == Cookies.get('userid')){
       Cookies.remove('room_id')
       Cookies.remove('room_info')
       room_id.value = null
       room_info.value = null
       ElMessage.success('离开房间成功')
+      avatars.value = {}
     }
     else{
       ElMessage.success('玩家'+data.username+'离开房间')
       if (room_info.value.holder.userid != Cookies.get('userid') && data.room_info.holder.userid == Cookies.get('userid')) 
         ElMessage.success('房主离开房间，你是新的房主')
       room_info.value = data.room_info
+      avatars.value[data.userid] = null
     }
   },
   rejoinGameSuccess(data){
@@ -144,9 +197,10 @@ const sockets_methods = {
         camp = i
       }
     }
+    resetLives()
     if (camp>=-1){
       Cookies.set('camp',camp)
-      console.log(Cookies.get('camp'))
+      //console.log(Cookies.get('camp'))
       ElMessage.success('游戏开始,你是'+(camp>0?(camp>1?'金方玩家':'黑方玩家'):(camp==0?'红方玩家':'观战者')))
     }
     removeSockets(sockets_methods, socket.value, proxy)
@@ -156,15 +210,49 @@ const sockets_methods = {
     if(data.username!=my_name.value)
       o_message.value.push({ 'user': data.username, 'message': data.message })
   },
-
 }
 
 onMounted(() => {
   establishConnection()
-  if (Cookies.get('room_id') && Cookies.get('room_info')) {
+  let fromGame = sessionStorage.getItem('fromGame')
+  if (fromGame == 'true') {
     room_id.value = Cookies.get('room_id')
     room_info.value = JSON.parse(Cookies.get('room_info'))
+    let userids = room_info.value.users.map(user => {
+      return user.userid;
+    })      
+    axios.post(main.url + '/api/getAvatars', {'userids': userids.join(',')},
+    {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    }
+    )
+    .then(res => {
+      //console.log(res.data)
+      avatars.value = res.data
+    })
+    .catch(err => {
+      //console.error(err)
+      if(err.response.status == CONST.SESSION_EXPIRED){ //Session expired
+        Cookies.remove('room_id')
+        Cookies.remove('userid')
+        Cookies.remove('room_info')
+        Cookies.remove('username')
+        Cookies.remove('camp')
+        ElMessage({
+          message: '会话过期，请重新登录',
+          grouping: true,
+          type: 'error',
+          showClose: true
+        })
+        router.replace('/login')
+      }
+    })
   }
+  else{
+    Cookies.remove('room_id')
+    Cookies.remove('room_info')
+  }
+  sessionStorage.removeItem('fromGame')
 })
 
 function establishConnection() {
@@ -175,7 +263,7 @@ function establishConnection() {
     })
   }
   registerSocketsForce(sockets_methods, socket.value, proxy)
-  console.log(socket.value)
+  //console.log(socket.value)
 }
 function createRoom() {
   socket.value.io.emit('createRoom', { 'userid': Cookies.get('userid') })
@@ -199,15 +287,24 @@ function createGame() {
     { 'room_id': room_id.value, 'userid': Cookies.get('userid') },
     {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    })
+    }).catch(error => {
+      if(error.response.status == CONST.SESSION_EXPIRED){ //Session expired
+        Cookies.remove('room_id')
+        Cookies.remove('userid')
+        Cookies.remove('room_info')
+        Cookies.remove('username')
+        Cookies.remove('camp')
+        ElMessage({
+          message: '会话过期，请重新登录',
+          grouping: true,
+          type: 'error',
+          showClose: true
+        })
+        router.replace('/login')
+      }
+  })
 }
 function goBackHome(){
-  // if (Cookies.get('room_id')){
-  //   leaveRoom()
-  // }
-  // 不知道到底需不需要离开房间
-  
-  
   removeSockets(sockets_methods, socket.value, proxy)
   Cookies.remove('room_id')
   Cookies.remove('room_info')
@@ -226,7 +323,7 @@ const copyRoomId = () => {
     document.body.removeChild(textarea);
     ElMessage.success('已复制房间号')
   } else {
-    console.error('room_info 或 room_info.room_id 未定义');
+    //console.error('room_info 或 room_info.room_id 未定义');
   }
 }
 
@@ -241,9 +338,7 @@ const handleReportEnd = () => {
   vis.value = false;
 }
 const handleReport = (id) => {
-  console.log(id);
   to_report_id.value = id;
-  console.log(to_report_id.value);
   vis.value = true;
 }
 
@@ -306,29 +401,51 @@ const handleReport = (id) => {
     <ElDivider/>
     <div class="in-room">
       <div class="room-info">
+        <div v-if="room_info" class="room-tag">
+          参战者
+        </div>
         <div v-if="room_info">
-          <li v-for="user in room_info.users" class="user" @mouseover="get_info"> 
+          <li v-for="user in room_info.users" class="user" @mouseover="get_info">
             <Avatar :my_userid="Cookies.get('userid')" :userid=user.userid @reportUser="handleReport" class="avas">
               <template #name>
                 <p>{{user.username}}</p>
               </template>
               <template #avatar>
-                <User/>
+                <img :src="main.url+avatars[user.userid]" alt="头像" />
               </template>
-            </Avatar>   
-            <span class="user-name" style="vertical-align: middle">{{ user.username }}</span>            
+            </Avatar>
+            <span class="user-name" style="vertical-align: middle">{{ user.username }}</span>
           </li>
         </div>
       </div>
+
       <div class="message" v-if="room_id">
-        
+
         <div class="message-show">
           <li v-for="(item, index) in o_message">
             {{item.user}} - {{ item.message }}
           </li>
         </div>
-          <el-input class="custom-input" v-model="i_message" maxlength=80 show-word-limit @keyup.enter.native="sendMessage" placeholder="Please input" />
-          <el-button @click="sendMessage" style="width:60px" type="primary">发送消息</el-button>
+        <el-input class="custom-input" v-model="i_message" maxlength=80 show-word-limit placeholder="Please input" />
+        <el-button @click="sendMessage" style="width:60px" type="primary">发送消息</el-button>
+      </div>
+      <div class="room-info">
+        <div v-if="room_info" class="room-tag" >
+          观战者
+        </div>
+        <div v-if="room_info">
+          <li v-for="viewer in room_info.viewers" class="user" @mouseover="get_info">
+            <Avatar :my_userid="Cookies.get('userid')" :userid=viewer.userid @reportUser="handleReport" class="avas">
+              <template #name>
+                <p>{{viewer.username}}</p>
+              </template>
+              <template #avatar>
+                <User/>
+              </template>
+            </Avatar>
+            <span class="user-name" style="vertical-align: middle">{{ viewer.username }}</span>
+          </li>
+        </div>
       </div>
     </div>
   </div>
@@ -539,14 +656,16 @@ const handleReport = (id) => {
   cursor: pointer;
   margin-left: 20px;
 }
-.avas{
-  min-width: 400px;
-}
+
 .button-create-game:hover {
   background-color: #bbe62d;
 }
 
 .room-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   margin-top: 20px;
   margin-left: 20px;
   margin-right: 20px;
@@ -556,13 +675,28 @@ const handleReport = (id) => {
   border-radius: 10px;
 }
 
+.room-tag{
+  font-size: 24px;
+  font-weight: bold;
+  color: #ecb920;
+  font-family:'Times New Roman', Times, serif;
+  margin-top: 20px;
+  margin-left: 20px;
+  margin-right: 20px;
+  display: flex;
+  max-width: 30%;
+  background-color:bisque;
+  border-radius: 10px;
+}
+
+
 .user{
+  position: relative;
   margin: 20px;
   padding-top: 10px;
   padding-bottom: 10px;
-  margin-right: 200px;
   height: 60px;
-  display: flex;
+  display: inline-flex;
   color: #ecb920;
 }
 

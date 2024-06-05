@@ -5,6 +5,7 @@ import axios from 'axios';
 import { ElMessage } from 'element-plus';
 import main from '@/main';
 import Cookies from 'js-cookie';
+import * as CONST from '@/lib/const';
 
 const uname = ref('');
 const password = ref('');
@@ -16,7 +17,7 @@ onMounted(() => {
   if (Cookies.get('userid') !== undefined) {
     router.push('/');
   }
-  console.log(main.url)
+  //console.log(main.url)
 });
 
 watchEffect(() => {
@@ -40,10 +41,12 @@ watchEffect(() => {
   }
 });
 
+const num = 8 //失效时间是几小时
+const expire_time= new Date(new Date().getTime() + num * 60 * 60 * 1000);
+
 const login = () => {
   if (uname.value === '' || password.value === '') {
     errorMessage.value = '用户名或密码不能为空';
-
     return;
   }
   axios.post(main.url+ '/api/login', {
@@ -55,11 +58,14 @@ const login = () => {
     }
   ).then(res => {
     if (res.status == 200) {
-      Cookies.set('userid',res.data.userid);
-      Cookies.set('username',res.data.username);
+
+      
+      Cookies.set('userid',res.data.userid,{expires:expire_time});
+      Cookies.set('username',res.data.username,{expires:expire_time});
       infoMessage.value = '登录成功';
       router.push('/');
-    } else {
+    }
+    else {
       errorMessage.value = '用户名或密码错误';
     }
   })
@@ -78,6 +84,9 @@ const login = () => {
     else if(error.response.status == 502){
       errorMessage.value = '密码错误';
     }
+    else if (error.response.status == CONST.BANNED_USER) {
+      errorMessage.value = '账号被封禁';
+    }
     else {
       errorMessage.value = '请求错误';
     }
@@ -90,10 +99,10 @@ const login = () => {
   <div class="outer-container">
     <div class="background-image"></div>
     <div class="login-container">
-      <h1 class="login-title">用户登录</h1>
+      <h1 class="login-title" >用户登录</h1>
 
       <div class="form-container">
-        <form @submit.prevent="login" class="login-form">
+        <form class="login-form" @submit.prevent="login">
           <div class="form-group">
             <label for="uname" class="form-label">用户名：</label>
             <input type="text" id="uname" v-model="uname" class="form-input">
@@ -103,11 +112,13 @@ const login = () => {
             <input type="password" id="password" v-model="password" class="form-input">
           </div>
           <div class="form-button">
-          <el-button native-type="submit" class="login-button">登录</el-button>
+          <el-button
+          native-type="submit" class="login-button">登录</el-button>
           </div>
         </form>
       </div> <!-- end of form-container -->
-      <router-link to="/register" class="go_button">立即注册！</router-link>
+      <router-link
+      to="/register" class="go_button">立即注册！</router-link>
     </div>  <!-- end of login-container -->
   </div>   <!-- end of outer-container -->
 </template>
@@ -115,6 +126,8 @@ const login = () => {
 <style scoped>
 .go_button{
   display: text-indent;
+  position: absolute;
+  bottom: 10px;
   color: #00b88d;
 }
 .outer-container {
@@ -136,8 +149,8 @@ const login = () => {
 }
 
 .login-container {
-  width: 600px;
-  height: 500px;
+  min-width: 600px;
+  min-height: 500px;
   padding: 20px;
   position: absolute;
   top: 50%;
@@ -191,6 +204,11 @@ const login = () => {
   justify-content: center;
 }
 
+.login-button:hover {
+  background-color: #d59f39;
+  color: #fff;
+}
+
 .login-button {
   justify-content: center;
   background-color: #f6bb4e;
@@ -202,6 +220,27 @@ const login = () => {
   font-size: 15px;
   height: 50px;
   width: 200px;
+}
+
+.admin-button{
+  display: block;
+  margin: 0 auto;
+  margin-top: 50px;
+  background-color: #00b88d;
+  color: #fff;
+  border: none;
+  border-radius: 15px;
+  padding: 15px 0; /* 增加垂直内边距 */
+  cursor: pointer;
+  font-size: 15px;
+  height: 50px;
+  width: 200px;
+  margin-bottom: 30px;
+}
+
+.admin-button:hover {
+  background-color: #00a177;
+  color: #fff;
 }
 
 .error-message {
