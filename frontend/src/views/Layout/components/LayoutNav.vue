@@ -1,7 +1,7 @@
 <script setup>
 import Cookies from "js-cookie";
 import {ref} from "vue";
-
+import FriendDrawer from "@/components/views/FriendDrawer.vue";
 // 定义一个响应式变量 categoryList，存储页面导航栏的数据
 const categoryList = ref([
   {
@@ -23,27 +23,21 @@ const categoryList = ref([
     picture:""
   },
   {
+    id:11,
+    name:"观战模式",
+    url:"/witness",
+    picture:""
+  },
+  {
     id:3,
     name:"个人中心",
     url:'/profile',
     picture:""
   },
-  // {
-  //   id:4,
-  //   name:"战绩查看",
-  //   url:"/record",
-  //   picture:""
-  // },
-  {
-    id:5,
-    name:"帮助中心",
-    url:"/",
-    picture:""
-  },
   {
     id:6,
-    name:"关于我们",
-    url:"/",
+    name:"棋局广场",
+    url:"/ground",
     picture:""
   },
   {
@@ -79,6 +73,9 @@ const logged = ref(Cookies.get("userid"))
     <div v-else>
     <RouterLink v-for="item in NoLoggedList" :key="item.id" :to="item.url" class="centered-button">{{ item.name }}</RouterLink>
     </div>
+  </div>
+  <div class="friend-drawer">
+    <FriendDrawer />
   </div>
 </template>
 
@@ -139,5 +136,10 @@ const logged = ref(Cookies.get("userid"))
   background-image: url('@/assets/images/login/图1.jpg');
   background-size: cover;
   z-index: -1;
+}
+
+.friend-drawer{
+  position: fixed;
+  right: 0%;
 }
 </style>

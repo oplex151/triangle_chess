@@ -7,10 +7,12 @@ import Cookies from 'js-cookie';
 import { registerSockets, socket, registerSocketsForce, removeSockets } from '@/sockets'
 import { ElMessage ,ElMessageBox} from "element-plus";
 import { useRouter } from 'vue-router';
+import { resetLives } from '@/chesses/Live';
 import { onMounted, ref, onUnmounted, computed, getCurrentInstance } from 'vue';
-import { User, HomeFilled } from '@element-plus/icons-vue'
+import { HomeFilled } from '@element-plus/icons-vue'
 import axios from 'axios';
-
+import {getRankLevel} from '@/config/rank.js'
+import * as CONST from "@/lib/const.js";
 const { proxy } = getCurrentInstance()
 const router = useRouter()
 const room_id = ref(null)
@@ -30,7 +32,7 @@ onMounted(() => {
         // socket.value.io.emit('joinRoom',{'userid':userid,'room_id':Cookies.get('room_id')})
     }
     registerSockets(sockets_methods, socket.value, proxy);
-    console.log(socket.value)
+    //console.log(socket.value)
 
     axios.post(main.url + '/api/getRankScore', {
         'userid': userid,
@@ -40,7 +42,7 @@ onMounted(() => {
         }
     ).then(res => {
         if (res.status == 200) {
-            console.log(res.data)
+            //console.log(res.data)
             totalscore.value = res.data.totalscore
             rank.value = res.data.rank
         } else {
@@ -53,6 +55,21 @@ onMounted(() => {
                 },}
         )}
     }).catch(err => {
+      if(err.response.status == CONST.SESSION_EXPIRED){ //Session expired
+        Cookies.remove('room_id')
+        Cookies.remove('userid')
+        Cookies.remove('room_info')
+        Cookies.remove('username')
+        Cookies.remove('camp')
+        sessionStorage.removeItem('fromGame')
+        ElMessage({
+          message: '会话过期，请重新登录',
+          grouping: true,
+          type: 'error',
+          showClose: true
+        })
+        router.replace('/login')
+      }
     ElMessageBox.alert(
         '网络错误，现在无法进行排位模式。请稍后再试。',
         {
@@ -61,73 +78,14 @@ onMounted(() => {
                 goBackHome()
             },
         }
-    )})
+    )
+    })
 });
-const type = computed(() => {
-    if (rank.value <= 5) {
-        return 'bronze'
-    } 
-    else if (rank.value <= 10) {
-        return 'sliver'
-    } 
-    else if (rank.value <= 15){
-        return 'gold'
-    } 
-    else if (rank.value<=20){
-        return 'platinum'
-    }
-    else if (rank.value<=25){
-        return 'diamond'
-    }
-    else if (rank.value<=30){
-        return 'master'
-    }
-    else {
-        return 'challenger'
-    }
-})
-const rankname = computed(()=>{
-    if (type.value=='bronze'){
-        return '青铜'
-    }
-    else if (type.value=='sliver'){
-        return '白银'
-    }
-    else if (type.value=='gold'){
-        return '黄金'
-    }
-    else if (type.value=='platinum'){
-        return '铂金'
-    }
-    else if (type.value=='diamond'){
-        return '钻石'
-    }
-    else if (type.value=='master'){
-        return '大师'
-    }
-    else {
-        return '挑战者'
-    }
-})
-const littlerank = computed(()=>{
-    let littlerank = rank.value%5+1
-    if (littlerank == 1){
-        return 'V'
-    }
-    else if (littlerank == 2){
-        return 'IV'
-    }
-    else if (littlerank == 3){
-        return 'III'
-    }
-    else if (littlerank == 4){
-        return 'II'
-    }
-    else {
-        return 'I'
-    }
 
+const rankname = computed(()=>{
+    return getRankLevel(rank.value)
 })
+
 //需要注册的监听时间，离开页面记得销毁
 const sockets_methods = {
     startRankSuccess(data) {
@@ -145,6 +103,7 @@ const sockets_methods = {
                 camp = i
             }
         }
+        resetLives()
         if (camp >= -1) {
             Cookies.set('camp', camp)
             ElMessage.success('游戏开始,你是' + (camp > 0 ? (camp > 1 ? '金方玩家' : '黑方玩家') : (camp == 0 ? '红方玩家' : '观战者')))
@@ -154,6 +113,21 @@ const sockets_methods = {
     },
     processWrong(data) {
         ElMessage.error('匹配失败，请重新匹配' + data.status)
+        if(data.status == CONST.SESSION_EXPIRED){ //Session expired
+          Cookies.remove('room_id')
+          Cookies.remove('userid')
+          Cookies.remove('room_info')
+          Cookies.remove('username')
+          Cookies.remove('camp')
+          sessionStorage.removeItem('fromGame')
+          ElMessage({
+            message: '会话过期，请重新登录',
+            grouping: true,
+            type: 'error',
+            showClose: true
+          })
+          router.replace('/login')
+        }
     },
 }
 
@@ -186,8 +160,8 @@ function goBackHome() {
         </p>
         
         <p>
-            <h3 class = "score" :class="type">
-                {{rankname}}   {{littlerank}} <br/> 
+            <h3 class = "score" :class="rankname">
+                {{rankname}}    <br/> 
                 {{totalscore}} 分
             </h3>
         </p>
@@ -257,9 +231,9 @@ function goBackHome() {
 }
 
 @font-face {
-  font-family: "阿里妈妈东方大楷 Regular";font-weight: 400;src: url("//at.alicdn.com/wf/webfont/uWrOvAFUee6Z/j21mxPjobcF7.woff2") format("woff2"),
-  url("//at.alicdn.com/wf/webfont/uWrOvAFUee6Z/V0SgC0T8YlgT.woff") format("woff");
-  font-display: swap;
+    font-family: "阿里妈妈东方大楷 Regular";font-weight: 400;src: url("//at.alicdn.com/wf/webfont/uWrOvAFUee6Z/j21mxPjobcF7.woff2") format("woff2"),
+    url("//at.alicdn.com/wf/webfont/uWrOvAFUee6Z/V0SgC0T8YlgT.woff") format("woff");
+    font-display: swap;
 }
 @font-face {
         font-family: "Bitstream Vera Serif Bold";
@@ -387,25 +361,31 @@ function goBackHome() {
 
 
 /* 段位颜色 */
-.bronze{
+.无{
+    background-color: transparent;
+}
+.菜鸟{
+    background-color: #918e8b;
+}
+.青铜{
     background-color: #cd7f32;
 }
-.sliver{
+.白银{
     background-color: #f2f2f2;
 }
-.gold{
+.黄金{
     background-color: #ffd700;
 }
-.platinum{
-    background-color: #f4edbf;
+.白金{
+    background-color: #cff4e9f2;
 }
-.diamond{
+.钻石{
     background-color: #b9f2ff;
 }
-.master{
-    background-color: #ff8c00;
+.王者{
+    background-color: #e87000;
 }
-.challenger{
-    background-color: #ff0000;
+.超神{
+    background-image: url("@/assets/images/game/超神.jpg");
 }
 </style>

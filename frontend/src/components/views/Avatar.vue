@@ -6,14 +6,16 @@ import main from '@/main';
 import * as CONST from '@/lib/const.js'
 
 import { ElMessage } from 'element-plus';
+import { getRankLevel } from '@/config/rank';
 
-const emits = defineEmits(['reportUser'])
-const props = defineProps(['userid', 'my_userid'])
+const emits = defineEmits(['reportUser','deleteFriend'])
+const props = defineProps(['userid', 'my_userid', 'is_friend'])
 
 const reportUser = () => {
     emits('reportUser', props.userid);
 }
 const isfriend = ref(false)
+const user_info = ref({})
 
 //////////////////////////////code for bug////////////////////////
 /**
@@ -30,8 +32,11 @@ const isfriend = ref(false)
  * p.s.这个并不是最终版本的好友功能，最后可能会用一个新的isFriends api 来代替现在的getFriends.
 */
 onMounted (() => {
-    console.log('mounted')
-    axios.post(main.url + '/api/getFriends', 
+    ////console.log('mounted')
+    if (props.is_friend) {
+        isfriend.value = true
+    }
+    else axios.post(main.url + '/api/getFriends', 
         {
             'userid': props.my_userid
         },
@@ -40,7 +45,7 @@ onMounted (() => {
         }
     ).then(res => {
         if (res.status == 200) {
-            console.log(res.data)
+            ////console.log(res.data)
             for (const id in res.data.friends) {
                 let friend = res.data.friends[id]
                 if (friend.userid == props.userid) {
@@ -48,19 +53,23 @@ onMounted (() => {
                     break
                 }
             }
+        }      
+    }).catch(err => {})
+    axios.post(main.url + '/api/getRankInfo', {
+        'userid': props.userid
+    },
+    {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    }).then(res => {
+        if (res.status == 200) {
+            user_info.value = res.data
         }
-        else {
-            console.log(res)
-        }        
-    }
-    ).catch(err => {
-        console.log(err)
-    })
+    }).catch(err => {})
 })
 //////////////////////////////////end////////////////////
 const addFriend = () => {
 
-    console.log('add friend')
+    ////console.log('add friend')
     if (props.userid == props.my_userid) {
         ElMessage.error('不能添加自己为好友')
         return
@@ -69,48 +78,48 @@ const addFriend = () => {
         'userid': props.my_userid,
         'friend_id': props.userid
     },
-        {
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        }
+    {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    }
     ).then(res => {
         if (res.status == 200) {
-            console.log(res.data)
-            ElMessage.success('添加好友成功')
-            isfriend.value = true
+            ////console.log(res.data)
+            ElMessage.success('好友信息已发送')
         } else {
-            console.log('error')
+            ////console.log('error')
             ElMessage.error('添加好友失败')
         }
     }).catch(err => {
         if (err.response.status == CONST.ALREADY_FRIEND) {
             ElMessage.error('已经是好友了')
             isfriend.value = true
+            return
         }
-        console.log(err)
+        ////console.log(err)
         ElMessage.error('添加好友失败')
     })
 }
 const deleteFriend = () => {
-    console.log('delete friend')
+    //console.log('delete friend')
     axios.post(main.url + '/api/deleteFriend', {
         'userid': props.my_userid,
         'friend_id': props.userid
     },
-        {
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        }
+    {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    }
     ).then(res => {
         if (res.status == 200) {
-            console.log(res.data)
+            ////console.log(res.data)
             ElMessage.success('删除好友成功')
             isfriend.value = false
         
         } else {
-            console.log('error')
+            ////console.log('error')
             ElMessage.error('删除好友失败')
         }
     }).catch(err => {
-        console.log(err)
+        //console.log(err)
         if (err.response.status == CONST.NOT_FRIEND) {
             ElMessage.error('已经不是好友了')
             isfriend.value = false
@@ -118,31 +127,36 @@ const deleteFriend = () => {
         else
             ElMessage.error('删除好友失败')
     })
+    emits('deleteFriend', props.userid)
 }   
 </script>
 
 <template>
-    <el-popover :width="300" class="avatar-popover">
+    <el-popover :width="200" class="avatar-popover">
         <template #reference>
-            <el-avatar>
+            <el-avatar :size="50">
                 <template v-slot>
                     <slot name="avatar"></slot>
                 </template>
             </el-avatar>
         </template>
-
         <template #default>
             <div class="rich-conent">
-                <el-avatar>
-                    <template v-slot>
+                <el-avatar :size="50">
+                    <template v-slot class='user-name'>
                         <slot name="avatar"></slot>
                     </template>
                 </el-avatar>
-
-                <div>
-                    <p class="name" style="margin: 0; font-weight: 500">
-                        <slot name="name">User</slot>
-                    </p>
+                <p class="name" style="margin: 0; font-weight: 500">
+                    <slot name="name">User</slot>
+                </p>
+                <div v-if="user_info" class="user-info-table">
+                    <div class="'user-info'">
+                        段位:{{getRankLevel(user_info.rank)}}
+                    </div>
+                    <div class="'user-info'">
+                        积分:{{user_info.score}}
+                    </div>
                 </div>
                 <p>
                     <el-button v-if="props.userid != props.my_userid" class="login-button"
@@ -179,6 +193,7 @@ const deleteFriend = () => {
     margin: auto;
     cursor: pointer;
     font-size: 15px;
+    margin: 5px;
 }
 
 .el-popover {
@@ -189,4 +204,28 @@ const deleteFriend = () => {
 .el-avatar {
     border: 2px solid #895e0f;
 }
+
+.user-name{
+    font-size: 18px;
+    color: #895e0f;
+    font-weight: 500;
+}
+
+.name{
+    position: relative;
+    left:50px;
+    bottom: 30px;
+}
+
+.user-info-table {
+    display: inline-flex;
+    flex-direction: column;
+}
+
+.user-info {
+    display: inline-block;
+    font-size: 14px;
+}
+
+
 </style>

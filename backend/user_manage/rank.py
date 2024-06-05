@@ -15,26 +15,15 @@ USER_TABLE = "user"
 load_dotenv()
 password = os.getenv("MYSQL_PASSWORD")
 
-db = pymysql.connect(host="127.0.0.1",user="root",password=password,database=DATA_BASE)
-cursor = db.cursor()
-
-def connectDatabase(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        global db, cursor
-        db = pymysql.connect(host="127.0.0.1",user="root",password=password,database=DATA_BASE)
-        cursor = db.cursor()
-        return func(*args, **kwargs)
-    return wrapper
-
 logger = setupLogger()
 
 #100积分晋升一个段位
 #初步设定，假设每个段位相同积分晋升
 rankscore = 100
 
-@connectDatabase
 def viewUserRank(userid:int):
+    db = pymysql.connect(host="127.0.0.1",user="root",password=password,database=DATA_BASE)
+    cursor = db.cursor()
     result = None
     try:
         db.begin()
@@ -148,9 +137,11 @@ def calculateNewScore(player_score, opponent_scores, result, player_performance)
         new_score = 0
     return round(new_score)
 
-@connectDatabase
-def updateUserRank(userid, new_score):
-    rank,score = rankScore(new_score)
+
+def updateUserRank(userid, new_totalscore):
+    db = pymysql.connect(host="127.0.0.1",user="root",password=password,database=DATA_BASE)
+    cursor = db.cursor()
+    rank,score = rankScore(new_totalscore)
     # 实现将新段位积分更新到数据库中
     result = False
     try:
@@ -207,8 +198,8 @@ def endRankGame(game:GameTable):
             new_totalscore = calculateNewScore(player_score[user_z], opponent_scores[user_z], result, player_performance)
             logger.info("计算新分数: %s", new_totalscore)
 
-            new_rank, new_score = rankScore(new_totalscore)
-            updateUserRank(userid, new_rank, new_score)  # 将新积分更新到数据库中
+            #new_rank, new_score = rankScore(new_totalscore)
+            updateUserRank(userid, new_totalscore)  # 将新积分更新到数据库中
 
     except Exception as e:
         logger.error("Error ending rank game {0} due to\n{1}".format(game.game_id,str(e)))

@@ -3,28 +3,31 @@ export function getRankLevel(num){
   if (num < 0) {
     return '无';
   }
-  else if (num < 5) {
+  else if (num < 1) {
     return '菜鸟';
   }
-  else if (num < 10) {
+  else if (num < 2) {
     return '青铜';
   }
-  else if (num < 20) {
+  else if (num < 3) {
     return '白银';
   }
-  else if (num < 30) {
+  else if (num < 4) {
     return '黄金';
   }
-  else if (num < 40) {
+  else if (num < 5) {
     return '白金';
   }
-  else if (num < 50) {
+  else if (num < 6) {
     return '钻石';
   }
-  else if (num < 60) {
+  else if (num < 7) {
     return '王者';
   }
-  else {
+  else if (num >= 7){
     return '超神';
+  }
+  else {
+    return '无';
   }
 }

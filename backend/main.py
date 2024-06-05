@@ -3,12 +3,12 @@ import sys
 from pathlib import Path
 import threading
 import time
-
 project_root = Path(__file__).parent.parent.absolute()
 os.environ['PROJECT_ROOT'] = str(project_root)
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 print("Project root set to:", os.environ['PROJECT_ROOT']) # 设置项目根目录
 
+import jwt
 import flask
 from flask_socketio import SocketIO,join_room,leave_room,emit,close_room
 from flask_cors import CORS
@@ -24,10 +24,48 @@ from backend.game import *
 
 app = flask.Flask(__name__)
 CORS(app,cors_allowed_origins="*")
+app.config['SECRET_KEY'] = 'sanguoxiangqi'
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 # 日志工具
 logger = setupLogger()
+
+def gate(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        global session_times,sessions
+        try:
+            if len(args) == 0:  #http
+                userid = request.form.get('userid')
+            else:  #websocket
+                userid = args[0].get('userid')
+            if not isinstance(userid,int) and userid is not None:
+                userid = int(userid)
+            if userid is None or userid not in sessions.keys():
+                raise ValueError
+            session_times[userid] = time.time() # 更新session时间
+            return func(*args, **kwargs)
+        except Exception as e:
+            logger.error(e,exc_info=True)
+            if len(args) == 0:  #http
+                return "{message: 'session expired!'}",SESSION_EXPIRED
+            else:  #websocket
+                emit('processWrong',{'status':SESSION_EXPIRED},to=request.sid,namespace='/')
+                return
+    return wrapper
+
+def protectedAdmin(token):
+    try:
+        payload = jwt.decode(token, app.config['SECRET_KEY'],algorithms=['HS256'])
+        # 验证成功，可以提取信息
+        print('Authenticated',payload)
+        return True
+    except jwt.ExpiredSignatureError:
+        print('Token过期')
+        return False
+    except jwt.InvalidTokenError:
+        print('Token无效')
+        return False
 
 @app.route('/api/login', methods=['POST'])
 def loginApi():
@@ -64,7 +102,27 @@ def registerApi():
         return "{message: 'parameter error'}",PARAM_ERROR
     return register(username, password, email, phone_num, gender)
 
+@app.route('/api/uploadImage', methods=['POST'])
+@gate
+def uploadImageApi():
+    '''
+    Description: 上传图片
+    Args:
+        userid: 用户id
+        image: 图片文件
+    Returns:
+        上传成功200
+    '''
+    params = {'userid':int, 'image':str}
+    try:
+        userid,image = getParams(params,request.form)
+    except:
+        return "{message: 'parameter error'}",PARAM_ERROR
+    return uploadImage(userid, image)
+
+
 @app.route('/api/changeUserInfo', methods=['POST'])
+@gate
 def changeUserInfoApi():
     '''
     Description: 修改用户信息
@@ -85,6 +143,7 @@ def changeUserInfoApi():
     return changeUserInfo(userid, username, email, phone_num, gender)
 
 @app.route('/api/changePassword', methods=['POST'])
+@gate
 def changePasswordApi():
     '''
     Description: 修改密码
@@ -102,7 +161,102 @@ def changePasswordApi():
         return "{message: 'parameter error'}",PARAM_ERROR
     return changePassword(userid, old_password, new_password)
 
+@app.route('/api/adminLogin',methods=['POST'])
+def adminLoginApi():
+    '''
+    Description: 管理员登录
+    Args:
+        password: 密码
+    Returns:
+        登录成功200
+    '''
+    params = {'password':str}
+    try:
+        password = getParams(params,request.form)
+    except:
+        return "{message: 'parameter error'}",PARAM_ERROR
+    return adminLogin(password,app.config['SECRET_KEY'])
+
+@app.route('/api/checkAdmin',methods=['POST'])
+def checkAdminApi():
+    '''
+    Description: 检查管理员权限
+    Args:
+        token: token
+    Returns:
+        权限验证成功200
+    '''
+    params = {'token':str}
+    try:
+        token = getParams(params,request.form)
+    except:
+        return "{message: 'parameter error'}",PARAM_ERROR
+    if protectedAdmin(token):
+        return "{message: 'admin'}",SUCCESS
+    else:
+        return "{message: 'not admin'}",NOT_ADMIN
+
+@app.route('/api/getUserData', methods=['POST'])
+def getUserDataApi():
+    '''
+    Description: 获取用户数据
+    Args:
+        token: token
+    Returns:
+        用户数据 详见数据库user表
+    '''
+    params = {'token':str}
+    try:
+        token = getParams(params,request.form)
+    except:
+        return "{message: 'parameter error'}",PARAM_ERROR
+    if protectedAdmin(token):
+        return getUserData()
+    else:
+        return "{message: 'not admin'}",NOT_ADMIN
+    
+@app.route('/api/banUser', methods=['POST'])
+def banUserApi():
+    '''
+    Description: 封禁用户
+    Args:
+        token: token
+        userid: 用户id
+    Returns:
+        封禁成功200
+    '''
+    params = {'token':str, 'userid':int}
+    try:
+        token,userid = getParams(params,request.form)
+    except:
+        return "{message: 'parameter error'}",PARAM_ERROR
+    if protectedAdmin(token):
+        return changeUserBanned(userid, 1)
+    else:
+        return "{message: 'not admin'}",NOT_ADMIN
+
+@app.route('/api/releaseUser', methods=['POST'])
+def releaseUserApi():
+    '''
+    Description: 解封用户
+    Args:
+        token: token
+        userid: 用户id
+    Returns:
+        解封成功200
+    '''
+    params = {'token':str, 'userid':int}
+    try:
+        token,userid = getParams(params,request.form)
+    except:
+        return "{message: 'parameter error'}",PARAM_ERROR
+    if protectedAdmin(token):
+        return changeUserBanned(userid, 0)
+    else:
+        return "{message: 'not admin'}",NOT_ADMIN
+
 @app.route('/api/logout', methods=['POST'])
+@gate
 def logoutApi():
     '''
     Description: 登出
@@ -134,7 +288,25 @@ def getUserInfoApi():
         return "{message: 'parameter error'}",PARAM_ERROR
     return getUserInfo(userid)
 
+@app.route('/api/getRankInfo', methods=['POST'])
+def getRankInfoApi():
+    '''
+    Description: 获取排行榜信息
+    Args:
+        userid: 用户id
+    Returns:
+        排行榜信息 详见数据库rank表
+    '''
+    params = {'userid':int}
+    try:
+        userid = getParams(params,request.form)
+    except:
+        return "{message: 'parameter error'}",PARAM_ERROR
+    return getUserInfo(userid,['username','rank','score'])
+    
+
 @app.route('/api/addFriend', methods=['POST'])
+@gate
 def addFriendApi():
     '''
     Args:
@@ -158,14 +330,18 @@ def getFriendsApi():
     Returns:
         好友列表 详见数据库friend表
     '''
-    params = {'userid':int}
+    params = {'userid':int, 'confirm':int}
     try:
-        userid = getParams(params,request.form)
+        userid,confirm = getParams(params,request.form,['confirm'])
     except:
         return "{message: 'parameter error'}",PARAM_ERROR
-    return getFriendsInfo(userid)
+    # 为confirm 赋默认值
+    if confirm == None:
+        confirm = 1
+    return getFriendsInfo(userid,confirm)
 
 @app.route('/api/deleteFriend',methods=['POST'])
+@gate
 def deleteFriendApi():
     '''
     Args:
@@ -181,7 +357,26 @@ def deleteFriendApi():
         return "{message: 'parameter error'}",PARAM_ERROR
     return deleteFriend(userid, friend_id)
 
+@app.route('/api/confirmFriend',methods=['POST'])
+@gate
+def confirmFriendApi():
+    '''
+    Args:
+        userid: 用户id
+        friend_id: 好友id
+        
+    Returns:
+        确认好友成功200
+    '''
+    params = {'userid':int, 'friend_id':int,'confirm':int}
+    try:
+        userid,friend_id,confirm= getParams(params,request.form,['confirm'])
+    except:
+        return "{message: 'parameter error'}",PARAM_ERROR
+    return confirmFriend(userid, friend_id,confirm)
+
 @app.route('/api/getRankScore',methods=['POST'])
+@gate
 def getRankScoreApi():
     '''
     Args:
@@ -198,37 +393,193 @@ def getRankScoreApi():
     
 
 @app.route('/api/addAppeals', methods=['POST'])
+@gate
 def addAppealsApi():
     '''
     Args:
         userid: 用户id
         type: 申诉种类
         content: 申诉内容
+        fromid: 申诉来源id
     Returns:
         添加申诉成功200
     '''
-    params = {'userid':int, 'type':str, 'content':str}
+    params = {'userid':int, 'type':str, 'content':str, 'fromid':int}
     try:
-        userid, appeal_type, content = getParams(params,request.form)
+        userid, appeal_type, content, fromid = getParams(params,request.form,['type','content','fromid'])
     except:
         return "{message: 'parameter error'}",PARAM_ERROR
-    return addAppeals(userid, appeal_type, content)
+    return addAppeals(userid, appeal_type, content, fromid)
 
 @app.route('/api/getAppeals', methods=['POST'])
 def getAppealsApi():
     '''
     Args:
-        userid: 用户id
-        adminid: 管理员用户id
+        token: token
     Returns:
         申诉列表 详见数据库appeal表
     '''
-    params = {'userid':int, 'adminid':int}
+    params = {'token':str}
     try:
-        userid, adminid = getParams(params,request.form)
+        token = getParams(params,request.form)
     except:
         return "{message: 'parameter error'}",PARAM_ERROR
-    return getAppealsInfo(userid, adminid)
+    if protectedAdmin(token):
+        return getAppealsInfo(None)
+    else:
+        return "{message: 'not admin'}",NOT_ADMIN
+
+@app.route('/api/handleAppeal', methods=['POST'])
+def handleAppealApi():
+    '''
+    Args:
+        token: token
+        appeal_id: 申诉id
+        feedback: 处理结果
+    Returns:
+        处理申诉成功200
+    '''
+    params = {'token':str, 'appeal_id':int, 'feedback':str}
+    try:
+        token, appeal_id, feedback = getParams(params,request.form,['handle_result'])
+    except:
+        return "{message: 'parameter error'}",PARAM_ERROR
+    if protectedAdmin(token):
+        return handleAppeal(appeal_id, feedback)
+    else:
+        return "{message: 'not admin'}",NOT_ADMIN
+
+
+@app.route('/api/getUserAppeal', methods=['POST'])
+@gate
+def getUserAppealApi():
+    '''
+    Args:
+        userid: 用户id
+    Returns:
+        用户的申诉列表 详见数据库appeal表
+    '''
+    params = {'userid':int}
+    try:
+        userid = getParams(params,request.form)
+    except:
+        return "{message: 'parameter error'}",PARAM_ERROR
+    return getAppealsInfo(userid)
+
+@app.route('/api/getAvatars', methods=['POST'])
+def getAvatarsApi():
+    '''
+    Args:
+        userids: 用户ids
+    Returns:
+        用户头像列表 详见数据库avatar表
+    '''
+    params = {'userids':str}
+    # logger.debug("getavatars:"+str(request.form))
+    # logger.debug(request.form.getlist('userids[]'))
+    try:
+        userids = getParams(params,request.form)
+    except:
+        return "{message: 'parameter error'}",PARAM_ERROR
+    # logger.debug("gettavatars:"+str(userids))
+    userids = eval(userids)
+    avatars,status = getSomeUserAvatar(userids)
+    return jsonify(avatars),status
+
+@app.route('/api/likeGameRecord', methods=['POST'])
+def likeGameRecordApi():
+    '''
+    Args:
+        recordid: 对局记录id
+    Returns:
+        点赞成功200
+    '''
+    params = {'recordid': int}
+    try:
+        recordid = getParams(params, request.form)
+    except:
+        return "{message: 'parameter error'}", PARAM_ERROR
+    return likeGameRecord(recordid)
+
+@app.route('/api/unlikeGameRecord', methods=['POST'])
+def unlikeGameRecordApi():
+    '''
+    Args:
+        recordid: 对局记录id
+    Returns:
+        取消点赞成功200
+    '''
+    params = {'recordid': int}
+    try:
+        recordid = getParams(params, request.form)
+    except:
+        return "{message: 'parameter error'}", PARAM_ERROR
+    return unlikeGameRecord(recordid)
+
+@app.route('/api/addComment', methods=['POST'])
+@gate
+def addCommentApi():
+    '''
+    Args:
+        recordid: 对局记录id
+        userid: 用户id
+        content: 评论内容str
+    Returns:
+        添加评论成功200
+    '''
+    params = {'recordid': int, 'userid': int, 'content': str}
+    try:
+        recordid, userid, content = getParams(params, request.form)
+    except:
+        return "{message: 'parameter error'}", PARAM_ERROR
+    return addComment(recordid, userid, content)
+
+@app.route('/api/likeComment', methods=['POST'])
+def likeCommentApi():
+    '''
+    Args:
+        commentid: 评论id
+    Returns:
+        点赞成功200
+    '''
+    params = {'commentid': int}
+    try:
+        commentid = getParams(params, request.form)
+    except:
+        return "{message: 'parameter error'}", PARAM_ERROR
+    return likeComment(commentid)
+
+@app.route('/api/unlikeComment', methods=['POST'])
+def unlikeCommentApi():
+    '''
+    Args:
+        commentid: 评论id
+    Returns:
+        取消点赞成功200
+    '''
+    params = {'commentid': int}
+    try:
+        commentid = getParams(params, request.form)
+    except:
+        return "{message: 'parameter error'}", PARAM_ERROR
+    return unlikeComment(commentid)
+
+@app.route('/api/viewRecordComments', methods=['POST'])
+def viewRecordCommentsApi():
+    '''
+    Args:
+        recordid: 对局记录id
+    Returns:
+        评论列表
+    '''
+    params = {'recordid': int}
+    try:
+        recordid = getParams(params, request.form)
+    except:
+        return "{message: 'parameter error'}", PARAM_ERROR
+
+    comments, status = viewRecordComments(recordid)
+    return jsonify(comments), status
 
 @socketio.on('connect')
 def connect():
@@ -252,14 +603,27 @@ def disconnect():
             if room_id is not None:
                 room:RoomManager = fetchRoomByRoomID(room_id,rooms)
                 if room is not None:
-                    room.removeUser(userid)
-                    leave_room(room_id)
-                    if len(room.users) == 0:
+                    if room.isHolder(userid) and room.game_table is None:
+                        userids = [u['userid'] for u in room.users]
+                        emit('leaveRoomSuccess',{'userid':-1},to=room.room_id,namespace='/',skip_sid=request.sid)
+
+                        for u in userids:
+                            sid = uid2sid(u)
+                            if sid: 
+                                leave_room(room_id,sid=sid) 
+                                sid2uid.pop(sid)
+                                
                         rooms.remove(room)
-                        close_room(room=room_id,namespace='/')
-                        logger.info(f"Room {room_id} is empty, remove it")
+                        logger.info(f"Room {room_id} with no holder, so remove it")
                     else:
-                        emit('leaveRoomSuccess',{'userid':userid,'username':sessions[userid],'room_info':room.getRoomInfo()},to=room.room_id,namespace='/')
+                        room.removeUser(userid)
+                        leave_room(room_id)
+                        if len(room.users) == 0:
+                            rooms.remove(room)
+                            close_room(room=room_id,namespace='/')
+                            logger.info(f"Room {room_id} is empty, remove it")
+                        else:
+                            emit('leaveRoomSuccess',{'userid':userid,'username':sessions[userid],'room_info':room.getRoomInfo()},to=room.room_id,namespace='/')
         except:
             logger.error("User {0} disconnect, ".format(userid), exc_info=True)
 
@@ -276,6 +640,7 @@ def disconnect():
     logger.info("User {0} disconnect".format(request.sid))
 
 @socketio.event
+@gate
 def createRoom(data):
     '''
     Description: 创建房间
@@ -302,12 +667,22 @@ def createRoom(data):
     join_room(room_id)
     logger.info(f"Create room {room_id} by user {userid}, type is {room_type}, sid={request.sid}\n"
                 +f"this room's users: {new_room.users}")
-    emit('createRoomSuccess',{'room_id':room_id,'room_info':new_room.getRoomInfo()},to=request.sid)
+    
+    avatar,_ = getSomeUserAvatar([userid])
+    # logger.debug(f"avatar: {avatar}")
+    try:
+        avatar = avatar[userid]
+    except KeyError:
+        avatar = None
+        logger.error(f"User {userid} has no avatar")    
+        
+    emit('createRoomSuccess',{'room_id':room_id,'room_info':new_room.getRoomInfo(),'avatar':avatar},to=request.sid)
     # 更新sid2uid
     if request.sid not in sid2uid:
         sid2uid[request.sid] = userid
 
 @socketio.event
+@gate
 def joinRoom(data):
     '''
     Description: 加入房间
@@ -355,11 +730,21 @@ def joinRoom(data):
         logger.info(f"User {userid} rejoin to game {room.game_table.game_id}")
         emit('rejoinGameSuccess',{'room_id':room_id},to=request.sid,namespace='/')
     
-    room.addUser(UserDict(userid=userid,username=sessions[userid]))
+    if room.addUser(UserDict(userid=userid,username=sessions[userid])) == False:
+        emit('processWrong',{'status':ROOM_FULL},to=request.sid)
+        return
     join_room(room_id)
     logger.info(f"User {userid} join room {room_id}, sid={request.sid}"
                 +f"this room's users: {room.users}")
-    emit('joinRoomSuccess',{'room_id':room_id,'userid':userid,'username':sessions[userid],'room_info':room.getRoomInfo()},to=room_id)
+    
+    avatar,_ = getSomeUserAvatar([userid])
+    try:
+        avatar = avatar[userid]
+    except KeyError:
+        avatar = None
+        logger.error(f"User {userid} has no avatar")
+    emit('joinRoomSuccess',{'room_id':room_id,'userid':userid,'username':sessions[userid],
+                            'room_info':room.getRoomInfo(),'avatar':avatar},to=room_id)
     # 更新sid2uid
     if request.sid not in sid2uid: 
         sid2uid[request.sid] = userid
@@ -382,15 +767,33 @@ def leaveRoom(data):
         return
     room:RoomManager = fetchRoomByRoomID(room_id,rooms)
     if room is None:
+
         logger.error("No such room {0}".format(room_id))
         emit('processWrong',{'status':ROOM_NOT_EXIST},to=request.sid)
         return
-    if room.removeUser(userid):
+    
+    if room.isHolder(userid):
+
+        userids = [u['userid'] for u in room.users]
+        emit('leaveRoomSuccess',{'userid':-1},to=room_id,namespace='/', skip_sid=request.sid)
+        emit('leaveRoomSuccess',{'userid':userid,'username':sessions[userid],'room_info':room.getRoomInfo()},to=request.sid)
+
+        for u in userids:
+            sid = uid2sid(u)
+            if sid: 
+                leave_room(room_id,sid=sid) 
+                sid2uid.pop(sid)
+
+        rooms.remove(room)
+        logger.info(f"Room {room_id} with no holder, so remove it")
+    elif room.removeUser(userid):
         emit('leaveRoomSuccess',{'userid':userid,'username':sessions[userid],'room_info':room.getRoomInfo()},to=room_id)
         leave_room(room_id)
+
         # 更新sid2uid
         if request.sid in sid2uid:
             sid2uid.pop(request.sid)
+
         # 房间为空, 移除房间
         if len(room.users) == 0:
             rooms.remove(room)
@@ -401,6 +804,7 @@ def leaveRoom(data):
         emit('processWrong',{'status':NOT_IN_ROOM},to=request.sid)
 
 @app.route('/api/game/create', methods=['POST'])
+@gate
 def createGameApi():
     '''
     Args:
@@ -467,6 +871,7 @@ def initGame():
 
 
 @socketio.event
+@gate
 def movePiece(data):
     '''
     Args:
@@ -548,7 +953,7 @@ def roomOver(game:GameTable, room:RoomManager, userid:int):
         print(f"对局时长为：{match_duration}")
         # 结束记录
         state,record_id = game.record.recordEnd(userid)
-        emit('gameEnd', {'status': GAME_END, 'record_id':record_id, 'room_type':room_type,"step_count":game.step_count,"match_duration": match_duration.total_seconds(),'winner': userid, 'winner_name': sessions[userid]}, to=room.room_id)
+        emit('gameEnd', {'status': GAME_END, 'record_id':record_id, 'room_info':room.getRoomInfo(),'room_type':room_type,"step_count":game.step_count,"match_duration": match_duration.total_seconds(),'winner': userid, 'winner_name': sessions[userid]}, to=room.room_id, namespace='/')
 
     elif game.game_state == EnumGameState.draw:
         # 记录结束时间
@@ -558,7 +963,7 @@ def roomOver(game:GameTable, room:RoomManager, userid:int):
         match_duration = (game.record.end_time - game.record.start_time)
         # 结束记录
         state,recordId=game.record.recordEnd(None)
-        emit('gameEnd', {'status': GAME_END, 'recordId':recordId,'room_type':room_type,"step_count":game.step_count,"match_duration": match_duration,'winner': -1, 'winner_name': None}, to=room.room_id)
+        emit('gameEnd', {'status': GAME_END, 'recordId':recordId,'room_type':room_type,"step_count":game.step_count,"match_duration": match_duration.total_seconds(),'winner': -1, 'winner_name': None}, to=room.room_id,namespace='/')
 
     room.removeGameTable()
     if room.room_type == RoomType.matched:
@@ -570,6 +975,7 @@ def roomOver(game:GameTable, room:RoomManager, userid:int):
             logger.error("May remove in other way. Remove room error due to {0}".format(str(e)), exc_info=True)
 
 @socketio.event
+@gate
 def watchGame(data):
     """
     请求观战，前提是游戏已经开始
@@ -577,7 +983,7 @@ def watchGame(data):
         userid: 用户id          int
         room_id: 房间id        str
     """
-    global rooms,sessions
+    global rooms
     params = {'userid':int,  'room_id':str}
     try:
         userid,room_id = getParams(params,data)
@@ -593,19 +999,22 @@ def watchGame(data):
             return
         user = UserDict(userid=userid,username=sessions[userid])
         if room.game_table.addViewer(user):
-            room.addUser(user) 
+            room.addUser(user)
             join_room(room_id)
             logger.info(f"User {userid} watch game {room.game_table.game_id} and join room {room_id}")
             # 需要前端根据自己的身份来决定是成功加入观战，还是某某进入观战
-            emit('watchGameSuccess',{'room_id':room_id,'game_info':room.game_table.getGameInfo()},to=room_id,namespace='/')
+            emit('watchGameSuccess',{'room_info':room.getRoomInfo(),'game_info':room.game_table.getGameInfo()},to=room_id,namespace='/')
         else:
             emit('processWrong',{'status':NOT_JOIN_GAME},to=request.sid)
     except Exception as e:
         logger.error("Watch game error due to {0}".format(str(e)), exc_info=True)
         emit('processWrong',{'status':OTHER_ERROR},to=request.sid)
+        return
+
         
 
 @socketio.event
+@gate
 def requestSurrender(data):
     """
     接收玩家投降请求的数据。
@@ -647,6 +1056,7 @@ def requestSurrender(data):
 
 
 @socketio.event
+@gate
 def requestDraw(data):
     """
     接收玩家发起求和请求的数据。
@@ -660,7 +1070,7 @@ def requestDraw(data):
     except:
         emit('processWrong',{'status':PARAM_ERROR},to=request.sid)
         return
-    # 先判断用户是否在房间中
+    
     room_id = inWhitchRoom(userid,rooms)
     if room_id is None:
         emit('processWrong',{'status':NOT_IN_ROOM},to=request.sid)
@@ -672,15 +1082,15 @@ def requestDraw(data):
     try:
         game.requestDraw(userid)
         # 广播求和请求给其他存活的玩家
-        for user in game.getAlivePlayers():
-            if user != userid:
-                emit('drawRequest', {'requester': userid}, to=user)
+        emit('drawRequest', {'requester': userid, 'username': sessions[userid]}, to=room_id, skip_sid=request.sid)
         return
     except Exception as e:
+        logger.error("Request draw error due to {0}".format(str(e)), exc_info=True)
         emit('processWrong',{'status':OTHER_ERROR},to=request.sid)
         return 
     
 @socketio.event
+@gate
 def respondDraw(data):
     """
     接收玩家回应求和请求的数据。
@@ -700,29 +1110,30 @@ def respondDraw(data):
     if room_id is None:
         emit('processWrong',{'status':NOT_IN_ROOM},to=request.sid)
         return
-    game:GameTable = fetchRoomByRoomID(room_id,rooms).game_table
+    room = fetchRoomByRoomID(room_id,rooms)
+    game = room.game_table
     if game is None:
         emit('processWrong',{'status':NOT_JOIN_GAME},to=request.sid)
         return
     try:
-        # 通知所有玩家游戏结束
         game.respondDraw(userid, agree)
         # 所有存活的玩家均已回应
-        if len(game.draw_respondents) == len(game.getAlivePlayers):
+        if len(game.draw_respondents) == len(game.getAlivePlayers()):
             for res_agree in game.draw_agree:
                 if res_agree == False:
-                    for user in game.getAlivePlayers:
-                        emit('gameOngoing', {'status': SUCCESS}, to=user)
-                    game.setDraw()
+                    logger.info(f"Draw was rejected, so game continues")
+                    emit('gameOngoing', {'status': SUCCESS,'userid': userid, 'username': sessions[userid]}, to=room_id)
+                    game.setDraw(False)
                     return
-            for user in game.users:
-                emit('gameEnd', {'status': GAME_END, 'winner': -1}, to=room_id)
-            # TODO:: 通知所有玩家游戏结束
-            game.setDraw()
+
+            game.setDraw(True)
+
+            roomOver(game=game, room=room, userid=game.winner_id)
         else:
-            emit('wait_for_others', {'status': SUCCESS}, to=user)
+            emit('waitForOthers', {'status': SUCCESS, 'userid': userid, 'username': sessions[userid], 'agree': agree}, to=room_id)
         return
     except Exception as e:
+        logger.error("Respond draw error due to {0}".format(str(e)), exc_info=True)
         emit('processWrong',{'status':OTHER_ERROR},to=request.sid)
         return 
 
@@ -825,8 +1236,6 @@ def cycleRank(app):
                                 rank_queue.put(user)
                         # if room and room in rooms:
                         #     rooms.remove(room)
-
-
                 else:
                     # 重新将所有用户放回队列
                     for user in user_list:
@@ -836,6 +1245,7 @@ def cycleRank(app):
             time.sleep(1)
 
 @socketio.event
+@gate
 def startMatch(data):
     """
     接收玩家开始匹配请求
@@ -854,6 +1264,7 @@ def startMatch(data):
     logger.info(f"User {userid} join match queue: sid {request.sid}")
 
 @socketio.event
+@gate
 def startRank(data):
     """
     接收玩家开始排位匹配请求
@@ -894,9 +1305,15 @@ def viewGameRecords(data):
         return
     try:
         # 查询游戏记录
-        records = viewUserGameRecords(userid)
-        logger.info(records)
-        emit('gameRecord', {'record': records}, to=request.sid)
+        if userid == -1:
+            records,status = viewAllVisibleGameRecords()
+            logger.info('view all game records num={}'.format(len(records)))
+        else:
+            records,status = viewUserGameRecords(userid)
+        if status == SUCCESS:
+            emit('gameRecord', {'record': records}, to=request.sid)
+        else:
+            emit('processWrong',{'status':status},to=request.sid)
     except Exception as e:
         emit('processWrong',{'status':OTHER_ERROR},to=request.sid)
         logger.error(e)
@@ -925,6 +1342,26 @@ def viewMoveRecords(data):
         logger.error(e)
         return
 
+@app.route('/api/changeVisible', methods=['POST'])
+def changeVisibleApi():
+    """
+    修改游戏记录可见性请求
+    Args:
+        record_id: 对局id      int 
+        visible:   是否可见    int
+    """
+    params = {'record_id':int,'visible':int}
+    try:
+        record_id,visible = getParams(params,request.form)
+    except:        
+        return '{}',PARAM_ERROR
+    try:
+        # 修改游戏记录可见性
+        return changeGameRecordVisible(record_id,visible)
+    except Exception as e:
+        logger.error("failed to change game record visible due to {0}".format(str(e)), exc_info=True)
+        return '{}',OTHER_ERROR
+
 @socketio.event
 def sendMessage(data):
     """_summary_
@@ -944,8 +1381,26 @@ def sendMessage(data):
     emit('receiveMessage',{'username':sessions[userid],'message':message,'userid':userid},to=room_id,
             skip_sid=request.sid)
     
+
+def subtractSesion():
+    """
+    定时清理过期session
+    """
+    global sessions,session_times
+    while True:
+        li = list(sessions.keys())
+        for key in li:
+            try:
+                if time.time() - session_times[key] > 60*60*1:  # 1小时
+                    sessions.pop(key)
+                    session_times.pop(key)
+            except Exception as e:
+                logger.error("Failed to delete session due to {0}".format(str(e)), exc_info=True)
+        time.sleep(60*5)
+
+threading.Thread(target=subtractSesion,daemon=True, name='subtractSesion').start()
+threading.Thread(target=cycleMatch,args=[app] ,daemon=True, name='cycleMatch').start()  #bug uwsgi不执行main函数
+threading.Thread(target=cycleRank,args=[app] ,daemon=True, name='cycleRank').start()
 if __name__ == "__main__":
-    threading.Thread(target=cycleMatch,args=[app] ,daemon=True, name='cycleMatch').start()
-    threading.Thread(target=cycleRank,args=[app] ,daemon=True, name='cycleRank').start()
     socketio.run(app,debug=True,host='0.0.0.0',port=8888,allow_unsafe_werkzeug=True)
     print("Good bye!")

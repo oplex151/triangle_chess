@@ -13,6 +13,7 @@ import game_info from '@/assets/jsons/game_info.json'
 import Report from '@/components/views/Report.vue'
 import Avatar from '@/components/views/Avatar.vue'
 import useClipboard from 'vue-clipboard3';
+import * as CONST from "@/lib/const.js";
 
 const { toClipboard } = useClipboard()
 const start = ref(false)
@@ -43,15 +44,15 @@ const name = computed(()=>{
 const sockets_methods = {
     gameRecord(data) {
         options.value = data.record[0]
-        console.log(options.value)
+        //console.log(options.value)
         loading.value = false
     },
     gameMoveRecord(data) {
-        console.log(data)
+        //console.log(data)
         moves.value = data.record[0]
         loading.value = false
         start.value = true
-        console.log(game_info)
+        //console.log(game_info)
         map_state.value = game_info
         // 使用nextTick等board初始化完成
         nextTick(() => {
@@ -62,6 +63,20 @@ const sockets_methods = {
     processWrong(data) {
         status1 = data.status
         ElMessage.error("Error due to " + status1)
+        if(status1 == CONST.SESSION_EXPIRED){ //Session expired
+          Cookies.remove('room_id')
+          Cookies.remove('userid')
+          Cookies.remove('room_info')
+          Cookies.remove('username')
+          Cookies.remove('camp')
+          ElMessage({
+            message: '会话过期，请重新登录',
+            grouping: true,
+            type: 'error',
+            showClose: true
+          })
+          router.replace('/login')
+        }
     },
 }
 
@@ -73,9 +88,9 @@ onMounted(() => {
         })
     }
     registerSockets(sockets_methods, socket.value, proxy);
-    console.log(socket.value)
+    //console.log(socket.value)
     my_camp.value = -1
-    console.log(route.query.recordId)
+    //console.log(route.query.recordId)
     socket.value.io.emit('viewMoveRecords', { 'record_id': route.query.recordId })
 });
 function goBackHome() {
@@ -92,15 +107,15 @@ onUnmounted(() => {
         socket.value.io.disconnect()
     }
     catch (err) {
-        console.log("Record Remove Socket Failed!")
-        console.log(err)
+        //console.log("Record Remove Socket Failed!")
+        //console.log(err)
     }
 
 });
 
 
 const Move = (data) => {
-    console.log(data)
+    //console.log(data)
 }
 
 const Next = () => {
@@ -117,7 +132,7 @@ const Next = () => {
     data.x2 = parseInt(data.pos2[0])
     data.y2 = parseInt(data.pos2[1])
     data.z2 = parseInt(data.pos2[2])
-    console.log(data)
+    //console.log(data)
     step.value += 1
     board.value.moveSuccess(data)
 }
@@ -163,15 +178,18 @@ const camp_0_style = computed(() => {
 const copy = async (anything) => {
     try {
         await toClipboard(anything)
-        console.log('Copied to clipboard')
+        //console.log('Copied to clipboard')
     } catch (e) {
-        console.error(e)
+        //console.error(e)
     }
 }
 const share = () => {
     copy(main.self_url+'/publicShare?recordId='+route.query.recordId)
     ElMessage.success('链接已复制到剪贴板')
 }
+const camp_c = computed(() => {
+    return [camp_0_style.value, camp_1_style.value, camp_2_style.value]
+})
 </script>
 <template>
     <div class="background-image-publicShare"></div>
@@ -194,39 +212,19 @@ const share = () => {
             <button @click="Next" class="next_button">下一步</button>
             <div class="avatar">
             <!---------0号位---------->
-            <div :class="camp_0_style">
-                <Avatar :my_userid="userid" :userid="userids[0]" @reportUser="handleReport">
-                    <template #name>
-                        <p>{{ name[0] }}</p>
-                    </template>
-                    <template #avatar>
-                        {{ name[0] }}
-                    </template>
-                </Avatar>
+                <div v-for="(item,index) in camp_c" :key="index">
+                    <div :class="item">
+                        <Avatar :my_userid="userid" :userid="userids[index]" @reportUser="handleReport">
+                            <template #name>
+                                <p>noname{{index}}</p>
+                            </template>
+                            <template #avatar>
+                                <img :src="main.url+'/static/noname.png'" alt="头像" />
+                            </template>
+                        </Avatar>
+                    </div>
+                </div>
             </div>
-            <!---------1号位---------->
-            <div :class="camp_1_style">
-                <Avatar :my_userid="userid" :userid="userids[1]" @reportUser="handleReport">
-                    <template #name>
-                        <p>{{ name[1] }}</p>
-                    </template>
-                    <template #avatar>
-                        {{ name[1] }}
-                    </template>
-                </Avatar>
-            </div>
-            <!---------2号位---------->
-            <div :class="camp_2_style">
-                <Avatar :my_userid="userid" :userid="userids[2]"  @reportUser="handleReport" >
-                    <template #name>
-                        <p>{{ name[2] }}</p>
-                    </template>
-                    <template #avatar>
-                        {{ name[2] }}
-                    </template>
-                </Avatar>
-            </div>
-        </div>
         </div>
     </div>
 </template>
