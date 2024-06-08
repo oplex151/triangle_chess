@@ -403,8 +403,7 @@ const handleReportEnd = (id) => {
 
   vis.value = false;
 }
-const handleReport = () => {
-  //console.log(id);
+const handleReport = (id) => {
   to_report_id.value = id;
   //console.log(to_report_id.value);
   vis.value = true;
