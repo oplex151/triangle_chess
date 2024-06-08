@@ -1,6 +1,6 @@
 from typing import Literal
 from .piece import *
-from .exception import *
+from backend.tools.exception import *
 
 class Soilder(Piece):
     '''

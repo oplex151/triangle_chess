@@ -15,6 +15,7 @@ WRONG_OLD_PASSWORD = 513 #"Wrong old password"
 BANNED_USER = 514 #"Banned user"
 USER_ALREADY_BANNED = 515 #"User already banned"
 ROOM_FULL = 516 #"Room full"
+REPEAT_DRAW_REQUEST = 517 #"Repeat draw request"
 
 PARAM_ERROR = 505 #"Parameter error"
 

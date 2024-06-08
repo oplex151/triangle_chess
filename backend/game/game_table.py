@@ -267,7 +267,7 @@ class GameTable:
         '''
         # 如果已经有一个求和请求，则忽略新请求
         if self.draw_requester is not None:
-            return
+            return False
         
         # 记录发起求和请求的玩家
         self.draw_requester = userid
@@ -277,6 +277,8 @@ class GameTable:
         self.draw_agree = set()
         self.draw_respondents.add(userid)
         self.draw_agree.add(True)
+
+        return True
 
     def respondDraw(self, userid:int, agree:bool):
         '''

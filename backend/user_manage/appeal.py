@@ -91,7 +91,7 @@ def getAppealsInfo(userid):
                             "fromid":fromid,
                             "dealed":dealed,
                             "feedback":feedback if dealed else ""})
-        logger.debug(res)
+        # logger.debug(res)
         status = SUCCESS
     except Exception as e:
         logger.error(e)

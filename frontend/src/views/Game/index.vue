@@ -320,8 +320,9 @@ const sockets_methods = {
   },
   processWrong(data) {
     let status1 = data.status
-    ElMessage.error("Error due to " + status1)
+    //ElMessage.error("Error due to " + status1)
     if (status1 == CONST.ROOM_NOT_EXIST) {
+      ElMessage.error('房间不存在')
       router.replace('/room')
     }
     else if (status1 == CONST.NOT_IN_ROOM) {
@@ -331,6 +332,9 @@ const sockets_methods = {
     else if (status1 == CONST.USER_NOT_LOGIN) {
       ElMessage.error('用户未登录')
       router.replace('/login')
+    }
+    else if (status1 == CONST.REPEAT_DRAW_REQUEST) {
+      ElMessage.error('重复的求和请求或者有求和决议在进行')
     }
     else if(status1 == CONST.SESSION_EXPIRED){
       Cookies.remove('room_id')
@@ -378,7 +382,9 @@ function requestDraw(){
         'userid': Cookies.get('userid')
       })
       game_status.value = CONST.STATUS_DRAWING
-      draw_responser.value.push({ 'userid': userid, 'username': my_name ,'agree':true})
+      if (draw_responser.value.length == 0) {  // 只有请求为空时才可以发起请求
+        draw_responser.value.push({ 'userid': userid, 'username': my_name ,'agree':true})
+      }
     }
     else{
       ElMessage.error('你已经输了，不能求和')

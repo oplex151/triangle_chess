@@ -17,10 +17,11 @@ from backend.global_var import *
 from backend.tools import setupLogger, getParams
 from backend.user_manage import *
 from backend.user_manage.appeal import *
-from backend.game.exception import *
+from backend.tools.exception import *
 from backend.game.record import *
 from message import *
 from backend.game import *
+from backend.tools.exception import *
 
 app = flask.Flask(__name__)
 CORS(app,cors_allowed_origins="*")
@@ -39,13 +40,24 @@ def gate(func):
                 userid = request.form.get('userid')
             else:  #websocket
                 userid = args[0].get('userid')
+
             if not isinstance(userid,int) and userid is not None:
                 userid = int(userid)
+
             if userid is None or userid not in sessions.keys():
-                raise ValueError
+                logger.debug('session expired! '+'func name:'+func.__name__) 
+                raise SessionException
+            
             session_times[userid] = time.time() # 更新session时间
             return func(*args, **kwargs)
-        except Exception as e:
+        
+        except SessionException:
+            if len(args) == 0:  #http
+                return "{message: 'session expired!'}",SESSION_EXPIRED
+            else:  #websocket
+                emit('processWrong',{'status':SESSION_EXPIRED},to=request.sid,namespace='/')
+                return 
+        except Exception as e: 
             logger.error(e,exc_info=True)
             if len(args) == 0:  #http
                 return "{message: 'session expired!'}",SESSION_EXPIRED
@@ -594,6 +606,7 @@ def disconnect():
     断开socket连接
     '''
     global rooms,sid2uid,sessions,match_queue,rank_queue
+    userid = None
     if request.sid in sid2uid:
         # 断开连接时,判断用户是否在房间中,如果在房间中,则退出房间
         userid = sid2uid[request.sid]
@@ -637,7 +650,7 @@ def disconnect():
             logger.info(f"User {userid} leave rank queue")
             rank_queue.remove(userid)
         
-    logger.info("User {0} disconnect".format(request.sid))
+    logger.info("User {0} disconnect".format(request.sid) + ", userid=" + f"{userid}" if userid else "None")
 
 @socketio.event
 @gate
@@ -1080,9 +1093,11 @@ def requestDraw(data):
         emit('processWrong',{'status':NOT_JOIN_GAME},to=request.sid)
         return
     try:
-        game.requestDraw(userid)
+        if game.requestDraw(userid):
         # 广播求和请求给其他存活的玩家
-        emit('drawRequest', {'requester': userid, 'username': sessions[userid]}, to=room_id, skip_sid=request.sid)
+            emit('drawRequest', {'requester': userid, 'username': sessions[userid]}, to=room_id, skip_sid=request.sid)
+        else:
+            emit('processWrong',{'status':REPEAT_DRAW_REQUEST},to=request.sid)
         return
     except Exception as e:
         logger.error("Request draw error due to {0}".format(str(e)), exc_info=True)
@@ -1143,6 +1158,7 @@ def cycleMatch(app):
     """
     global rooms, match_queue, sessions
     with app.app_context():
+
         while True:
             if match_queue.qsize() >= 3:
                 user0,user1,user2 = match_queue.get(),match_queue.get(),match_queue.get()
@@ -1156,7 +1172,8 @@ def cycleMatch(app):
                     for user in room.users:
                         join_room(room=room.room_id,sid=uid2sid(user['userid']),namespace='/')
 
-                    logger.info(f"Create room : {room.room_id} and game: {room.game_table.game_id}")
+                    logger.info(f"Create room : {room.room_id} and game: {room.game_table.game_id}"
+                                + f" with users: {user0}, {user1}, {user2}")
                     # 通知房间所有人匹配到了
                     emit('startMatchSuccess',{'game_id':room.game_table.game_id,
                                             'room_info':room.getRoomInfo()},
@@ -1166,22 +1183,16 @@ def cycleMatch(app):
                     for user in [user0,user1,user2]:
                         if user and user in sessions:
                             match_queue.put(user)
-                    # if room and room in rooms:
-                    #     rooms.remove(room)
-                    
+
             time.sleep(1)
 
 def cycleRank(app):
     """
     排位模式下，定时检查的守护进程，检查是否有玩家加入排位队列，若有则创建房间
     """
-    global rooms, rank_queue, sessions
+    global rooms, rank_queue, sessions, rank_table
     with app.app_context():
         while True:
-            # def isEligible(user1, user2):
-            #     rank_diff = abs(user1[1] - user2[1])
-            #     score_diff = abs(user1[2] - user2[2])
-            #     return rank_diff <= 1 and score_diff <= 100  # 假设允许的最大段位差和积分
 
             if rank_queue.qsize() >= 3:
                 user_list = []
@@ -1192,7 +1203,7 @@ def cycleRank(app):
                 # 将段位符合的[user1，user2]组加入到eligible_users中
                 for i, user1 in enumerate(user_list):
                     for j, user2 in enumerate(user_list[i+1:], start=i+1):
-                        if user1 != user2 and isEligible(user1, user2):
+                        if user1 != user2 and isEligible(*rank_table[user1], *rank_table[user2]):
                             eligible_users.append([user1, user2])
 
                 # 再遍历user_list，将各个user与eligible_users中的各组中的两个user分别进行比对
@@ -1200,7 +1211,7 @@ def cycleRank(app):
                 matched_users = None
                 for [user1, user2] in eligible_users:
                     for user in user_list:
-                        if user != user1 and user != user2 and isEligible(user, user1) and isEligible(user, user2):
+                        if user != user1 and user != user2 and isEligible(*rank_table[user], *rank_table[user1]) and isEligible(*rank_table[user], *rank_table[user2]):
                             matched_users = (user1, user2, user)
                             break
                     if matched_users is not None:
@@ -1213,33 +1224,33 @@ def cycleRank(app):
                         if user and user != user0 and user != user1 and user != user2 and user in sessions:
                             rank_queue.put(user)
                     try:
-                        room = RoomManager([UserDict(userid=user0[0], username=sessions[user0[0]]),
-                                            UserDict(userid=user1[0], username=sessions[user1[0]]),
-                                            UserDict(userid=user2[0], username=sessions[user2[0]])], 
+                        room = RoomManager([UserDict(userid=user0, username=sessions[user0]),
+                                            UserDict(userid=user1, username=sessions[user1]),
+                                            UserDict(userid=user2, username=sessions[user2])], 
                                             RoomType.ranked)
                         rooms.append(room)
                         room.game_table = GameTable(room.users)
                         for user in room.users:
                             join_room(room=room.room_id, sid=uid2sid(user['userid']),namespace='/')
-                        logger.info(f"Create room : {room.room_id} and game: {room.game_table.game_id}")
+                        logger.info(f"Create room : {room.room_id} and game: {room.game_table.game_id}"
+                                    + f" with users: {user0}, {user1}, {user2}")
                         # 通知房间所有人匹配到了，并展示各玩家段位和积分
                         emit('startRankSuccess',{'game_id':room.game_table.game_id,
                                             'room_info':room.getRoomInfo(),
-                                            'ranks': [user0[1], user1[1], user2[1]],
-                                            'scores': [user0[2], user1[2], user2[2]]},
+                                            'ranks': [rank_table[user0][0], rank_table[user1][0], rank_table[user2][0]],
+                                            'scores': [rank_table[user0][1], rank_table[user1][1], rank_table[user2][1]]},
                                             to=room.room_id,namespace='/')
                     except Exception as e:
                         logger.error("Create rank_game error due to {0}".format(str(e)), exc_info=True)
                         # 重新将所有用户放回队列
                         for user in user_list:
-                            if user and user[0] in sessions:
+                            if user and user in sessions:
                                 rank_queue.put(user)
-                        # if room and room in rooms:
-                        #     rooms.remove(room)
+
                 else:
                     # 重新将所有用户放回队列
                     for user in user_list:
-                        if user and user[0] in sessions:
+                        if user and user in sessions:
                             rank_queue.put(user)
 
             time.sleep(1)
@@ -1271,7 +1282,7 @@ def startRank(data):
     Args:
         userid: 用户id      int 
     """
-    global rooms, rank_queue
+    global rooms, rank_queue ,rank_table
     params = {'userid': int}
     try:
         userid = getParams(params, data)
@@ -1287,7 +1298,11 @@ def startRank(data):
     
     user_rank, user_score = result
     sid2uid[request.sid] = userid # 维护sid2uid映射
-    rank_queue.put((userid, user_rank, user_score))
+
+    # rank_queue.put((userid, user_rank, user_score)) 一把拍死这样写的
+    rank_queue.put(userid)
+    rank_table[userid] = (user_rank, user_score)
+
     logger.info(f"User {userid} join rank queue: sid {request.sid}")
 
 @socketio.event
@@ -1398,9 +1413,21 @@ def subtractSesion():
                 logger.error("Failed to delete session due to {0}".format(str(e)), exc_info=True)
         time.sleep(60*5)
 
+
+def viewQueue():
+    # bebug
+    global match_queue,rank_queue
+    while True:
+        input()
+        print(f"match_queue size: {match_queue.qsize()}, rank_queue size: {rank_queue.qsize()}")
+        print(f"match_queue: {match_queue.queue}, rank_queue: {rank_queue.queue}")
+        print(f'match_set: {match_queue.queue_set}, rank_set: {rank_queue.queue_set}')
+
 threading.Thread(target=subtractSesion,daemon=True, name='subtractSesion').start()
 threading.Thread(target=cycleMatch,args=[app] ,daemon=True, name='cycleMatch').start()  #bug uwsgi不执行main函数
 threading.Thread(target=cycleRank,args=[app] ,daemon=True, name='cycleRank').start()
+# threading.Thread(target=viewQueue,daemon=True, name='viewQueue').start()
+
 if __name__ == "__main__":
-    socketio.run(app,debug=True,host='0.0.0.0',port=8888,allow_unsafe_werkzeug=True)
+    socketio.run(app,debug=False,host='0.0.0.0',port=8888,allow_unsafe_werkzeug=True)
     print("Good bye!")

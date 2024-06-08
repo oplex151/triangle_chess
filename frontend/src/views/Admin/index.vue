@@ -6,6 +6,7 @@ import { useRouter,useRoute } from 'vue-router';
 import Cookies from 'js-cookie'
 import { ElMessage } from 'element-plus';
 import router from '@/router';
+import * as CONST from '@/lib/const.js';
 
 const user_data = ref([])
 const apeal_table = ref([])
@@ -78,7 +79,11 @@ function getAppeals() {
         }
     }).catch(err => {
         //console.log(err)
-        ElMessage.error('获取申诉数据失败')
+        if (err.response.status == CONST.NO_APPEALS) {
+            ElMessage.info('暂无申诉数据')
+        }
+        else
+            ElMessage.error('获取申诉数据失败')
     })
 }
 
