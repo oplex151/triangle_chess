@@ -397,7 +397,7 @@ const handleReportEnd = (id) => {
 
   vis.value = false;
 }
-const handleReport = () => {
+const handleReport = (id) => {
   to_report_id.value = id;
   //console.log(to_report_id.value);
   vis.value = true;
