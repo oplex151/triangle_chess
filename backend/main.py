@@ -1407,5 +1407,5 @@ threading.Thread(target=subtractSesion,daemon=True, name='subtractSesion').start
 threading.Thread(target=cycleMatch,args=[app] ,daemon=True, name='cycleMatch').start()  #bug uwsgi不执行main函数
 threading.Thread(target=cycleRank,args=[app] ,daemon=True, name='cycleRank').start()
 if __name__ == "__main__":
-    socketio.run(app,debug=True,host='0.0.0.0',port=8888,allow_unsafe_werkzeug=True)
+    socketio.run(app,debug=False,host='0.0.0.0',port=8888,allow_unsafe_werkzeug=True)
     print("Good bye!")
