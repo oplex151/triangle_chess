@@ -45,14 +45,14 @@ function getUserInfo() {
             userinfo.value.gender = response.data.gender;
             userinfo.value.rank = getRankLevel(response.data.rank);
             userinfo.value.score = response.data.score;
-            console.log(response.data.image_path)
+            //console.log(response.data.image_path)
             image_path.value = main.url + response.data.image_path;
         }
         else{
             ElMessage.error('获取用户信息失败，请稍后再试');
         }
     }).catch(error => {
-        console.log(error);
+        //console.log(error);
         if(error.response.status == CONST.SESSION_EXPIRED){ //Session expired
           Cookies.remove('room_id')
           Cookies.remove('userid')
@@ -84,10 +84,10 @@ function chooseImg (event) {
     reader.onloadend = (e) => {
         img.src = e.target.result
         // 这里的e.target就是reader
-        // console.log(reader.result)
+        // //console.log(reader.result)
         // reader.result就是图片的base64字符串
         base64.value = reader.result
-        // console.log(base64.value)
+        // //console.log(base64.value)
     }
     // 预览图片
     let canvas = imgPreview.value
@@ -121,10 +121,10 @@ function uploadImg () {
             haven_upload.value = true
         }
         else {
-            console.log('上传失败')
+            //console.log('上传失败')
         }
     }).catch(error => {
-        console.log(error)
+        //console.log(error)
         if(error.response.status == CONST.SESSION_EXPIRED){ //Session expired
           Cookies.remove('room_id')
           Cookies.remove('userid')
@@ -145,7 +145,7 @@ function uploadImg () {
 function justIt (data) {
     is_select_img.value = false
     base64.value = data.src
-    console.log(data.src)
+    //console.log(data.src)
     let img = new Image()
     img.src = data.src
     let canvas = imgPreview.value
@@ -199,7 +199,7 @@ function saveEdit () {
             cancelEdit()
         }
     }).catch(error => {
-        console.log(error)
+        //console.log(error)
         cancelEdit()
         if(error.response.status == CONST.SESSION_EXPIRED){ //Session expired
           Cookies.remove('room_id')

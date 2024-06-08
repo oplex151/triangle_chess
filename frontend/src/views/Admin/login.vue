@@ -55,7 +55,7 @@ function adminLogin() {
       errorMessage.value = '用户名或密码错误';
     }
   }).catch(err => {
-    console.log(err);
+    //console.log(err);
     errorMessage.value = '登录失败';
   });
 }

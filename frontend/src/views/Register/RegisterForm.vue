@@ -121,10 +121,10 @@ const submitForm = (formEl: FormInstance | undefined) => {
     if (!formEl) return
     formEl.validate((valid) => {
     if (valid) {
-        console.log('submit!')
+        //console.log('submit!')
         disableForm.value = true
     } else {
-        console.log('error submit!')
+        //console.log('error submit!')
         return false
     }
     })

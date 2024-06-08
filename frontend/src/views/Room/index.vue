@@ -9,7 +9,7 @@ import Cookies from 'js-cookie'
 import { useRouter } from 'vue-router';
 import { ElDivider, ElInput, ElMessage } from 'element-plus'
 import * as CONST from '@/lib/const.js'
-import { lives, resetLives } from '@/chesses/Live';
+import { resetLives } from '@/chesses/Live';
 import { User, HomeFilled } from '@element-plus/icons-vue'
 
 import Avatar from '@/components/views/Avatar.vue'
@@ -81,7 +81,7 @@ const sockets_methods = {
         avatars.value = res.data
       })
       .catch(err => {
-        console.error(err)
+        //console.error(err)
         if(err.response.status == CONST.SESSION_EXPIRED){ //Session expired
           Cookies.remove('room_id')
           Cookies.remove('userid')
@@ -151,7 +151,7 @@ const sockets_methods = {
         router.replace('/login')
         break;
       default:
-        console.error(data.status)
+        //console.error(data.status)
         ElMessage.error('未知错误')
     }
   },
@@ -200,7 +200,7 @@ const sockets_methods = {
     resetLives()
     if (camp>=-1){
       Cookies.set('camp',camp)
-      console.log(Cookies.get('camp'))
+      //console.log(Cookies.get('camp'))
       ElMessage.success('游戏开始,你是'+(camp>0?(camp>1?'金方玩家':'黑方玩家'):(camp==0?'红方玩家':'观战者')))
     }
     removeSockets(sockets_methods, socket.value, proxy)
@@ -227,11 +227,11 @@ onMounted(() => {
     }
     )
     .then(res => {
-      console.log(res.data)
+      //console.log(res.data)
       avatars.value = res.data
     })
     .catch(err => {
-      console.error(err)
+      //console.error(err)
       if(err.response.status == CONST.SESSION_EXPIRED){ //Session expired
         Cookies.remove('room_id')
         Cookies.remove('userid')
@@ -263,7 +263,7 @@ function establishConnection() {
     })
   }
   registerSocketsForce(sockets_methods, socket.value, proxy)
-  console.log(socket.value)
+  //console.log(socket.value)
 }
 function createRoom() {
   socket.value.io.emit('createRoom', { 'userid': Cookies.get('userid') })
@@ -323,7 +323,7 @@ const copyRoomId = () => {
     document.body.removeChild(textarea);
     ElMessage.success('已复制房间号')
   } else {
-    console.error('room_info 或 room_info.room_id 未定义');
+    //console.error('room_info 或 room_info.room_id 未定义');
   }
 }
 

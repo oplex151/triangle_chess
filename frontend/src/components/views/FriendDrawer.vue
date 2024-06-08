@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import Avatar from './Avatar.vue';
 import Cookies from 'js-cookie';
 import * as CONST from '@/lib/const.js'
@@ -22,6 +22,13 @@ const  getFriendList = () => {
     getUnconfirmedFriendList()
 
 }
+
+onMounted(() => {
+    getFriendList()
+    getAvatars()
+    getUnconfirmedFriendList()
+})
+
 const getConfirmedFriendList = () => {
     
     axios.post(main.url+'/api/getFriends', {
@@ -31,22 +38,8 @@ const getConfirmedFriendList = () => {
     }).then(res => {
         Friendlist.value = res.data.friends
     }).catch(err => {
-        console.log(err)
+        //console.log(err)
         ElMessage.error('获取好友列表失败')
-        // if(err.response.status == CONST.SESSION_EXPIRED){ //Session expired
-        // Cookies.remove('room_id')
-        // Cookies.remove('userid')
-        // Cookies.remove('room_info')
-        // Cookies.remove('username')
-        // Cookies.remove('camp')
-        // ElMessage({
-        //     message: '会话过期，请重新登录',
-        //     grouping: true,
-        //     type: 'error',
-        //     showClose: true
-        // })
-        //     router.replace('/login')
-        // }
     })
 }
 const getUnconfirmedFriendList = () => {
@@ -58,26 +51,12 @@ const getUnconfirmedFriendList = () => {
     }).then(res => {
         UnconfirmedFriendlist.value = res.data.friends
     }).catch(err => {
-        console.log(err)
+        //console.log(err)
         ElMessage.error('获取列表失败')
-        // if(err.response.status == CONST.SESSION_EXPIRED){ //Session expired
-        // Cookies.remove('room_id')
-        // Cookies.remove('userid')
-        // Cookies.remove('room_info')
-        // Cookies.remove('username')
-        // Cookies.remove('camp')
-        // ElMessage({
-        //     message: '会话过期，请重新登录',
-        //     grouping: true,
-        //     type: 'error',
-        //     showClose: true
-        // })
-        //     router.replace('/login')
-        // }
     })
 }
 const getAvatars = () =>{
-    console.log(UnconfirmedFriendlist.value)
+    //console.log(UnconfirmedFriendlist.value)
     let confuserids = Friendlist.value.map(user => {
         return user.userid;
     }) 
@@ -91,16 +70,16 @@ const getAvatars = () =>{
     },{
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
     }).then(res => {
-        console.log(res.data)
+        //console.log(res.data)
         AvatarList.value = res.data
     }).catch(err => {
-        console.log(err)
+        //console.log(err)
         ElMessage.error('获取头像列表失败')
     })
 }
 const confirmFriend = (friendid, confirm) => {
-    console.log(confirm)
-    console.log(friendid)
+    //console.log(confirm)
+    //console.log(friendid)
     axios.post(main.url+'/api/confirmFriend', {
         'userid': userid,
         'friend_id': friendid,
@@ -120,13 +99,13 @@ const confirmFriend = (friendid, confirm) => {
             ElMessage.error('操作失败')
         }
     }).catch(err => {
-        console.log(err)
+        //console.log(err)
         ElMessage.error('操作失败')
     })
 }
 
 const deleteFriend = (friendid) => {
-    console.log('delete friend')
+    //console.log('delete friend')
     axios.post(main.url + '/api/deleteFriend', {
         'userid': userid,
         'friend_id': friendid
@@ -139,11 +118,12 @@ const deleteFriend = (friendid) => {
             ElMessage.success('删除好友成功')
             isfriend.value = false
             Friendlist.value = Friendlist.value.filter(friend => friend.userid != friendid)
+            getFriendList()
         } else {
             ElMessage.error('删除好友失败')
         }
     }).catch(err => {
-        console.log(err)
+        //console.log(err)
         if (err.response.status == CONST.NOT_FRIEND) {
             ElMessage.error('已经不是好友了')
             Friendlist.value = Friendlist.value.filter(friend => friend.userid != friendid)
@@ -171,7 +151,14 @@ const handleReport = (id) => {
 
 <button @click="outerDrawer = true" class="friend-drawer-start-btn">好友</button>
 <el-drawer class ="friend-drawer-body" v-model="outerDrawer" title="好友列表" :append-to-body="true" @open="getFriendList" @opened="getAvatars" size="18%">
-    <div class="friend-drawer-header"><button class="friend-drawer-btn" @click="innerDrawer = true">好友确认消息</button></div>
+    <div class="friend-drawer-header">
+        <button class="friend-drawer-btn" @click="innerDrawer = true">
+            好友确认消息
+            <div class="msg-count" v-if="UnconfirmedFriendlist.length">
+                {{UnconfirmedFriendlist.length}}
+            </div>
+        </button>
+    </div>
     
     <el-drawer class="friend-drawer-body" v-model="innerDrawer" append-to-body="true" title="好友确认消息" @open="getUnconfirmedFriendList" @close="getConfirmedFriendList" size = "18%">
         <div v-for="(friend, index) in UnconfirmedFriendlist" :key="friend.userid" :index="index" class="friend-item">

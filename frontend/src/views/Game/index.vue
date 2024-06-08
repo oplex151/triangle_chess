@@ -47,14 +47,14 @@ const avatars = ref({})
 const copy = async (anything) => {
   try {
     await toClipboard(anything)
-    console.log('Copied to clipboard')
+    //console.log('Copied to clipboard')
   } catch (e) {
-    console.error(e)
+    //console.error(e)
   }
 }
 
 const sendMessage = (message) => {
-  console.log(message)
+  //console.log(message)
   socket.value.io.emit('sendMessage', {
     'userid': userid,
     'message': i_message.value
@@ -85,7 +85,7 @@ onMounted(() => {
     }
   ).then(res => {
     if (res.status == 200) {
-      console.log(res.data)
+      //console.log(res.data)
       board.value.initMap(res.data.game_info)
     }
     else {
@@ -93,7 +93,7 @@ onMounted(() => {
       return
     }
   }).catch(error => {
-    console.log(error)
+    //console.log(error)
     if(error.response.status == 550){ //Session expired
       Cookies.remove('room_id')
       Cookies.remove('userid')
@@ -109,7 +109,7 @@ onMounted(() => {
       router.replace('/login')
     }
   })
-  console.log(socket.value)
+  //console.log(socket.value)
   let userids = room_info.users.map(user => {
     return user.userid;
   }) 
@@ -119,11 +119,11 @@ onMounted(() => {
   }
   )
   .then(res => {
-      console.log(res.data)
+      //console.log(res.data)
       avatars.value = res.data
   })
   .catch(err => {
-      console.error(err)
+      //console.error(err)
     if(err.response.status == 550){ //Session expired
       Cookies.remove('room_id')
       Cookies.remove('userid')
@@ -228,9 +228,9 @@ const sockets_methods = {
         }
     })
     .catch((action) => {})
-    console.log(data.room_info)
+    //console.log(data.room_info)
     // 匹配模式退回主页面
-    console.log(data.room_type)
+    //console.log(data.room_type)
     if (data.room_type == 1) {
       Cookies.remove('game_id')
       Cookies.remove('camp')
@@ -295,13 +295,13 @@ const sockets_methods = {
             agree = true
           else 
             agree = false
-          console.log(agree)
+          //console.log(agree)
           socket.value.io.emit('respondDraw', {
             'userid': Cookies.get('userid'),
             'agree': agree
           })
         }).catch((action) => {
-          console.log(agree)
+          //console.log(agree)
           socket.value.io.emit('respondDraw', {
             'userid': Cookies.get('userid'),
             'agree': agree
@@ -366,7 +366,7 @@ function requestSurrender() {
 
 function leaveRoom() {
   socket.value.io.emit('leaveRoom', { 'room_id': Cookies.get('room_id'), 'userid': Cookies.get('userid') })
-  console.log("点击了退出房间")
+  //console.log("点击了退出房间")
   i_message.value = ''
   o_message.value = []
 }
@@ -399,7 +399,7 @@ const handleReportEnd = (id) => {
 }
 const handleReport = () => {
   to_report_id.value = id;
-  console.log(to_report_id.value);
+  //console.log(to_report_id.value);
   vis.value = true;
 }
 const camp_1_style = computed(() => {

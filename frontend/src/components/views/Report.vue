@@ -88,13 +88,13 @@ const Confirm = () => {
     } 
     else {
         ElMessage.success('举报出错')
-        console.log(res)        
+        //console.log(res)        
     }
     resetForm(ruleFormRef.value)  
     })
     .catch(error => {
         ElMessage.success('举报出错')
-        console.log(error)
+        //console.log(error)
         resetForm(ruleFormRef.value)  
     });
     emit('reportEnd')

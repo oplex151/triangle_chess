@@ -91,9 +91,9 @@ function findIntersectionPoints(radian, a, b) {
     return { x: a, y: y };
   } else {
     // it intersects with the top side
-    // console.log(m);
+    // //console.log(m);
     const x = b / m;
-    // console.log(x, b);
+    // //console.log(x, b);
     return { x: x, y: b };
   }
 }
@@ -206,6 +206,6 @@ export function generateFaceCountourPoints(numPoints = 100) {
   // add the first point to the end to close the shape
   results.push(results[0]);
   results.push(results[1]);
-  // console.log(results);
+  // //console.log(results);
   return { face: results, width: width, height: height, center: [0, 0] };
 }

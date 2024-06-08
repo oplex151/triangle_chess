@@ -47,7 +47,7 @@ function mapChessToPoint(row, col) {
     return { top: y, left: x };
   } else {
     // Handle out of bounds error
-    console.error('Row or column out of bounds:', row, col);
+    //console.error('Row or column out of bounds:', row, col);
     return { top: 0, left: 0 }; // Return default values or handle error as needed
   }
 }
@@ -102,7 +102,7 @@ const camp_0_style = computed(() => {
   }
 });
 const action = (position) => {
-  console.log(props.game_status)
+  //console.log(props.game_status)
   if (props.game_status != CONST.STATUS_ONING)
     return
   // 未选中
@@ -158,12 +158,12 @@ const moveChess = (chess, to) => {
   return true;
 };
 const initMap = (game_info) => {
-  console.log("initMap执行开始")
+  //console.log("initMap执行开始")
   // 设置轮到谁走
   camp.value = game_info.turn
   // 设置活着的玩家
   changeLives(game_info.lives)
-  // console.log("111111111111")
+  // //console.log("111111111111")
   initChess(game_info)
   for (const [k, camp] of Object.entries(camps)) {
     camp.get().forEach((chess) => {
@@ -190,11 +190,11 @@ const initMap = (game_info) => {
       GEBI(`${chess.position}`).style.background = `url(${chess.image}) center center / contain no-repeat`;
       GEBI(`${chess.position}`).style.backgroundSize = '53px'; // 将背景图片大小设置为 53px，宽度和高度均为 53px
       // element.style.backgroundImage = `url(${chess.image})`;  // 设置背景图片
-      console.log(chess.image);
+      //console.log(chess.image);
       map.set(chess.position, chess);
     });
   }
-  console.log("initMap执行结束")
+  //console.log("initMap执行结束")
 
 };
 
@@ -415,13 +415,6 @@ defineExpose({
 
 }
 
-//.board :deep(.chess) {
- // rotate: 180deg !important;
-  // 某些浏览器（例如小智双核）不支持 ::v-deep 伪元素选择器，这个我也没办法，只能这样了
-  // 御三家firefox,chrome,edge都支持
-//}
-
-// = 1
 .board-tilt-left {
   position: absolute;
   top: 178px;

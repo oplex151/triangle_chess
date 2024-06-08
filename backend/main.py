@@ -41,10 +41,8 @@ def gate(func):
                 userid = args[0].get('userid')
             if not isinstance(userid,int) and userid is not None:
                 userid = int(userid)
-            if userid is None:
+            if userid is None or userid not in sessions.keys():
                 raise ValueError
-            if  userid not in sessions.keys():
-                raise TimeoutError
             session_times[userid] = time.time() # 更新session时间
             return func(*args, **kwargs)
         except Exception as e:
@@ -55,7 +53,6 @@ def gate(func):
                 emit('processWrong',{'status':SESSION_EXPIRED},to=request.sid,namespace='/')
                 return
     return wrapper
-
 
 def protectedAdmin(token):
     try:
@@ -488,8 +485,6 @@ def getAvatarsApi():
     userids = eval(userids)
     avatars,status = getSomeUserAvatar(userids)
     return jsonify(avatars),status
-
-
 
 @app.route('/api/likeGameRecord', methods=['POST'])
 def likeGameRecordApi():
@@ -1401,7 +1396,7 @@ def subtractSesion():
                     session_times.pop(key)
             except Exception as e:
                 logger.error("Failed to delete session due to {0}".format(str(e)), exc_info=True)
-        time.sleep(60*60)
+        time.sleep(60*5)
 
 threading.Thread(target=subtractSesion,daemon=True, name='subtractSesion').start()
 threading.Thread(target=cycleMatch,args=[app] ,daemon=True, name='cycleMatch').start()  #bug uwsgi不执行main函数

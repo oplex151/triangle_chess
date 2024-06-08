@@ -25,7 +25,7 @@ function getUserAppeal() {
         headers: {'Content-Type':'application/x-www-form-urlencoded'},
     }).then(response => {
         if (response.status ==200) {
-            console.log(response.data)
+            //console.log(response.data)
             user_apeals.value = response.data
         }
         else{
@@ -55,7 +55,7 @@ function getUserAppeal() {
     })
 }
 const formatDate = (timestamp) => {
-    console.log(timestamp)
+    //console.log(timestamp)
     // 将日期字符串转换为Date对象
     const date = new Date(timestamp);
 

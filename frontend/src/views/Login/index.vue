@@ -17,7 +17,7 @@ onMounted(() => {
   if (Cookies.get('userid') !== undefined) {
     router.push('/');
   }
-  console.log(main.url)
+  //console.log(main.url)
 });
 
 watchEffect(() => {

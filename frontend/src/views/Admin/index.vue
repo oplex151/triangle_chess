@@ -57,7 +57,7 @@ function getUserData() {
             ElMessage.error('获取用户数据失败')
         }
     }).catch(err => {
-        console.log(err)
+        //console.log(err)
         ElMessage.error('获取用户数据失败')
     })
 }
@@ -77,13 +77,13 @@ function getAppeals() {
             ElMessage.error('获取申诉数据失败')
         }
     }).catch(err => {
-        console.log(err)
+        //console.log(err)
         ElMessage.error('获取申诉数据失败')
     })
 }
 
 function handleBan(user) {
-    console.log(user)
+    //console.log(user)
     axios.post(main.url+'/api/banUser',
     {
         'token': Cookies.get('admin_token'),
@@ -100,13 +100,13 @@ function handleBan(user) {
             ElMessage.error('封禁失败')
         }
     }).catch(err => {
-        console.log(err)
+        //console.log(err)
         ElMessage.error('封禁失败')
     })
 }
 
 function handleRelease(user) {
-    console.log(user)
+    //console.log(user)
     axios.post(main.url+'/api/releaseUser',
     {
         'token': Cookies.get('admin_token'),
@@ -123,23 +123,23 @@ function handleRelease(user) {
             ElMessage.error('解封失败')
         }
     }).catch(err => {
-        console.log(err)
+        //console.log(err)
         ElMessage.error('解封失败')
     })
 }   
 
 const filterHandler = (value,row) => {
-  console.log(row, value)
+  //console.log(row, value)
   return row.banned == value
 }
 
 const filterDealed = (value,row) => {
-  console.log(row, value)
+  //console.log(row, value)
   return row.dealed == value
 }
 
 function viewDetail(row) {
-    console.log(row)
+    //console.log(row)
     visable.value = true
     appeal_text.value = row.content
     appeal_id.value = row.appealid
@@ -156,7 +156,7 @@ function handleClose() {
 }
 
 function handleSubmit() {
-    console.log(appeal_id.value, ruleForm.value.feedback)
+    //console.log(appeal_id.value, ruleForm.value.feedback)
     axios.post(main.url+'/api/handleAppeal',
     {
         'token': Cookies.get('admin_token'),
@@ -174,14 +174,14 @@ function handleSubmit() {
             ElMessage.error('处理失败')
         }
     }).catch(err => {
-        console.log(err)
+        //console.log(err)
         ElMessage.error('处理失败')
     })
     handleClose()
 }
 
 const formatDate = (timestamp) => {
-    console.log(timestamp)
+    //console.log(timestamp)
     // 将日期字符串转换为Date对象
     const date = new Date(timestamp);
 

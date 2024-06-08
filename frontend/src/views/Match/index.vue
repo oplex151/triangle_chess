@@ -29,7 +29,7 @@ onMounted(()=>{
     // socket.value.io.emit('joinRoom',{'userid':userid,'room_id':Cookies.get('room_id')})
   }
   registerSockets(sockets_methods,socket.value,proxy);
-  console.log(socket.value)
+  //console.log(socket.value)
 });
 
 //需要注册的监听时间，离开页面记得销毁
@@ -52,7 +52,7 @@ const sockets_methods={
         resetLives()
         if (camp>=-1){
             Cookies.set('camp',camp)
-            console.log(Cookies.get('camp'))
+            //console.log(Cookies.get('camp'))
             ElMessage.success('游戏开始,你是'+ (camp>0?(camp>1?'金方玩家':'黑方玩家'):(camp==0?'红方玩家':'观战者')))
         }
         removeSockets(sockets_methods, socket.value, proxy)
