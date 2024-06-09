@@ -212,7 +212,9 @@ const hover = (position) => {
 
   GEBI(`${hoverChess.position}`).classList.add('chess_hover');
   hoverChess.canMove().forEach((posi) => {
-    GEBI(`${posi}`).classList.add('moviable');
+    if (!GEBI(`${posi}`).classList.contains(`camp${hoverChess.camp}`)){
+      GEBI(`${posi}`).classList.add('moviable');
+    }
   });
 };
 
