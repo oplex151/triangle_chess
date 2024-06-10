@@ -16,7 +16,7 @@ import threading
 logger = setupLogger()
 
 MAX_WATCHERS = 3
-NEXT_TIME_INTERVAL = 30000
+NEXT_TIME_INTERVAL = 30
 class UserDict(Dict):
     userid:int
     username:str
@@ -179,6 +179,7 @@ class GameTable:
 
                         self.turnChange() # 切换到下一个玩家
                         self.next_time = time.time()+NEXT_TIME_INTERVAL # 这一个走棋开始的时间
+                        logger.error(self.next_time)
                         return SUCCESS
             else:
                 logger.error(f"用户{userid}没有棋子在({px},{py},{pz})")

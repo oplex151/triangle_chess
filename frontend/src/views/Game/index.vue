@@ -48,29 +48,31 @@ const timer = ref(30);
 const interval = ref(null);
 const startTimer = (time) => {
   console.log(time)
+  console.log(Date.now())
   if(time == undefined){
     timer.value = 30;
   }
   else{
-    timer.value = (time - Date.now())/1000;
+    timer.value = Math.floor(time - Date.now()/1000);
   }
   GEBI('timer-info').classList.add('timer-info-on')
   interval.value = setInterval(() => {
-    timer.value--;
-    ElMessage.info('剩余时间：' + timer.value + 's')
-    
-    if (timer.value === 0) {
-      clearInterval(interval.value);
-
+    timer.value--;    
+    if (timer.value <= 0) {
+      clearTimer();
       ElMessage.error('时间到!')
-      socket.value.io.emit('requestSurrender', {
-          'userid': Cookies.get('userid')
-      })
-      timer.value = 30;
-      GEBI('timer-info').classList.remove('timer-info-on')
+      // socket.value.io.emit('requestSurrender', {
+      //     'userid': Cookies.get('userid')
+      // })
     }
   }, 1000);
 };
+const clearTimer = () =>{
+  clearInterval(interval.value);
+  timer.value = 30;
+  GEBI('timer-info').classList.remove('timer-info-on')
+
+}
 const copy = async (anything) => {
   try {
     await toClipboard(anything)
@@ -176,7 +178,7 @@ const sockets_methods = {
   movePieceSuccess(data) {
     if (userid == data.userid) {
       ElMessage.info('移动成功')
-      clearInterval(interval.value);
+      clearTimer()
     }
     else {
       ElMessage.info('玩家' + data.username + '移动成功')
@@ -184,6 +186,7 @@ const sockets_methods = {
     // 移动棋子_切换阵营
     board.value.moveSuccess(data);
     if(board.value.camp == my_camp.value){
+      console.log(data)
       startTimer(data.next_time);
     }
   },
@@ -307,7 +310,7 @@ const sockets_methods = {
     }
     if (data.userid == Cookies.get('userid')) {
       ElMessage.info('你投降了')
-      clearInterval(interval.value);
+      clearTimer()
     }
     else {
       ElMessage.info('用户' + data.username + '投降')
@@ -397,7 +400,7 @@ const sockets_methods = {
 }
 
 onUnmounted(() => {
-  clearInterval(interval.value);
+  clearTimer()
 })
 
 function requestSurrender() {
