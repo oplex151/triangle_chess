@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 load_dotenv()
 import hashlib
 import random
+import time
 from .piece import Piece
 from .special_piece import *
 from .record import GameRecord
@@ -13,8 +14,12 @@ from backend.tools import setupLogger
 
 logger = setupLogger()
 
-MAX_WATCHERS = 3
+import heapq
+global timeout_heap
+timeout_heap:heapq = []
 
+MAX_WATCHERS = 3
+NEXT_TIME_INTERVAL = 30
 class UserDict(Dict):
     userid:int
     username:str
@@ -56,7 +61,8 @@ class GameTable:
         # 表现分相关
         self.captured_pieces = [[],[],[]] # 玩家捕获的对手棋子
         self.opponent_captured_pieces = [[],[],[]] # 对手捕获的玩家棋子
-
+        self.next_time = time.time()+NEXT_TIME_INTERVAL # 这一个走棋开始的时间
+        heapq.heappush(timeout_heap, (self.next_time, self.users[self.turn]['userid']))
         self.record = GameRecord(
                 p1=self.users[0]['userid'],
                 p2=self.users[1]['userid'],
@@ -97,6 +103,11 @@ class GameTable:
                 return index
         else:
             raise ValueError("该用户不是玩家")
+        
+    # def timeOut(self):
+        
+    # def _nextTime(self):
+    #     self
         
     def searchGameTable(self, userid:int) -> bool:
         '''
@@ -171,6 +182,8 @@ class GameTable:
                             return GAME_END
 
                         self.turnChange() # 切换到下一个玩家
+                        self.next_time = time.time()+NEXT_TIME_INTERVAL # 这一个走棋开始的时间
+                        heapq.heappush(timeout_heap, (self.next_time, self.users[self.turn]['userid']))
 
                         return SUCCESS
             else:
@@ -255,7 +268,9 @@ class GameTable:
                 self.lives[index] = False
                 if self.turn == self._getUserIndex(userid):
                     # 投降玩家，切换到下一个玩家
-                    self.turnChange()
+                    self.turnChange()                    
+                    self.next_time = time.time()+NEXT_TIME_INTERVAL # 这一个走棋开始的时间
+                    heapq.heappush(timeout_heap, (self.next_time, self.users[self.turn]['userid']))
         if self.checkGameEnd():
             return GAME_END
         else:   

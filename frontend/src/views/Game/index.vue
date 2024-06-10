@@ -18,6 +18,7 @@ import Avatar from '@/components/views/Avatar.vue'
 import Messager from '@/components/views/Messager.vue';
 
 import useClipboard from 'vue-clipboard3';
+import { GEBI } from '@/utils/utils';
 
 const my_camp = ref(Cookies.get('camp'))
 const { toClipboard } = useClipboard()
@@ -43,7 +44,35 @@ const i_message = ref('')
 
 const my_name = Cookies.get('username')
 const avatars = ref({})
+const timer = ref(30);
+const interval = ref(null);
+const startTimer = (time) => {
+  console.log(time)
+  console.log(Date.now())
+  if(time == undefined){
+    timer.value = 30;
+  }
+  else{
+    timer.value = Math.floor(time - Date.now()/1000);
+  }
+  GEBI('timer-info').classList.add('timer-info-on')
+  interval.value = setInterval(() => {
+    timer.value--;    
+    if (timer.value <= 0) {
+      clearTimer();
+      ElMessage.error('时间到!')
+      // socket.value.io.emit('requestSurrender', {
+      //     'userid': Cookies.get('userid')
+      // })
+    }
+  }, 1000);
+};
+const clearTimer = () =>{
+  clearInterval(interval.value);
+  timer.value = 30;
+  GEBI('timer-info').classList.remove('timer-info-on')
 
+}
 const copy = async (anything) => {
   try {
     await toClipboard(anything)
@@ -87,6 +116,9 @@ onMounted(() => {
     if (res.status == 200) {
       //console.log(res.data)
       board.value.initMap(res.data.game_info)
+      if(board.value.camp == my_camp.value){
+        startTimer(res.data.next_time);
+      }
     }
     else {
       ElMessage.error('获取房间信息失败')
@@ -139,18 +171,24 @@ onMounted(() => {
       router.replace('/login')
     }
   })
+
 });
 
 const sockets_methods = {
   movePieceSuccess(data) {
     if (userid == data.userid) {
       ElMessage.info('移动成功')
+      clearTimer()
     }
     else {
       ElMessage.info('玩家' + data.username + '移动成功')
     }
     // 移动棋子_切换阵营
     board.value.moveSuccess(data);
+    if(board.value.camp == my_camp.value){
+      console.log(data)
+      startTimer(data.next_time);
+    }
   },
   joinRoomSuccess(data) {
     if (data.userid == Cookies.get('userid')) {
@@ -229,17 +267,18 @@ const sockets_methods = {
     })
     .catch((action) => {})
     //console.log(data.room_info)
-    // 匹配模式退回主页面
-    //console.log(data.room_type)
-    if (data.room_type == 1) {
+    
+    // 创房间模式
+    if(data.room_type == 0){
+      // Cookies.set('room_info',data.room_info)
       Cookies.remove('game_id')
       Cookies.remove('camp')
       removeSockets(sockets_methods, socket.value, proxy);
-      socket.value.io.disconnect()
-      socket.value = null
-      router.replace('/')
+      sessionStorage.setItem('fromGame', 'true')
+      router.replace('/room')
       return
     }
+
     // 天梯模式
     else if (data.room_type == 2) {
       Cookies.remove('game_id')
@@ -250,16 +289,18 @@ const sockets_methods = {
       router.replace('/rank')
       return
     }
-    // 创房间模式
+    // 匹配模式退回主页面
+    //console.log(data.room_type)
     else {
-      // Cookies.set('room_info',data.room_info)
       Cookies.remove('game_id')
       Cookies.remove('camp')
       removeSockets(sockets_methods, socket.value, proxy);
-      sessionStorage.setItem('fromGame', 'true')
-      router.replace('/room')
+      socket.value.io.disconnect()
+      socket.value = null
+      router.replace('/')
       return
     }
+
   },
   surrenderSuccess(data) {
     for (let i = 0; i < 3; i++) {
@@ -269,9 +310,30 @@ const sockets_methods = {
     }
     if (data.userid == Cookies.get('userid')) {
       ElMessage.info('你投降了')
+      clearTimer()
     }
     else {
       ElMessage.info('用户' + data.username + '投降')
+    }
+    if (board.value.camp == my_camp.value){
+      startTimer(data.next_time);
+    }
+  },
+  surrenderTimeout(data) {
+    for (let i = 0; i < 3; i++) {
+      if (data.userid == Cookies.get('user' + i))
+        lives[i] = false
+      board.value.camp = data.game_info.turn
+    }
+    if (data.userid == Cookies.get('userid')) {
+      ElMessage.info('你超时了')
+      clearTimer()
+    }
+    else {
+      ElMessage.info('用户' + data.username + '超时')
+    }
+    if (board.value.camp == my_camp.value){
+      startTimer(data.next_time);
     }
   },
   waitForOthers(data){
@@ -354,19 +416,38 @@ const sockets_methods = {
   }
 }
 
+onUnmounted(() => {
+  clearTimer()
+})
+
 function requestSurrender() {
   if(my_camp.value >= 0)
-    if(lives[my_camp.value])
-      socket.value.io.emit('requestSurrender', {
-        'userid': Cookies.get('userid')
-      })
-    else{
+    if ((!lives[my_camp.value])){
       ElMessage.error('你已经输了，不能投降')
+      return
     }
+    else if(my_camp.value!=board.value.camp){
+      ElMessage.error('现在不是你的回合，不能投降')
+      return
+    }
+    else
+      ElMessageBox.confirm('确定要投降吗？', '投降', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        socket.value.io.emit('requestSurrender', {
+          'userid': Cookies.get('userid')
+        })
+      }).catch(() => {
+        ElMessage.info('已取消')
+      })
   else{
     ElMessage.error('你不是本游戏的玩家，不能投降')
   }
 }
+
+
 
 function leaveRoom() {
   socket.value.io.emit('leaveRoom', { 'room_id': Cookies.get('room_id'), 'userid': Cookies.get('userid') })
@@ -445,9 +526,11 @@ const camp_0_style = computed(() => {
 
 <template>
   <Messager :o_message="o_message" v-model:i_message="i_message" @sendMessage="sendMessage" class="messager" v-if="my_camp >= 0"/>
-
+  
   <div class="background-image"></div>
   <div class="chessboard-overlay"></div>
+  <div class="timer-info" id="timer-info">剩余时间：{{timer}}
+  </div>
   <div v-if="my_camp >= 0">
     <button class="surrender-button" @click="requestSurrender">投降</button>
   </div>
@@ -640,6 +723,28 @@ const camp_0_style = computed(() => {
   --message-height:500px;
   --message-width:10px;
   --message-margin-bottom: 10px;
-  // 卧槽原来是这么实现的吗，太逆天了
 }
+.timer-info{
+  position:absolute;
+  top:600px;
+  left:50px;
+  background-color: #dbf685;
+  padding: 10px;
+  border-radius: 10px;
+  z-index: 99;
+}
+.timer-info-on{
+  animation: colorChange 30s infinite;
+}
+@keyframes colorChange {
+    0% {
+      background-color: #c4ffa0;
+    }
+    75% {
+      background-color: #f68585;
+    }
+    100% {
+      background-color: #d73b3b;
+    }
+  }
 </style>

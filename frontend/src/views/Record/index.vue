@@ -206,7 +206,15 @@ const Next = () => {
     step.value += 1
     board.value.moveSuccess(data)
 }
-
+const Previous = () =>{
+  step.value -= 1
+  if(step.value < 0){
+    ElMessage.info('已经到第一步')
+    step.value = 0
+    return
+  }
+  board.value.WithDraw()
+}
 
 const vis = ref(false)
 const to_report_id = ref(0)
@@ -537,6 +545,7 @@ function changeVisible(record_id, visible) {
                   <div class="chessboard-container">
                   <Board :my_camp="my_camp" ref="board" :game_status="CONST.STATUS_ONING" @requireMove="Move" />
                   </div>
+                  <button @click="Previous" class="next_button">上一步</button>
                   <button @click="Next" class="next_button">下一步</button>
                   <div class="avatar">
                   <!---------0号位---------->

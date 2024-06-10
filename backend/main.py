@@ -3,6 +3,7 @@ import sys
 from pathlib import Path
 import threading
 import time
+import heapq
 project_root = Path(__file__).parent.parent.absolute()
 os.environ['PROJECT_ROOT'] = str(project_root)
 sys.path.append(str(Path(__file__).resolve().parent.parent))
@@ -884,6 +885,64 @@ def leaveRoom(data):
         logger.error("User {0} not in room {1}".format(userid,room_id))
         emit('processWrong',{'status':NOT_IN_ROOM},to=request.sid)
 
+@socketio.event
+@gate
+def removeUserFromRoom(data):
+    '''
+    Description: 房主移除玩家
+    Args:
+        room_id: 房间id str
+        userid: 用户id int (房主)
+        target_userid: 需要被移除的用户id int
+    '''
+    global rooms, sid2uid, sessions
+    params = {'room_id': str, 'userid': int, 'target_userid': int}
+    try:
+        room_id, userid, target_userid = getParams(params, data)
+    except:
+        logger.error("Remove user from room error due to parameter error", exc_info=True)
+        emit('processWrong', {'status': PARAM_ERROR}, to=request.sid)
+        return
+
+    # 获取房间对象
+    room: RoomManager = fetchRoomByRoomID(room_id, rooms)
+    if room is None:
+        logger.error(f"No such room {room_id}")
+        emit('processWrong', {'status': ROOM_NOT_EXIST}, to=request.sid)
+        return
+
+    # 检查提出请求的用户是否是房主
+    if not room.isHolder(userid):
+        logger.error(f"User {userid} is not the holder of room {room_id}")
+        emit('processWrong', {'status': NOT_HOLDER}, to=request.sid)
+        return
+
+    # 检查需要移除的目标用户是否是房主
+    if room.isHolder(target_userid):
+        logger.error(f"Failed to remove user {target_userid} from room {room_id} because User {target_userid} is the holder of room {room_id}")
+        emit('processWrong', {'status': REMOVE_USER_FAILED}, to=request.sid)
+        return
+
+    # 从房间中移除目标用户
+    if room.removeUser(target_userid):
+        emit('userRemovedSuccess', {'userid': target_userid, 'username': sessions[target_userid], 'room_info': room.getRoomInfo()}, to=room_id)
+        sid = uid2sid(target_userid)
+        if sid:
+            leave_room(room_id, sid=sid)
+            if sid in sid2uid:
+                sid2uid.pop(sid)
+        logger.info(f"User {target_userid} removed from room {room_id} by holder {userid}")
+
+        # 房间为空, 移除房间
+        # if len(room.users) == 0:
+        #     rooms.remove(room)
+        #     close_room(room=room_id,namespace='/')
+        #     logger.info(f"Room {room_id} is empty, remove it")
+    else:
+        logger.error("User {0} not in room {1}".format(userid,room_id))
+        emit('processWrong',{'status':NOT_IN_ROOM},to=request.sid)
+
+
 @app.route('/api/game/create', methods=['POST'])
 @gate
 def createGameApi():
@@ -950,8 +1009,8 @@ def initGame():
     if room is None: return "{message: 'room not exist'}",ROOM_NOT_EXIST
 
     game:GameTable = room.game_table
- 
-    return jsonify({'game_info':game.getGameInfo()}),SUCCESS
+
+    return jsonify({'game_info':game.getGameInfo(),'next_time':game.next_time}),SUCCESS
 
 
 @socketio.event
@@ -1004,7 +1063,7 @@ def movePiece(data):
             # 建议前端根据userid来判断到底是自己走成功了，还是其他人走的，自己这边要更新状态
             emit('movePieceSuccess',{'userid':userid,'status':status, 'username':sessions[userid],
                                      'x1':x1, 'y1':y1, 'z1':z1, 
-                                     'x2':x2, 'y2':y2, 'z2':z2},
+                                     'x2':x2, 'y2':y2, 'z2':z2,'next_time':game.next_time},
                                      to=room_id)
             if status == GAME_END:
                 roomOver(game=game, room=room, userid=game.winner_id)
@@ -1133,7 +1192,8 @@ def requestSurrender(data):
         status = game.surrender(userid)
 
         # 通知所有玩家有玩家投降
-        emit('surrenderSuccess',{'userid':userid,'username':sessions[userid],'game_info':game.getGameInfo()},to=room_id)
+        emit('surrenderSuccess',{'userid':userid,'username':sessions[userid],
+                                'game_info':game.getGameInfo(),'next_time':game.next_time},to=room_id)
         # 判断游戏是否结束
         if status == GAME_END:
             roomOver(game=game, room=room, userid=game.winner_id)
@@ -1333,6 +1393,55 @@ def cycleRank(app):
 
             time.sleep(1)
 
+def cycleTimeout(app):
+    """
+    定时检查走棋超时的守护进程
+    """
+    global rooms,sessions,timeout_heap
+    with app.app_context():
+        while True:
+            while True:
+                try:
+                    next = heapq.heappop(timeout_heap)
+                    if next[0] > time.time():
+                        heapq.heappush(timeout_heap,next)
+                        # logger.info(f"User {userid} left time {next[0] - time.time()}")
+                        break
+                except Exception as e:
+                    break
+                userid = next[1]
+                room_id = inWhitchRoom(userid,rooms)
+                if room_id is None:
+                    continue
+                room:RoomManager = fetchRoomByRoomID(room_id,rooms)
+                if room is None:
+                    # logger.info(f"room id {room_id} not exist")
+                    continue
+                game_table:GameTable = room.game_table
+                if game_table is None:
+                    #　logger.info(f"room id {room_id} has no game")
+                    continue
+                if game_table.next_time > next[0]:
+                    # logger.info(f"next time {next[0]} satisfied")
+                    continue
+                try:
+                    # 玩家投降
+                    status = game_table.surrender(userid)
+                    # logger.info(f"User {userid} timeout")
+                    # 通知所有玩家有玩家超时
+                    emit('surrenderTimeout',{'userid':userid,'username':sessions[userid],
+                                            'game_info':game_table.getGameInfo(),'next_time':game_table.next_time},
+                        namespace='/' , to=room_id)
+                    # 判断游戏是否结束
+                    if status == GAME_END:
+                        roomOver(game=game_table, room=room, userid=game_table.winner_id)
+                    
+                except Exception as e:
+                    logger.error("Request surrender error due to {0}".format(str(e)), exc_info=True)
+                    emit('processWrong',{'status':OTHER_ERROR},to=request.sid)
+                    
+            time.sleep(1)
+
 @socketio.event
 @gate
 def startMatch(data):
@@ -1501,9 +1610,20 @@ def viewQueue():
         print(f"match_queue: {match_queue.queue}, rank_queue: {rank_queue.queue}")
         print(f'match_set: {match_queue.queue_set}, rank_set: {rank_queue.queue_set}')
 
+def surrenderGame(game:GameTable, userid:int):
+    """
+    投降游戏
+    Args:
+        game: 游戏对象
+        userid: 投降用户id
+    """
+    game.surrender(userid)
+    return SUCCESS
+
 threading.Thread(target=subtractSesion,daemon=True, name='subtractSesion').start()
 threading.Thread(target=cycleMatch,args=[app] ,daemon=True, name='cycleMatch').start()  #bug uwsgi不执行main函数
 threading.Thread(target=cycleRank,args=[app] ,daemon=True, name='cycleRank').start()
+threading.Thread(target=cycleTimeout,args=[app] ,daemon=True, name='cycleTimeout').start()
 # threading.Thread(target=viewQueue,daemon=True, name='viewQueue').start()
 
 if __name__ == "__main__":

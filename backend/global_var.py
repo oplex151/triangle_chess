@@ -1,6 +1,5 @@
 import queue
 from backend.game import RoomManager
-
 # 全局变量
 global rooms
 global sessions
@@ -46,7 +45,8 @@ class UniqueQueue(queue.Queue):
         
     def qsize(self) -> int:
         return len(self.queue_set)
-  
+
+
 
 rooms:list[RoomManager] = []
 sessions:dict[int, str] = {}
