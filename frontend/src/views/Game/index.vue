@@ -319,6 +319,23 @@ const sockets_methods = {
       startTimer(data.next_time);
     }
   },
+  surrenderTimeout(data) {
+    for (let i = 0; i < 3; i++) {
+      if (data.userid == Cookies.get('user' + i))
+        lives[i] = false
+      board.value.camp = data.game_info.turn
+    }
+    if (data.userid == Cookies.get('userid')) {
+      ElMessage.info('你超时了')
+      clearTimer()
+    }
+    else {
+      ElMessage.info('用户' + data.username + '超时')
+    }
+    if (board.value.camp == my_camp.value){
+      startTimer(data.next_time);
+    }
+  },
   waitForOthers(data){
     draw_responser.value.push({ 'userid': data.userid, 'username': data.username ,'agree':data.agree})
   },
