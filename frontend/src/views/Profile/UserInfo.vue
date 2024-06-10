@@ -11,10 +11,10 @@ import * as CONST from "@/lib/const.js";
  
 
 const userinfo= ref({
-    username: 'John Doe',
-    email: 'johndoe@example.com',
-    phone_num: '123-456-7890',
-    gender :'male',
+    username: '',
+    email: '',
+    phone_num: '',
+    gender :'',
     rank: '无',
     score: 0,
 })
@@ -164,15 +164,15 @@ function justIt (data) {
     haven_upload.value = false
 }
 
-const email = ref('')
-const phone_num = ref('')
-const gender = ref('')
+const email = ref(userinfo.value.email)
+const phone_num = ref(userinfo.value.phone_num)
+const gender = ref(userinfo.value.gender)
 
 function cancelEdit () {
     editMode.value = false
-    email.value = ''
-    phone_num.value = ''
-    gender.value = ''
+    email.value = userinfo.value.email
+    phone_num.value = userinfo.value.phone_num
+    gender.value = userinfo.value.gender
 }
 
 function saveEdit () {
