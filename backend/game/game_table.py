@@ -19,7 +19,7 @@ global timeout_heap
 timeout_heap:heapq = []
 
 MAX_WATCHERS = 3
-NEXT_TIME_INTERVAL = 30
+NEXT_TIME_INTERVAL = 40
 class UserDict(Dict):
     userid:int
     username:str
@@ -37,10 +37,11 @@ class RoomType(Enum):
 class GameTable:
     max_row = 9
     max_col = 5
-    def __init__(self,users:list[UserDict], viewers:Optional[list[UserDict]] = None):
+    def __init__(self,users:list[UserDict], viewers:Optional[list[UserDict]] = None, time_interval:int = 40):
         self.game_id = hashlib.md5(str(sum([user['userid'] for user in users])).encode('utf-8')).hexdigest()
         self.users = users.copy()
         self.lives = [True,True,True]
+        self.time_interval = time_interval
         if not viewers:
             self.viewers = []
         else :
@@ -61,7 +62,7 @@ class GameTable:
         # 表现分相关
         self.captured_pieces = [[],[],[]] # 玩家捕获的对手棋子
         self.opponent_captured_pieces = [[],[],[]] # 对手捕获的玩家棋子
-        self.next_time = time.time()+NEXT_TIME_INTERVAL # 这一个走棋开始的时间
+        self.next_time = time.time()+self.time_interval # 这一个走棋开始的时间
         heapq.heappush(timeout_heap, (self.next_time, self.users[self.turn]['userid']))
         self.record = GameRecord(
                 p1=self.users[0]['userid'],
@@ -182,7 +183,7 @@ class GameTable:
                             return GAME_END
 
                         self.turnChange() # 切换到下一个玩家
-                        self.next_time = time.time()+NEXT_TIME_INTERVAL # 这一个走棋开始的时间
+                        self.next_time = time.time()+self.time_interval # 这一个走棋开始的时间
                         heapq.heappush(timeout_heap, (self.next_time, self.users[self.turn]['userid']))
 
                         return SUCCESS
@@ -269,7 +270,7 @@ class GameTable:
                 if self.turn == self._getUserIndex(userid):
                     # 投降玩家，切换到下一个玩家
                     self.turnChange()                    
-                    self.next_time = time.time()+NEXT_TIME_INTERVAL # 这一个走棋开始的时间
+                    self.next_time = time.time()+self.time_interval # 这一个走棋开始的时间
                     heapq.heappush(timeout_heap, (self.next_time, self.users[self.turn]['userid']))
         if self.checkGameEnd():
             return GAME_END
@@ -404,14 +405,21 @@ class GameTable:
         print(board)
 
 class RoomManager:
-    def __init__(self, users: Union[list[UserDict], UserDict], locked=0 ,room_type: RoomType=RoomType.created, password:str=None):
+    def __init__(self, users: Union[list[UserDict], UserDict], 
+                 locked=0 ,
+                 room_type: RoomType=RoomType.created, 
+                 password:str=None,
+                 time_interval:int=NEXT_TIME_INTERVAL):
         # 随机生成一串字符串
         self.room_id:str = hashlib.md5(str(random.randint(0,1000000000)).encode('utf-8')).hexdigest()
         self.users:list[UserDict] | UserDict = None
         self.game_table = None
         self.locked = locked # 是否锁定房间
         self.password = password # 房间密码
-
+        if time_interval is None:
+            self.time_interval = NEXT_TIME_INTERVAL # 房间内的游戏时间间隔
+        else:
+            self.time_interval = time_interval # 房间内的游戏时间间隔
 
         if isinstance(users, list):
             self.users = users.copy()

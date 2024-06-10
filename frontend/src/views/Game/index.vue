@@ -44,18 +44,21 @@ const i_message = ref('')
 
 const my_name = Cookies.get('username')
 const avatars = ref({})
-const timer = ref(30);
+const timer = ref(0);
 const interval = ref(null);
+
+
 const startTimer = (time) => {
-  console.log(time)
-  console.log(Date.now())
+  //console.log(time)
+  //console.log(Date.now())
   if(time == undefined){
-    timer.value = 30;
+    timer.value = 30;   //unuse
   }
   else{
     timer.value = Math.floor(time - Date.now()/1000);
   }
-  GEBI('timer-info').classList.add('timer-info-on')
+  //GEBI('timer-info').classList.add('timer-info-on')
+  //GEBI('timer-info').style.animation = "colorChange" + timeout+'s infinite'
   interval.value = setInterval(() => {
     timer.value--;    
     if (timer.value <= 0) {
@@ -67,12 +70,14 @@ const startTimer = (time) => {
     }
   }, 1000);
 };
+
 const clearTimer = () =>{
   clearInterval(interval.value);
-  timer.value = 30;
-  GEBI('timer-info').classList.remove('timer-info-on')
-
+  timer.value = 0;
+  //GEBI('timer-info').style.animation = 'none'
+  //GEBI('timer-info').classList.remove('timer-info-on')
 }
+
 const copy = async (anything) => {
   try {
     await toClipboard(anything)
@@ -728,7 +733,7 @@ const camp_0_style = computed(() => {
   position:absolute;
   top:600px;
   left:50px;
-  background-color: #dbf685;
+  background-color: #f5d769;
   padding: 10px;
   border-radius: 10px;
   z-index: 99;

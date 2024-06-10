@@ -687,11 +687,12 @@ def createRoom(data):
         userid: 用户id 作为房主 int
         locked: 是否锁定房间 int
         password: 房间密码 str
+        time_interval: 房间时间间隔 int
     '''
     global rooms,sid2uid,sessions
-    params = {'userid':int, 'locked':int, 'password':str}
+    params = {'userid':int, 'locked':int, 'password':str , 'time_interval':int}
     try:
-        userid, locked, password = getParams(params, data, can_be_none=['locked','password'])
+        userid, locked, password,time_interval = getParams(params, data, can_be_none=['locked','password','time_interval'])
     except:
         emit('processWrong',{'status':PARAM_ERROR},to=request.sid)
         return
@@ -704,7 +705,8 @@ def createRoom(data):
     
     new_room = RoomManager(users = UserDict(userid=userid,username=sessions[userid]),
                            locked = locked,
-                           password = password)
+                           password = password,
+                           time_interval = time_interval)
     rooms.append(new_room)
     room_id = rooms[-1].room_id
     room_type = rooms[-1].room_type
@@ -974,7 +976,9 @@ def createGameApi():
             emit('processWrong',{'status':NOT_ALL_READY},to=uid2sid(userid),namespace='/')
             return "{message: '房间未准备好！'}",NOT_ALL_READY
 
-        game:GameTable = GameTable(room.users[:3], room.users[3:] if len(room.users) > 3 else [])
+        game:GameTable = GameTable(room.users[:3], 
+                                   room.users[3:] if len(room.users) > 3 else [],
+                                   room.time_interval)
         
         room.addGameTable(game)
         

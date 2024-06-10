@@ -15,7 +15,7 @@ import { User, HomeFilled } from '@element-plus/icons-vue'
 import Avatar from '@/components/views/Avatar.vue'
 import Report from '@/components/views/Report.vue'
 
-
+const TIME_INTERVAL = 40
 
 const { proxy } = getCurrentInstance()
 const router = useRouter()
@@ -35,6 +35,7 @@ const joining = ref(false)
 const rooms = ref([])
 const locked = ref(0)
 const room_password = ref('')
+const time_interval = ref(TIME_INTERVAL)
 
 const ready_status = computed(() => {
   if (room_info.value) {
@@ -319,8 +320,15 @@ function createRoom() {
     ElMessage.error('房间密码为6位数字')
     return
   }
+  if (time_interval.value < 30 || time_interval.value > 120) {
+    ElMessage.error('最大思考时间为30-120秒')
+    return
+  }
   creating.value = false
-  socket.value.io.emit('createRoom', { 'userid': Cookies.get('userid'), 'password': room_password.value , 'locked': locked.value })
+  socket.value.io.emit('createRoom', { 'userid': Cookies.get('userid'),
+                                    'password': room_password.value , 
+                                    'locked': locked.value,
+                                    'time_interval': time_interval.value })
 }
 
 function joinRoomBefore(room_id) {
@@ -460,8 +468,15 @@ function getAllRooms() {
   <el-dialog v-model="creating"
   title="房间设置"
   width="400"
-  :before-close="()=>{locked=0;room_password='';creating=false}">
+  :before-close="()=>{locked=0;room_password='';time_interval=TIME_INTERVAL;creating=false}">
     <div class="create-room-cfg">
+      <div style="padding-bottom: 10px; text-align: left;">
+      设置最大思考时间（30秒-120秒）
+      <input type="number" v-model="time_interval"
+        class="info-text"
+        placeholder="设置最大思考时间（秒）">
+      </input>
+      </div>
       <el-radio-group v-model="locked"
         class="info-text">
           <el-radio value='1' size="large">上锁</el-radio>
@@ -470,7 +485,7 @@ function getAllRooms() {
       <div
       style="height: 10px;"
       ></div>
-      <input type="email" v-model="room_password" v-if="locked==1"
+      <input type="number" v-model="room_password" v-if="locked==1"
         class="info-text"
         placeholder="密码（6位数字）">
       </input>
