@@ -85,7 +85,8 @@ const login = () => {
       errorMessage.value = '密码错误';
     }
     else if (error.response.status == CONST.BANNED_USER) {
-      errorMessage.value = '账号被封禁';
+      errorMessage.value = '账号被封禁，您可以申诉';
+      router.push('/appeal');
     }
     else {
       errorMessage.value = '请求错误';

@@ -158,7 +158,7 @@ def getFriendsInfo(user_id,confirm=CONFRIMED):
             if result:
                 username = result[0]
                 friends_info.append({"userid":friend_id,"username":username})
-        logger.debug(friends_info)
+        # logger.debug(friends_info)
         result = {'friends':friends_info}
         status = SUCCESS
     except Exception as e:

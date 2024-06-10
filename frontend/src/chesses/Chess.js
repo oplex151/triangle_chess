@@ -1,8 +1,8 @@
 import { COL, ROWMID, ROWTOP, ROWBOT } from "@/config/config";
 import { GEBI, getCol, getRow } from "@/utils/utils";
 import { lives } from "./Live";
-import {ElMessage} from "element-plus";
-import main from "@/main"
+import { ElMessage } from "element-plus";
+import main from "@/main";
 
 export class Chess {
     constructor(position, camp, inWhichArea) {
@@ -21,7 +21,6 @@ export class Chess {
         point.innerText = '';
         point.style.backgroundImage = "";
 
-
         point.classList.remove(`camp${this.camp}`);
         beginPosition = this.position;
         this.position = to;
@@ -29,16 +28,16 @@ export class Chess {
 
         if (point.innerText !== '') {
             let originalCamp = null;
-            for(let i = 0 ; i < 3 ; i++){
-                if(point.classList.contains(`camp${i}`)){
-                    originalCamp = i ;
+            for (let i = 0; i < 3; i++) {
+                if (point.classList.contains(`camp${i}`)) {
+                    originalCamp = i;
                     break;
                 }
             }
             point.classList.remove(`camp${originalCamp}`);
             if (point?.innerText === '将') {
                 let message = '';
-                switch (originalCamp){
+                switch (originalCamp) {
                     case 0:
                         message = '红方淘汰';
                         break;
@@ -80,13 +79,13 @@ export class Chess {
         point.style.background = `url(${this.image}) center center / contain no-repeat`;
         point.style.backgroundSize = '53px'; // 将背景图片大小设置为 53px，宽度和高度均为 53px
 
-        if(this.position <= (COL * ROWBOT)) {
+        if (this.position <= (COL * ROWBOT)) {
             this.inWhichArea = 0;
         }
-        else if((this.position > (COL * ROWBOT)) && (this.position <= (COL * ROWMID))){
+        else if ((this.position > (COL * ROWBOT)) && (this.position <= (COL * ROWMID))) {
             this.inWhichArea = 1;
         }
-        else{
+        else {
             this.inWhichArea = 2;
         }
         // this.inWhichArea = this.position <= COL * ROW / 2 ? 0 : 1;
@@ -97,7 +96,9 @@ export class Chess {
         let p = [];
         for (let i = this.position; i <= ROWBOT * COL; i += COL) {
             if (i === this.position) continue;
-            if (GEBI(i + '')?.innerText) {
+            const target = GEBI(i + '');
+            if (target?.innerText) {
+                if (target.classList.contains(`camp${this.camp}`)) break;
                 p.push(i);
                 break;
             }
@@ -110,7 +111,9 @@ export class Chess {
         let p = [];
         for (let i = this.position; i <= ROWMID * COL; i += COL) {
             if (i === this.position) continue;
-            if (GEBI(i + '')?.innerText) {
+            const target = GEBI(i + '');
+            if (target?.innerText) {
+                if (target.classList.contains(`camp${this.camp}`)) break;
                 p.push(i);
                 break;
             }
@@ -119,11 +122,13 @@ export class Chess {
         return p;
     }
 
-    get_C_MoviableArea(){
+    get_C_MoviableArea() {
         let p = [];
         for (let i = this.position; i <= ROWTOP * COL; i += COL) {
             if (i === this.position) continue;
-            if (GEBI(i + '')?.innerText) {
+            const target = GEBI(i + '');
+            if (target?.innerText) {
+                if (target.classList.contains(`camp${this.camp}`)) break;
                 p.push(i);
                 break;
             }
@@ -131,13 +136,14 @@ export class Chess {
         }
         return p;
     }
-
 
     getLeftMoviableArea() {
         let p = [];
         for (let i = this.position; i >= (getRow(this.position) - 1) * COL + 1; i--) {
             if (i === this.position) continue;
-            if (GEBI(i + '')?.innerText) {
+            const target = GEBI(i + '');
+            if (target?.innerText) {
+                if (target.classList.contains(`camp${this.camp}`)) break;
                 p.push(i);
                 break;
             }
@@ -150,7 +156,9 @@ export class Chess {
         let p = [];
         for (let i = this.position; i <= getRow(this.position) * COL; i++) {
             if (i === this.position) continue;
-            if (GEBI(i + '')?.innerText) {
+            const target = GEBI(i + '');
+            if (target?.innerText) {
+                if (target.classList.contains(`camp${this.camp}`)) break;
                 p.push(i);
                 break;
             }

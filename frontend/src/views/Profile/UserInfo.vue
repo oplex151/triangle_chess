@@ -11,10 +11,10 @@ import * as CONST from "@/lib/const.js";
  
 
 const userinfo= ref({
-    username: 'John Doe',
-    email: 'johndoe@example.com',
-    phone_num: '123-456-7890',
-    gender :'male',
+    username: '',
+    email: '',
+    phone_num: '',
+    gender :'',
     rank: '无',
     score: 0,
 })
@@ -164,15 +164,15 @@ function justIt (data) {
     haven_upload.value = false
 }
 
-const email = ref('')
-const phone_num = ref('')
-const gender = ref('')
+const email = ref(userinfo.value.email)
+const phone_num = ref(userinfo.value.phone_num)
+const gender = ref(userinfo.value.gender)
 
 function cancelEdit () {
     editMode.value = false
-    email.value = ''
-    phone_num.value = ''
-    gender.value = ''
+    email.value = userinfo.value.email
+    phone_num.value = userinfo.value.phone_num
+    gender.value = userinfo.value.gender
 }
 
 function saveEdit () {
@@ -272,7 +272,7 @@ function saveEdit () {
                     <el-radio value="male" size="large">男</el-radio>
                     <el-radio value="female" size="large">女</el-radio>
                     <el-radio value="" size="large">不愿透露</el-radio>
-                Q</el-radio-group>
+                </el-radio-group>
             </div>
             <div class="info-item">
                 <span class="info-title">邮箱</span>
@@ -285,7 +285,7 @@ function saveEdit () {
             </div>
             <div class="info-item">
                 <span class="info-title">手机号</span>
-                <span class="info-text" v-if="!editMode">{{userinfo.phone_num}}</span>
+                <span class="info-text" v-if="!editMode">{{userinfo.phone_num ? userinfo.phone_num : '(未绑定，您将无法申诉)'}}</span>
                 <input type="text" v-model="phone_num"
                 v-if="editMode"
                 class="info-text"

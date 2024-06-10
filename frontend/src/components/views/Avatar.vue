@@ -188,12 +188,12 @@ const deleteFriend = () => {
     color: #fff;
     border: none;
     border-radius: 15px;
-    padding: 15px 0;
     /* 增加垂直内边距 */
     margin: auto;
     cursor: pointer;
     font-size: 15px;
     margin: 5px;
+    width: 70px;
 }
 
 .el-popover {
