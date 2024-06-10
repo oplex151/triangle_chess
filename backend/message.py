@@ -32,6 +32,7 @@ NOT_IN_ROOM = 522 #"Not in room"
 ROOM_NOT_ENOUGH = 523 #"Room not enough"
 NOT_HOLDER = 524 #"Not holder"
 REMOVE_USER_FAILED = 525 #"Remove user failed"
+NOT_ALL_READY = 526 #"Not all ready"
 
 ALLREADY_FRIEND = 530 #"Already friend"
 NO_FRIENDS = 531 #"No friends"
