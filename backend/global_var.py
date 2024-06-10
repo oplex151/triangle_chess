@@ -1,6 +1,6 @@
 import queue
 from backend.game import RoomManager
-
+import heapq
 # 全局变量
 global rooms
 global sessions
@@ -9,6 +9,7 @@ global sid2uid
 global match_queue
 global rank_queue
 global rank_table
+global timeout_heap
 
 def uid2sid(uid:int)->str:
     global sid2uid
@@ -46,7 +47,8 @@ class UniqueQueue(queue.Queue):
         
     def qsize(self) -> int:
         return len(self.queue_set)
-  
+
+
 
 rooms:list[RoomManager] = []
 sessions:dict[int, str] = {}
@@ -55,6 +57,7 @@ match_queue:UniqueQueue = UniqueQueue()
 sid2uid:dict[str, int] = {}
 rank_queue:UniqueQueue = UniqueQueue()
 rank_table:dict[int, (int, int)] = {}
+
 
 if __name__ == '__main__':
     q = UniqueQueue()

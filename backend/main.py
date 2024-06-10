@@ -3,6 +3,7 @@ import sys
 from pathlib import Path
 import threading
 import time
+import heapq
 project_root = Path(__file__).parent.parent.absolute()
 os.environ['PROJECT_ROOT'] = str(project_root)
 sys.path.append(str(Path(__file__).resolve().parent.parent))
@@ -879,8 +880,8 @@ def initGame():
     if room is None: return "{message: 'room not exist'}",ROOM_NOT_EXIST
 
     game:GameTable = room.game_table
- 
-    return jsonify({'game_info':game.getGameInfo()}),SUCCESS
+
+    return jsonify({'game_info':game.getGameInfo(),'next_time':game.next_time}),SUCCESS
 
 
 @socketio.event
@@ -933,7 +934,7 @@ def movePiece(data):
             # 建议前端根据userid来判断到底是自己走成功了，还是其他人走的，自己这边要更新状态
             emit('movePieceSuccess',{'userid':userid,'status':status, 'username':sessions[userid],
                                      'x1':x1, 'y1':y1, 'z1':z1, 
-                                     'x2':x2, 'y2':y2, 'z2':z2},
+                                     'x2':x2, 'y2':y2, 'z2':z2,'next_time':game.next_time},
                                      to=room_id)
             if status == GAME_END:
                 roomOver(game=game, room=room, userid=game.winner_id)
@@ -1058,7 +1059,8 @@ def requestSurrender(data):
         status = game.surrender(userid)
 
         # 通知所有玩家有玩家投降
-        emit('surrenderSuccess',{'userid':userid,'username':sessions[userid],'game_info':game.getGameInfo()},to=room_id)
+        emit('surrenderSuccess',{'userid':userid,'username':sessions[userid],
+                                'game_info':game.getGameInfo(),'next_time':game.next_time},to=room_id)
         # 判断游戏是否结束
         if status == GAME_END:
             roomOver(game=game, room=room, userid=game.winner_id)
@@ -1422,6 +1424,16 @@ def viewQueue():
         print(f"match_queue size: {match_queue.qsize()}, rank_queue size: {rank_queue.qsize()}")
         print(f"match_queue: {match_queue.queue}, rank_queue: {rank_queue.queue}")
         print(f'match_set: {match_queue.queue_set}, rank_set: {rank_queue.queue_set}')
+
+def surrenderGame(game:GameTable, userid:int):
+    """
+    投降游戏
+    Args:
+        game: 游戏对象
+        userid: 投降用户id
+    """
+    game.surrender(userid)
+    return SUCCESS
 
 threading.Thread(target=subtractSesion,daemon=True, name='subtractSesion').start()
 threading.Thread(target=cycleMatch,args=[app] ,daemon=True, name='cycleMatch').start()  #bug uwsgi不执行main函数
