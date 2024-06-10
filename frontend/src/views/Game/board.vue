@@ -7,6 +7,7 @@ import { lives, changeLives } from '@/chesses/Live';
 import { onMounted, ref, onUnmounted, computed, getCurrentInstance } from 'vue';
 import { COL, ROWTOP, ROWMID, AREABOT, ROWBOT } from '@/config/config';
 import main from "@/main"
+import {ElMessage} from "element-plus";
 
 
 const map = new Map();
@@ -68,6 +69,42 @@ function moveSuccess(data) {
   while (lives[camp.value] == false) {
     camp.value = (camp.value + 1) % 3;
   }
+
+  let toChess = map.get(position_end);
+  console.log('开始toChess.canMove');
+  toChess.canMove().forEach((posi) => {
+    console.log('可走的位置是'+posi);
+    if (!GEBI(`${posi}`).classList.contains(`camp${hoverChess.camp}`) && GEBI(`${posi}`).innerText == '将'){
+      let toName = '';
+      switch (toChess.camp){
+        case 0:
+          toName = '红方';
+          break;
+        case 1:
+          toName = '黑方';
+          break;
+        case 2:
+          toName = '金方';
+          break;
+      }
+      console.log('toName是:'+toName);
+      let LeaderCamp = '';
+      if(GEBI(`${posi}`).classList.contains('camp0')){
+        LeaderCamp = '红方';
+      }
+      else if(GEBI(`${posi}`).classList.contains('camp1')){
+        LeaderCamp = '黑方';
+      }
+      else{
+        LeaderCamp = '金方';
+      }
+      console.log('LeaderCamp是:'+LeaderCamp);
+
+      ElMessage.info('注意！'+toName + "将军"+LeaderCamp)
+    }
+  });
+  console.log('结束toChess.canMove');
+
 }
 
 const camp_1_style = computed(() => {
@@ -163,6 +200,7 @@ const moveChess = (chess, to) => {
   map.delete(chess.position);
   chess.move(to);
   map.set(to, chess);
+
   return true;
 };
 const initMap = (game_info) => {
