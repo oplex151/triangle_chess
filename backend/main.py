@@ -816,6 +816,64 @@ def leaveRoom(data):
         logger.error("User {0} not in room {1}".format(userid,room_id))
         emit('processWrong',{'status':NOT_IN_ROOM},to=request.sid)
 
+@socketio.event
+@gate
+def removeUserFromRoom(data):
+    '''
+    Description: 房主移除玩家
+    Args:
+        room_id: 房间id str
+        userid: 用户id int (房主)
+        target_userid: 需要被移除的用户id int
+    '''
+    global rooms, sid2uid, sessions
+    params = {'room_id': str, 'userid': int, 'target_userid': int}
+    try:
+        room_id, userid, target_userid = getParams(params, data)
+    except:
+        logger.error("Remove user from room error due to parameter error", exc_info=True)
+        emit('processWrong', {'status': PARAM_ERROR}, to=request.sid)
+        return
+
+    # 获取房间对象
+    room: RoomManager = fetchRoomByRoomID(room_id, rooms)
+    if room is None:
+        logger.error(f"No such room {room_id}")
+        emit('processWrong', {'status': ROOM_NOT_EXIST}, to=request.sid)
+        return
+
+    # 检查提出请求的用户是否是房主
+    if not room.isHolder(userid):
+        logger.error(f"User {userid} is not the holder of room {room_id}")
+        emit('processWrong', {'status': NOT_HOLDER}, to=request.sid)
+        return
+
+    # 检查需要移除的目标用户是否是房主
+    if room.isHolder(target_userid):
+        logger.error(f"Failed to remove user {target_userid} from room {room_id} because User {target_userid} is the holder of room {room_id}")
+        emit('processWrong', {'status': REMOVE_USER_FAILED}, to=request.sid)
+        return
+
+    # 从房间中移除目标用户
+    if room.removeUser(target_userid):
+        emit('userRemovedSuccess', {'userid': target_userid, 'username': sessions[target_userid], 'room_info': room.getRoomInfo()}, to=room_id)
+        sid = uid2sid(target_userid)
+        if sid:
+            leave_room(room_id, sid=sid)
+            if sid in sid2uid:
+                sid2uid.pop(sid)
+        logger.info(f"User {target_userid} removed from room {room_id} by holder {userid}")
+
+        # 房间为空, 移除房间
+        # if len(room.users) == 0:
+        #     rooms.remove(room)
+        #     close_room(room=room_id,namespace='/')
+        #     logger.info(f"Room {room_id} is empty, remove it")
+    else:
+        logger.error("User {0} not in room {1}".format(userid,room_id))
+        emit('processWrong',{'status':NOT_IN_ROOM},to=request.sid)
+
+
 @app.route('/api/game/create', methods=['POST'])
 @gate
 def createGameApi():
