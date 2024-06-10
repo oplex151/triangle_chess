@@ -30,6 +30,7 @@ ROOM_NOT_EXIST = 520 #"Room not exist"
 ALREADY_IN_ROOM = 521 #"Already in room"
 NOT_IN_ROOM = 522 #"Not in room"
 ROOM_NOT_ENOUGH = 523 #"Room not enough"
+NOT_ALL_READY = 524 #"Not all ready"
 
 ALLREADY_FRIEND = 530 #"Already friend"
 NO_FRIENDS = 531 #"No friends"

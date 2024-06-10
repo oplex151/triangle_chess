@@ -26,6 +26,7 @@ export const ROOM_NOT_EXIST = 520 ;
 export const ALREADY_IN_ROOM = 521;
 export const NOT_IN_ROOM = 522;
 export const ROOM_NOT_ENOUGH = 523;
+export const NOT_ALL_READY = 524;
 
 
 export const ALREADY_FRIEND = 530; // already friend,拼写不一样

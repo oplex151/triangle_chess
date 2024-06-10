@@ -36,6 +36,22 @@ const rooms = ref([])
 const locked = ref(0)
 const room_password = ref('')
 
+const ready_status = computed(() => {
+  if (room_info.value) {
+    try{
+      let user_ready = room_info.value.readys[Cookies.get('userid')]
+      if (user_ready)
+        return true
+      else
+        return false
+    }
+    catch(e){
+      return false
+    }
+  }
+  return false
+})
+
 const my_name = computed(() => {
   if (room_info.value) {
     for (let user of room_info.value.users) {
@@ -46,6 +62,22 @@ const my_name = computed(() => {
   }
   return ''
 })
+
+const getUserReadyStatus = (userid) => {
+  if (room_info.value) {
+    try{
+      let user_ready = room_info.value.readys[userid]
+      if (user_ready)
+        return true
+      else
+        return false
+    }
+    catch(e){
+      return false
+    }
+  }
+  return false
+}
 
 const sockets_methods = {
   createRoomSuccess(data){
@@ -119,6 +151,9 @@ const sockets_methods = {
         break
       case CONST.ROOM_NOT_ENOUGH:
         ElMessage.error('房间人数不足')
+        break
+      case CONST.NOT_ALL_READY:
+        ElMessage.error('还有玩家未准备')
         break
       case CONST.GAME_CREATE_FAILED:
         ElMessage.error('游戏创建失败:未知错误')
@@ -212,6 +247,9 @@ const sockets_methods = {
   receiveMessage(data){
     if(data.username!=my_name.value)
       o_message.value.push({ 'user': data.username, 'message': data.message })
+  },
+  changeReadyStatusSuccess(data){
+    room_info.value = data.room_info
   },
 }
 
@@ -337,6 +375,12 @@ function createGame() {
       }
   })
 }
+
+function changeReadyStatus(){
+  socket.value.io.emit('changeReadyStatus', { 'room_id': room_id.value, 'userid': Cookies.get('userid') })
+}
+
+
 function goBackHome(){
   removeSockets(sockets_methods, socket.value, proxy)
   Cookies.remove('room_id')
@@ -556,6 +600,10 @@ function getAllRooms() {
       @click="createGame()">
         开始游戏
       </button>
+      <button v-else-if="room_id" @click="changeReadyStatus()"
+      :class="ready_status?'button-cancel':'button-create-game'">
+        {{ready_status?'取消准备':'准备'}}
+      </button>
     </div>
     <ElDivider/>
     <div class="in-room">
@@ -573,7 +621,7 @@ function getAllRooms() {
                 <img :src="main.url+avatars[user.userid]" alt="头像" />
               </template>
             </Avatar>
-            <span class="user-name" style="vertical-align: middle">{{ user.username }}</span>
+            <span :class="getUserReadyStatus(user.userid)?'ready-user-name':'user-name'" style="vertical-align: middle">{{ user.username }}</span>
           </li>
         </div>
       </div>
@@ -586,7 +634,7 @@ function getAllRooms() {
           </li>
         </div>
         <el-input class="custom-input" v-model="i_message" maxlength=80 show-word-limit placeholder="Please input" />
-        <el-button @click="sendMessage" style="width:60px" type="primary">发送消息</el-button>
+        <el-button @click="sendMessage" style="width:60px;border-radius:5px; margin-top: 10px;" type="primary">发送消息</el-button>
       </div>
       <div class="room-info">
         <div v-if="room_info" class="room-tag" >
@@ -797,6 +845,7 @@ function getAllRooms() {
   font-size: 18px;
   cursor: pointer;
   margin-right: 20px;
+  width:112px;
 }
 
 .button-leave:hover {
@@ -813,10 +862,28 @@ function getAllRooms() {
   font-size: 18px;
   cursor: pointer;
   margin-left: 20px;
+  width:112px;
 }
 
 .button-create-game:hover {
   background-color: #bbe62d;
+}
+
+.button-cancel {
+  margin-top: 10px;
+  background-color: #f47710;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  font-size: 18px;
+  cursor: pointer;
+  margin-left: 20px;
+  width:112px;
+}
+
+.button-cancel:hover {
+  background-color:#f8903b
 }
 
 .room-info {
@@ -881,6 +948,14 @@ function getAllRooms() {
   overflow: hidden;
 }
 
+.ready-user-name{
+  color: #a7d413;
+  margin-left: 20px;
+  font-size: 18px;
+  font-weight: bold;
+  max-width: 40%;
+  overflow: hidden;
+}
 
 /* 添加其他样式以美化页面 */
 

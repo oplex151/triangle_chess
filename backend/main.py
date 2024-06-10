@@ -405,7 +405,7 @@ def getRankScoreApi():
     
 
 @app.route('/api/addAppeals', methods=['POST'])
-@gate
+#@gate
 def addAppealsApi():
     '''
     Args:
@@ -413,15 +413,17 @@ def addAppealsApi():
         type: 申诉种类
         content: 申诉内容
         fromid: 申诉来源id
+        username: 申诉来源用户名
+        phone_number: 申诉来源手机号
     Returns:
         添加申诉成功200
     '''
-    params = {'userid':int, 'type':str, 'content':str, 'fromid':int}
+    params = {'userid':int, 'type':str, 'content':str, 'fromid':int, 'username':str, 'phone_number':str}
     try:
-        userid, appeal_type, content, fromid = getParams(params,request.form,['type','content','fromid'])
+        userid, appeal_type, content, fromid,username,phone_number = getParams(params,request.form,['type','content','fromid','username','phone_number'])
     except:
         return "{message: 'parameter error'}",PARAM_ERROR
-    return addAppeals(userid, appeal_type, content, fromid)
+    return addAppeals(userid, appeal_type, content, fromid, username, phone_number)
 
 @app.route('/api/getAppeals', methods=['POST'])
 def getAppealsApi():
@@ -801,6 +803,34 @@ def joinRoom(data):
         sid2uid[request.sid] = userid
 
 @socketio.event
+@gate
+def changeReadyStatus(data):
+    '''
+    Description: 准备游戏或取消准备
+    Args:    
+        room_id: 房间id str
+        userid: 用户id int
+    Return:
+        成功返回200
+    '''
+    global rooms,sessions
+    params = {'room_id':str, 'userid':int}
+    try:
+        room_id,userid = getParams(params,data)
+    except:
+        logger.error("Ready game error", exc_info=True)
+        emit('processWrong',{'status':PARAM_ERROR},to=request.sid)
+        return
+    room:RoomManager = fetchRoomByRoomID(room_id,rooms)
+    if room is None:
+        emit('processWrong',{'status':ROOM_NOT_EXIST},to=request.sid)
+        return
+    room.changeReadyStatus(userid)
+    emit('changeReadyStatusSuccess',{'userid':userid,'username':sessions[userid],'room_info':room.getRoomInfo()},to=room_id)
+    
+
+
+@socketio.event
 def leaveRoom(data):
     '''
     Description: 离开房间
@@ -881,6 +911,9 @@ def createGameApi():
         if len(room.users) < 3:
             emit('processWrong',{'status':ROOM_NOT_ENOUGH},to=uid2sid(userid),namespace='/')
             return "{message: '房间人数不足！'}",ROOM_NOT_ENOUGH
+        if room.isAllReady() == False:
+            emit('processWrong',{'status':NOT_ALL_READY},to=uid2sid(userid),namespace='/')
+            return "{message: '房间未准备好！'}",NOT_ALL_READY
 
         game:GameTable = GameTable(room.users[:3], room.users[3:] if len(room.users) > 3 else [])
         

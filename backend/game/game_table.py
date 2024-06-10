@@ -397,6 +397,7 @@ class RoomManager:
         self.locked = locked # 是否锁定房间
         self.password = password # 房间密码
 
+
         if isinstance(users, list):
             self.users = users.copy()
         else:
@@ -404,6 +405,7 @@ class RoomManager:
 
         self.holder = self.users[0]# 房主
         self.room_type = room_type # 房间类型
+        self.readys = {self.holder['userid']:True} # 房间内的准备状态
     
     def getRoomId(self) -> str:
         return self.room_id
@@ -417,6 +419,15 @@ class RoomManager:
     def checkPassword(self, password:str) -> bool:
         return self.locked == 0 or self.password == password
 
+    def changeReadyStatus(self, userid:int):
+        self.readys[userid] = not self.readys[userid]
+
+    def isAllReady(self) -> bool:
+        for u in self.users[:3]: # 只看前三个玩家
+            if not self.readys[u['userid']]:
+                return False
+        return True
+
     def addUser(self, user: Union[UserDict, list[UserDict]], password:str=None):
         if len(self.users) >= 3+MAX_WATCHERS:
             return False
@@ -424,9 +435,11 @@ class RoomManager:
             for u in user:
                 if u not in self.users:
                     self.addUser(u)
+                    self.readys[u['userid']] = False
         else:
             if user not in self.users:
                 self.users.append(user)
+                self.readys[user['userid']] = False
         return True
         
     
@@ -436,6 +449,7 @@ class RoomManager:
                 leaved_user = user
                 logger.info(f"User {userid} leave room {self.room_id}"+f"this room's users: {self.users}")
                 self.users.remove(leaved_user)
+                self.readys.pop(leaved_user['userid'])
                 if self.holder['userid'] == leaved_user['userid'] and len(self.users) > 0:
                     # 房主退出房间，更换房主
                     self.holder = self.users[0]
@@ -466,6 +480,7 @@ class RoomManager:
             'holder': self.holder,
             'users': self.game_table.users if self.game_table else self.users[:3],
             'viewers': self.game_table.viewers if self.game_table else self.users[3:] if len(self.users) > 3 else [],
+            'readys': self.readys,
         }
         return data
 
