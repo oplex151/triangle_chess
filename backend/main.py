@@ -593,6 +593,29 @@ def viewRecordCommentsApi():
     comments, status = viewRecordComments(recordid)
     return jsonify(comments), status
 
+@app.route('/api/getAllRooms', methods=['POST'])
+@gate
+def getAllRoomsApi():
+    '''
+    Args:
+        userid: 用户id
+    Returns:
+        200
+
+    '''
+    global rooms
+    rooms_copy = rooms.copy()
+    rooms_to_return = [{'room_id':room.room_id,
+                        'user_num':len(room.users) if len(room.users) <= 3 else 3,
+                        'locked':room.locked,
+                        'holder':{'username':room.holder['username'],'userid':room.holder['userid']},
+                        'started': 1 if room.game_table is not None else 0,
+                        'room_type': 1 if room.room_type == RoomType.matched else 2 if room.room_type == RoomType.ranked else 0
+                        } for room in rooms_copy]
+    print(rooms_to_return)
+    return jsonify({'rooms':rooms_to_return}),SUCCESS
+
+
 @socketio.on('connect')
 def connect():
     '''
@@ -659,11 +682,13 @@ def createRoom(data):
     Description: 创建房间
     Args:
         userid: 用户id 作为房主 int
+        locked: 是否锁定房间 int
+        password: 房间密码 str
     '''
     global rooms,sid2uid,sessions
-    params = {'userid':int}
+    params = {'userid':int, 'locked':int, 'password':str}
     try:
-        userid = getParams(params,data)
+        userid, locked, password = getParams(params, data, can_be_none=['locked','password'])
     except:
         emit('processWrong',{'status':PARAM_ERROR},to=request.sid)
         return
@@ -673,16 +698,20 @@ def createRoom(data):
         logger.error("User {0} is already in room {1}".format(userid,room_id))
         emit('processWrong',{'status':ALREADY_IN_ROOM},to=request.sid)
         return
-    new_room = RoomManager(UserDict(userid=userid,username=sessions[userid]))
+    
+    new_room = RoomManager(users = UserDict(userid=userid,username=sessions[userid]),
+                           locked = locked,
+                           password = password)
     rooms.append(new_room)
     room_id = rooms[-1].room_id
     room_type = rooms[-1].room_type
     join_room(room_id)
+
     logger.info(f"Create room {room_id} by user {userid}, type is {room_type}, sid={request.sid}\n"
                 +f"this room's users: {new_room.users}")
     
     avatar,_ = getSomeUserAvatar([userid])
-    # logger.debug(f"avatar: {avatar}")
+
     try:
         avatar = avatar[userid]
     except KeyError:
@@ -702,6 +731,7 @@ def joinRoom(data):
     Args:
         room_id: 房间id  str
         userid: 用户id  int
+        password: 房间密码 str
     Return:
         成功返回200
         room_id: 房间id  str
@@ -709,9 +739,9 @@ def joinRoom(data):
         username: 用户名 str
     '''
     global rooms,sessions,sid2uid
-    parms = {'room_id':str, 'userid':int}
+    parms = {'room_id':str, 'userid':int, 'password':str}
     try:
-        room_id,userid = getParams(parms,data)
+        room_id,userid,password = getParams(parms,data, can_be_none=['password'])
     except:
         logger.error("Join room error", exc_info=True)
         emit('processWrong',{'status':PARAM_ERROR},to=request.sid)
@@ -743,6 +773,14 @@ def joinRoom(data):
         logger.info(f"User {userid} rejoin to game {room.game_table.game_id}")
         emit('rejoinGameSuccess',{'room_id':room_id},to=request.sid,namespace='/')
     
+    if room.checkPassword(password) == False:
+        emit('processWrong',{'status':ROOM_PASSWORD_ERROR},to=request.sid)
+        return
+    
+    if room.game_table:
+        emit('processWrong',{'status':GAME_ALREADY_START},to=request.sid)
+        return
+
     if room.addUser(UserDict(userid=userid,username=sessions[userid])) == False:
         emit('processWrong',{'status':ROOM_FULL},to=request.sid)
         return
@@ -995,11 +1033,12 @@ def watchGame(data):
     Args:
         userid: 用户id          int
         room_id: 房间id        str
+        password: 房间密码      str
     """
     global rooms
-    params = {'userid':int,  'room_id':str}
+    params = {'userid':int,  'room_id':str, 'password':str}
     try:
-        userid,room_id = getParams(params,data)
+        userid,room_id,password = getParams(params,data,can_be_none=['password'])
     except:
         emit('processWrong',{'status':PARAM_ERROR},to=request.sid)
         return
@@ -1011,6 +1050,9 @@ def watchGame(data):
             emit('processWrong',{'status':ROOM_NOT_EXIST},to=request.sid)
             return
         user = UserDict(userid=userid,username=sessions[userid])
+        if room.checkPassword(password) == False:
+            emit('processWrong',{'status':ROOM_PASSWORD_ERROR},to=request.sid)
+            return
         if room.game_table.addViewer(user):
             room.addUser(user)
             join_room(room_id)
@@ -1164,7 +1206,10 @@ def cycleMatch(app):
                 user0,user1,user2 = match_queue.get(),match_queue.get(),match_queue.get()
                 try:
                     # 开始游戏
-                    room = RoomManager([UserDict(userid=user0,username=sessions[user0]),UserDict(userid=user1,username=sessions[user1]),UserDict(userid=user2,username=sessions[user2])],RoomType.matched)
+                    room = RoomManager(users=[UserDict(userid=user0,username=sessions[user0]),
+                                              UserDict(userid=user1,username=sessions[user1]),
+                                              UserDict(userid=user2,username=sessions[user2])],
+                                        room_type=RoomType.matched)
                     rooms.append(room)
                     
                     room.game_table = GameTable(room.users)
@@ -1224,10 +1269,10 @@ def cycleRank(app):
                         if user and user != user0 and user != user1 and user != user2 and user in sessions:
                             rank_queue.put(user)
                     try:
-                        room = RoomManager([UserDict(userid=user0, username=sessions[user0]),
+                        room = RoomManager(users=[UserDict(userid=user0, username=sessions[user0]),
                                             UserDict(userid=user1, username=sessions[user1]),
                                             UserDict(userid=user2, username=sessions[user2])], 
-                                            RoomType.ranked)
+                                            room_type=RoomType.ranked)
                         rooms.append(room)
                         room.game_table = GameTable(room.users)
                         for user in room.users:
@@ -1429,5 +1474,5 @@ threading.Thread(target=cycleRank,args=[app] ,daemon=True, name='cycleRank').sta
 # threading.Thread(target=viewQueue,daemon=True, name='viewQueue').start()
 
 if __name__ == "__main__":
-    socketio.run(app,debug=False,host='0.0.0.0',port=8888,allow_unsafe_werkzeug=True)
+    socketio.run(app,debug=True,host='0.0.0.0',port=8888,allow_unsafe_werkzeug=True)
     print("Good bye!")

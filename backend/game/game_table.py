@@ -389,11 +389,13 @@ class GameTable:
         print(board)
 
 class RoomManager:
-    def __init__(self, users: Union[list[UserDict], UserDict], room_type: RoomType=RoomType.created):
+    def __init__(self, users: Union[list[UserDict], UserDict], locked=0 ,room_type: RoomType=RoomType.created, password:str=None):
         # 随机生成一串字符串
         self.room_id:str = hashlib.md5(str(random.randint(0,1000000000)).encode('utf-8')).hexdigest()
         self.users:list[UserDict] | UserDict = None
         self.game_table = None
+        self.locked = locked # 是否锁定房间
+        self.password = password # 房间密码
 
         if isinstance(users, list):
             self.users = users.copy()
@@ -412,7 +414,10 @@ class RoomManager:
     def removeGameTable(self):
         self.game_table = None
 
-    def addUser(self, user: Union[UserDict, list[UserDict]]):
+    def checkPassword(self, password:str) -> bool:
+        return self.locked == 0 or self.password == password
+
+    def addUser(self, user: Union[UserDict, list[UserDict]], password:str=None):
         if len(self.users) >= 3+MAX_WATCHERS:
             return False
         if isinstance(user, list):

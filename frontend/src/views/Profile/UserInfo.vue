@@ -272,7 +272,7 @@ function saveEdit () {
                     <el-radio value="male" size="large">男</el-radio>
                     <el-radio value="female" size="large">女</el-radio>
                     <el-radio value="" size="large">不愿透露</el-radio>
-                Q</el-radio-group>
+                </el-radio-group>
             </div>
             <div class="info-item">
                 <span class="info-title">邮箱</span>

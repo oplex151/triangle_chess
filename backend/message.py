@@ -16,6 +16,8 @@ BANNED_USER = 514 #"Banned user"
 USER_ALREADY_BANNED = 515 #"User already banned"
 ROOM_FULL = 516 #"Room full"
 REPEAT_DRAW_REQUEST = 517 #"Repeat draw request"
+ROOM_PASSWORD_ERROR = 518 #"Room password error"
+GAME_ALREADY_START = 519 #"Game already start"
 
 PARAM_ERROR = 505 #"Parameter error"
 

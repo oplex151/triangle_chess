@@ -19,6 +19,8 @@ export const NOT_YOUR_TURN = 512;
 export const BANNED_USER = 514;
 export const ROOM_FULL = 516;
 export const REPEAT_DRAW_REQUEST = 517;
+export const ROOM_PASSWORD_ERROR = 518;
+export const GAME_ALREADY_START = 519;
 
 export const ROOM_NOT_EXIST = 520 ;
 export const ALREADY_IN_ROOM = 521;
