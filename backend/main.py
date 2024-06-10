@@ -1315,6 +1315,55 @@ def cycleRank(app):
 
             time.sleep(1)
 
+def cycleTimeout(app):
+    """
+    定时检查走棋超时的守护进程
+    """
+    global rooms,sessions,timeout_heap
+    with app.app_context():
+        while True:
+            while True:
+                try:
+                    next = heapq.heappop(timeout_heap)
+                    if next[0] > time.time():
+                        heapq.heappush(timeout_heap,next)
+                        # logger.info(f"User {userid} left time {next[0] - time.time()}")
+                        break
+                except Exception as e:
+                    break
+                userid = next[1]
+                room_id = inWhitchRoom(userid,rooms)
+                if room_id is None:
+                    continue
+                room:RoomManager = fetchRoomByRoomID(room_id,rooms)
+                if room is None:
+                    # logger.info(f"room id {room_id} not exist")
+                    continue
+                game_table:GameTable = room.game_table
+                if game_table is None:
+                    #　logger.info(f"room id {room_id} has no game")
+                    continue
+                if game_table.next_time > next[0]:
+                    # logger.info(f"next time {next[0]} satisfied")
+                    continue
+                try:
+                    # 玩家投降
+                    status = game_table.surrender(userid)
+                    # logger.info(f"User {userid} timeout")
+                    # 通知所有玩家有玩家超时
+                    emit('surrenderTimeout',{'userid':userid,'username':sessions[userid],
+                                            'game_info':game_table.getGameInfo(),'next_time':game_table.next_time},
+                        namespace='/' , to=room_id)
+                    # 判断游戏是否结束
+                    if status == GAME_END:
+                        roomOver(game=game_table, room=room, userid=game_table.winner_id)
+                    
+                except Exception as e:
+                    logger.error("Request surrender error due to {0}".format(str(e)), exc_info=True)
+                    emit('processWrong',{'status':OTHER_ERROR},to=request.sid)
+                    
+            time.sleep(1)
+
 @socketio.event
 @gate
 def startMatch(data):
@@ -1496,8 +1545,9 @@ def surrenderGame(game:GameTable, userid:int):
 threading.Thread(target=subtractSesion,daemon=True, name='subtractSesion').start()
 threading.Thread(target=cycleMatch,args=[app] ,daemon=True, name='cycleMatch').start()  #bug uwsgi不执行main函数
 threading.Thread(target=cycleRank,args=[app] ,daemon=True, name='cycleRank').start()
+threading.Thread(target=cycleTimeout,args=[app] ,daemon=True, name='cycleTimeout').start()
 # threading.Thread(target=viewQueue,daemon=True, name='viewQueue').start()
 
 if __name__ == "__main__":
-    socketio.run(app,debug=True,host='0.0.0.0',port=8888,allow_unsafe_werkzeug=True)
+    socketio.run(app,debug=False,host='0.0.0.0',port=8888,allow_unsafe_werkzeug=True)
     print("Good bye!")
