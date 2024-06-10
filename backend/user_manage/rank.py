@@ -67,9 +67,9 @@ def rankScore(totalscore):
     score = totalscore % rankscore
     return rank, score 
 
-def isEligible(user1, user2):
-    rank_diff = abs(user1[1] - user2[1])
-    totalscore_diff = abs(totalScore(user1[1],user1[2]) - totalScore(user2[1],user2[2]))
+def isEligible(user1_rank,user1_score, user2_rank,user2_score):
+    rank_diff = abs(user1_rank - user2_rank)
+    totalscore_diff = abs(totalScore(user1_rank,user1_score) - totalScore(user2_rank,user2_score))
     return rank_diff <= 1 and totalscore_diff <= 150  # 假设允许的段位差和最大总积分差
 
 def calculatePerformance(captured_pieces, opponent_captured_pieces):

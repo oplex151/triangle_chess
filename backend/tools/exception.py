@@ -9,3 +9,7 @@ class InvalidMoveError(ChessError):
 class OutOfBoardError(ChessError):
     def __init__(self, message='Out of board'):
         super().__init__(message)
+
+class SessionException(Exception):
+    def __init__(self, message='session expired!'):
+        super().__init__(message)

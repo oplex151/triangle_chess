@@ -1,4 +1,17 @@
 <template>
+    <div v-if="!myuserid">您好，这里是申诉界面，稍显简陋，后续会逐步完善。</div>
+    <div v-if="!myuserid">
+        <input v-model="username"
+            class="info-text"
+            type="text"
+            placeholder="您的用户名">
+        </input>
+        <input v-model="phone_number"
+            class="info-text"
+            type="text"
+            placeholder="您的手机号（没有手机号无法申诉）">
+        </input>
+    </div>
     <div class="apeal-body">
     <el-form 
     :model="ruleForm" 
@@ -40,7 +53,7 @@ const formSize = ref<ComponentSize>('default')
 const props = defineProps({
     myuserid: Number
 })
-const emit = defineEmits(['reportEnd','reportStop'])
+//const emit = defineEmits(['reportEnd','reportStop'])
 
 interface RuleForm {
     reason: string
@@ -52,6 +65,9 @@ const ruleForm = reactive < RuleForm > ({
     detail: '',
 })
 
+const username = ref("")
+const phone_number = ref("")
+
 const rules = reactive < FormRules < RuleForm >> ({
     reason: [
         { required: true, message: '请选择原因', trigger: 'blur' },
@@ -62,11 +78,27 @@ const rules = reactive < FormRules < RuleForm >> ({
 })
 
 const Confirm = () => {
+    let n_userid = props.myuserid
+    let n_fromid = props.myuserid
+    if (!n_userid) {
+        n_userid =  -1
+        n_fromid =  -1
+        if (!username.value) {
+            ElMessage.error('请填写用户名')
+            return
+        }
+        if (!phone_number.value) {
+            ElMessage.error('请填写手机号')
+            return
+        }
+    }
     axios.post(main.url+ '/api/addAppeals', {
-        'userid':props.myuserid,
+        'userid':n_userid,
         'type': 1,  //apeal
         'content':ruleForm.reason +':'+ruleForm.detail,
-        'fromid':props.myuserid
+        'fromid':n_fromid,
+        'username': username.value,
+        'phone_number': phone_number.value.trimStart(),
     },
     {
         headers: {'Content-Type':'application/x-www-form-urlencoded'},
@@ -97,9 +129,17 @@ const Confirm = () => {
           })
           router.replace('/login')
         }
+        else if (error.response.status == 508){
+            ElMessage({
+              message: '用户名不存在',
+              grouping: true,
+              type: 'error',
+              showClose: true
+            })
+        }
     });
     resetForm(ruleFormRef.value)  
-    emit('reportEnd')
+    //emit('reportEnd')
 }
 const handleSubmit = (ruleFormRef : FormInstance |undefined) => {
     if (!ruleFormRef) return
@@ -117,7 +157,7 @@ const resetForm = (ruleFormRef : FormInstance |undefined) => {
 }
 const handleClose = (done: () => void) => {
     resetForm(ruleFormRef.value)  
-    emit('reportEnd')
+    //emit('reportEnd')
 }
 </script>
 
@@ -128,8 +168,22 @@ const handleClose = (done: () => void) => {
 }
 .dialog-footer {
     margin-top: 20px;
-    position: absolute;
-    left: 50%;
+    position: relative;
+    top:100px;
     bottom: 70px;
+}
+.info-text {
+  position: relative;
+  left: 30%;
+  width: 300px;
+  display: block;
+  height: 50px;
+  padding: 10px;
+  font-size: 16px;
+  border-color: #333;
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 5px;
+  margin-top: 20px;
 }
 </style>

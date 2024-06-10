@@ -111,10 +111,14 @@ const submitForm = (formEl: FormInstance | undefined) => {
                     errorMessage.value = '未知错误'
                 }
             }).catch(err => {
-                //console.log(err);
-                errorMessage.value = err;
-                disableForm.value = false
-
+                if (err.response.status === 503) {
+                    errorMessage.value = '用户名已存在！'
+                    disableForm.value = false
+                }
+                else {
+                    disableForm.value = false
+                    errorMessage.value = '未知错误'
+                }
             });
             disableForm.value = false
         } else {

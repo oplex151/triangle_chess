@@ -16,6 +16,7 @@ import Admin from '@/views/Admin/index.vue'
 import AdminLogin from '@/views/Admin/login.vue'
 import Ground from '@/views/Ground/index.vue'
 import Witness from '@/views/Witness/index.vue'
+import Appeal from '@/views/Apeal/index.vue'
 import { socket } from '@/sockets';
 
 
@@ -41,6 +42,11 @@ const router = createRouter({
     {
       path: '/login',
       component: Login,
+      meta: {isAuth: false,connection: false},
+    },
+    {
+      path: '/appeal',
+      component: Appeal,
       meta: {isAuth: false,connection: false},
     },
     //   登出页

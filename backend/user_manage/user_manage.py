@@ -14,6 +14,7 @@ from flask import jsonify
 from backend.tools import setupLogger
 from backend.message import *
 from backend.global_var import rooms,sessions,session_times
+from typing import Union, List, Tuple, Dict
 
 DATA_BASE = "trianglechess" # 数据库名称
 USER_TABLE = "user"
@@ -277,7 +278,7 @@ def getUserInfo(userid:int,targets:dict=None):
     return jsonify(dic),status
 
 
-def getSomeUserAvatar(userids:list[int]|int):
+def getSomeUserAvatar(userids: Union[List[int], int]) -> Tuple[Dict[int, Union[str, None]], int]:
     db = pymysql.connect(host="127.0.0.1",user="root",password=db_password,database=DATA_BASE)
     cursor = db.cursor()
     dic, status = {}, None
