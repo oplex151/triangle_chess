@@ -16,7 +16,7 @@ import threading
 logger = setupLogger()
 
 MAX_WATCHERS = 3
-
+NEXT_TIME_INTERVAL = 30000
 class UserDict(Dict):
     userid:int
     username:str
@@ -58,7 +58,7 @@ class GameTable:
         # 表现分相关
         self.captured_pieces = [[],[],[]] # 玩家捕获的对手棋子
         self.opponent_captured_pieces = [[],[],[]] # 对手捕获的玩家棋子
-        self.next_time = time.time() # 这一个走棋开始的时间
+        self.next_time = time.time()+NEXT_TIME_INTERVAL # 这一个走棋开始的时间
         self.record = GameRecord(
                 p1=self.users[0]['userid'],
                 p2=self.users[1]['userid'],
@@ -178,7 +178,7 @@ class GameTable:
                             return GAME_END
 
                         self.turnChange() # 切换到下一个玩家
-                        self.next_time = time.time() # 这一个走棋开始的时间
+                        self.next_time = time.time()+NEXT_TIME_INTERVAL # 这一个走棋开始的时间
                         return SUCCESS
             else:
                 logger.error(f"用户{userid}没有棋子在({px},{py},{pz})")
@@ -263,7 +263,7 @@ class GameTable:
                 if self.turn == self._getUserIndex(userid):
                     # 投降玩家，切换到下一个玩家
                     self.turnChange()                    
-                    self.next_time = time.time() # 这一个走棋开始的时间
+                    self.next_time = time.time()+NEXT_TIME_INTERVAL # 这一个走棋开始的时间
         if self.checkGameEnd():
             return GAME_END
         else:   
