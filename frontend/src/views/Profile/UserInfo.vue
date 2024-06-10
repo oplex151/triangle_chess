@@ -272,7 +272,7 @@ function saveEdit () {
                     <el-radio value="male" size="large">男</el-radio>
                     <el-radio value="female" size="large">女</el-radio>
                     <el-radio value="" size="large">不愿透露</el-radio>
-                Q</el-radio-group>
+                </el-radio-group>
             </div>
             <div class="info-item">
                 <span class="info-title">邮箱</span>
@@ -285,7 +285,7 @@ function saveEdit () {
             </div>
             <div class="info-item">
                 <span class="info-title">手机号</span>
-                <span class="info-text" v-if="!editMode">{{userinfo.phone_num}}</span>
+                <span class="info-text" v-if="!editMode">{{userinfo.phone_num ? userinfo.phone_num : '(未绑定，您将无法申诉)'}}</span>
                 <input type="text" v-model="phone_num"
                 v-if="editMode"
                 class="info-text"
