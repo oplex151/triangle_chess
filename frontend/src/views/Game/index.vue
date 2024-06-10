@@ -356,13 +356,26 @@ const sockets_methods = {
 
 function requestSurrender() {
   if(my_camp.value >= 0)
-    if(lives[my_camp.value])
-      socket.value.io.emit('requestSurrender', {
-        'userid': Cookies.get('userid')
-      })
-    else{
+    if ((!lives[my_camp.value])){
       ElMessage.error('你已经输了，不能投降')
+      return
     }
+    else if(my_camp.value!=board.value.camp){
+      ElMessage.error('现在不是你的回合，不能投降')
+      return
+    }
+    else
+      ElMessageBox.confirm('确定要投降吗？', '投降', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        socket.value.io.emit('requestSurrender', {
+          'userid': Cookies.get('userid')
+        })
+      }).catch(() => {
+        ElMessage.info('已取消')
+      })
   else{
     ElMessage.error('你不是本游戏的玩家，不能投降')
   }

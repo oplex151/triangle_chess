@@ -7,7 +7,7 @@ import Cookies from 'js-cookie'
 import { ElMessage } from 'element-plus';
 import router from '@/router';
 import * as CONST from '@/lib/const.js';
-
+import {ReportDecoder} from '@/lib/convert.js'
 const user_data = ref([])
 const apeal_table = ref([])
 const visable = ref(false)
@@ -285,7 +285,7 @@ const formatDate = (timestamp) => {
         fixed="right" width="150">
             <template #default="scope">
                 <div>
-                {{scope.row.content.split(':')[0]}}
+                {{ReportDecoder(scope.row.content.split(':')[0])}}
                 </div>
                 <el-button type="text" @click="viewDetail(scope.row)">
                     查看详情
@@ -300,8 +300,8 @@ const formatDate = (timestamp) => {
     class="report-dialog" 
     :before-close="handleClose">
         <div class="report-content">
-            {{appeal_text.split(':')[0]}}:
-            {{appeal_text.split(':')[1]}}
+            {{ReportDecoder(appeal_text.split(':')[0])}}:
+            {{appeal_text.split(':').slice(1).join(':')}}
         </div>
         <el-input v-model="ruleForm.feedback" 
         placeholder="请输入回复" />

@@ -10,6 +10,8 @@ import main from "@/main"
 
 
 const map = new Map();
+const moveStack = ref([]);
+const moveNum = ref(1);
 const getid = (row, col) => (ROWTOP - row - 1) * COL + col + 1;
 const camp = ref(0);
 
@@ -152,6 +154,12 @@ const action = (position) => {
 };
 const moveChess = (chess, to) => {
   if (map.get(to)?.camp === camp.value) return false;
+  const liveDeepCopy = lives.map((value) => value);
+  moveStack.value.push({ 'moveNum': moveNum.value, 
+                          'from': chess.position, 'to': to 
+                          ,'kill':map.get(to),'lives':liveDeepCopy});
+  moveNum.value++;
+
   map.delete(chess.position);
   chess.move(to);
   map.set(to, chess);
@@ -163,11 +171,17 @@ const initMap = (game_info) => {
   camp.value = game_info.turn
   // 设置活着的玩家
   changeLives(game_info.lives)
-  // //console.log("111111111111")
   initChess(game_info)
   for (const [k, camp] of Object.entries(camps)) {
     camp.get().forEach((chess) => {
-      GEBI(`${chess.position}`).innerText = chess.name;
+      AddChess(chess);
+    });
+  }
+  //console.log("initMap执行结束")
+
+};
+const AddChess = (chess) =>{
+  GEBI(`${chess.position}`).innerText = chess.name;
       switch (chess.camp) {
         case 0:
           GEBI(`${chess.position}`).classList.add('camp0');
@@ -192,11 +206,34 @@ const initMap = (game_info) => {
       // element.style.backgroundImage = `url(${chess.image})`;  // 设置背景图片
       //console.log(chess.image);
       map.set(chess.position, chess);
-    });
-  }
-  //console.log("initMap执行结束")
+}
+const WithDraw = () => {
+  moveNum.value--;
+  // focusChess.value = map.get(position_start);
+  // // 移动棋子
+  // moveChess(focusChess.value, position_end);  
 
+  
+  const move = moveStack.value.pop();
+  // console.log("撤销",move)
+  const from = move.from;
+  const to = move.to;
+  const kill = move.kill;
+  const chess = map.get(to);
+  chess.move(from);
+  map.delete(to);
+  map.set(from, chess);
+  if(kill!=undefined){
+    AddChess(kill)
+    // console.log("撤销棋子",kill)
+  }
+  // 切换阵营
+  camp.value = chess.camp;
+  // 复活术
+  changeLives(move.lives)
 };
+
+
 
 const hover = (position) => {
   hoverposition.value = position;
@@ -237,6 +274,7 @@ onUnmounted(Destory);
 defineExpose({
   moveSuccess,
   initMap,
+  WithDraw,
   camp,
 })
 </script>
