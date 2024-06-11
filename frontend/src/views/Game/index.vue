@@ -121,9 +121,9 @@ onMounted(() => {
     if (res.status == 200) {
       //console.log(res.data)
       board.value.initMap(res.data.game_info)
-      if(board.value.camp == my_camp.value){
+      // if(board.value.camp == my_camp.value){
         startTimer(res.data.next_time);
-      }
+      // }
     }
     else {
       ElMessage.error('获取房间信息失败')
@@ -190,10 +190,9 @@ const sockets_methods = {
     }
     // 移动棋子_切换阵营
     board.value.moveSuccess(data);
-    if(board.value.camp == my_camp.value){
-      console.log(data)
+    // if(board.value.camp == my_camp.value){
       startTimer(data.next_time);
-    }
+    // }
   },
   joinRoomSuccess(data) {
     if (data.userid == Cookies.get('userid')) {
@@ -320,9 +319,9 @@ const sockets_methods = {
     else {
       ElMessage.info('用户' + data.username + '投降')
     }
-    if (board.value.camp == my_camp.value){
+    // if (board.value.camp == my_camp.value){
       startTimer(data.next_time);
-    }
+    // }
   },
   surrenderTimeout(data) {
     for (let i = 0; i < 3; i++) {
@@ -337,9 +336,9 @@ const sockets_methods = {
     else {
       ElMessage.info('用户' + data.username + '超时')
     }
-    if (board.value.camp == my_camp.value){
+    // if (board.value.camp == my_camp.value){
       startTimer(data.next_time);
-    }
+    //}
   },
   waitForOthers(data){
     draw_responser.value.push({ 'userid': data.userid, 'username': data.username ,'agree':data.agree})
