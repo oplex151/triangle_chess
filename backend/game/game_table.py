@@ -63,7 +63,7 @@ class GameTable:
         self.captured_pieces = [[],[],[]] # 玩家捕获的对手棋子
         self.opponent_captured_pieces = [[],[],[]] # 对手捕获的玩家棋子
         self.next_time = time.time()+self.time_interval # 这一个走棋开始的时间
-        heapq.heappush(timeout_heap, (self.next_time, self.users[self.turn]['userid']))
+        heapq.heappush(timeout_heap, (self.next_time, self.users[self.turn]['userid'], self.game_id))
         self.record = GameRecord(
                 p1=self.users[0]['userid'],
                 p2=self.users[1]['userid'],
@@ -184,7 +184,7 @@ class GameTable:
 
                         self.turnChange() # 切换到下一个玩家
                         self.next_time = time.time()+self.time_interval # 这一个走棋开始的时间
-                        heapq.heappush(timeout_heap, (self.next_time, self.users[self.turn]['userid']))
+                        heapq.heappush(timeout_heap, (self.next_time, self.users[self.turn]['userid'], self.game_id))
 
                         return SUCCESS
             else:
@@ -271,7 +271,7 @@ class GameTable:
                     # 投降玩家，切换到下一个玩家
                     self.turnChange()                    
                     self.next_time = time.time()+self.time_interval # 这一个走棋开始的时间
-                    heapq.heappush(timeout_heap, (self.next_time, self.users[self.turn]['userid']))
+                    heapq.heappush(timeout_heap, (self.next_time, self.users[self.turn]['userid'], self.game_id))
         if self.checkGameEnd():
             return GAME_END
         else:   
@@ -534,6 +534,21 @@ def inWhitchRoom(userid:int, room_managers:list[RoomManager]) -> str:
     '''
     for room in room_managers:
         if userid in [user['userid'] for user in room.users]:
+            return room.getRoomId()
+    else:
+        return None
+
+def inWhichGame(userid:int, room_managers:list[RoomManager]) -> str:
+    '''
+    Description: 判断用户是否在某个游戏中
+    Args:
+        userid: 用户ID
+        room_managers: 房间列表
+    Returns:
+        str: 房间ID
+    '''
+    for room in room_managers:
+        if room.game_table and userid in [user['userid'] for user in room.game_table.users]:
             return room.getRoomId()
     else:
         return None
