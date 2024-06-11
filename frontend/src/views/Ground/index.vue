@@ -62,6 +62,15 @@ const EndGo = () => {
     my_camp.value = -1
     record_id.value = -1
 }
+const Previous = () =>{
+  step.value -= 1
+  if(step.value < 0){
+    ElMessage.info('已经到第一步')
+    step.value = 0
+    return
+  }
+  board.value.WithDraw()
+}
 const sockets_methods = {
     gameRecord(data) {
         options.value = data.record.map(record => ({
@@ -489,6 +498,7 @@ function formatDate(date1) {
                 <div class="chessboard-container">
                 <Board :my_camp="my_camp" ref="board" :game_status="CONST.STATUS_ONING" @requireMove="Move" />
                 </div>
+                <button @click="Previous" class="next_button">上一步</button>  
                 <button @click="Next" class="next_button">下一步</button>
                 <div class="avatar">
                 <!---------0号位---------->
@@ -663,9 +673,10 @@ function formatDate(date1) {
     background-color: #ecb920;
     border-radius: 10px;
     border: none;
-    position: absolute;
-    left: 600px;
-    top: 430px;
+    position: relative;
+    margin-right: 30px;
+    top: 360px;
+    left:550px
 }
 
 .next_button:hover {
