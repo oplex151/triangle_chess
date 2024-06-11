@@ -175,7 +175,9 @@ const deleteFriend = () => {
                             </el-button>
                         </div>
                     </div>
+                    <slot name="custom"></slot>
                 </p>
+                    
             </div>
         </template>
     </el-popover>

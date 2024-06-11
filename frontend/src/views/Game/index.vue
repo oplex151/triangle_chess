@@ -51,6 +51,7 @@ const interval = ref(null);
 const startTimer = (time) => {
   //console.log(time)
   //console.log(Date.now())
+  clearTimer()
   if(time == undefined){
     timer.value = 30;   //unuse
   }
@@ -63,7 +64,8 @@ const startTimer = (time) => {
     timer.value--;    
     if (timer.value <= 0) {
       clearTimer();
-      ElMessage.error('时间到!')
+      if(board.value.camp == my_camp.value)
+        ElMessage.error('时间到!')
       // socket.value.io.emit('requestSurrender', {
       //     'userid': Cookies.get('userid')
       // })

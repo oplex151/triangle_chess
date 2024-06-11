@@ -887,6 +887,7 @@ def leaveRoom(data):
         logger.error("User {0} not in room {1}".format(userid,room_id))
         emit('processWrong',{'status':NOT_IN_ROOM},to=request.sid)
 
+
 @socketio.event
 @gate
 def removeUserFromRoom(data):

@@ -218,6 +218,33 @@ const sockets_methods = {
       avatars.value[data.userid] = null
     }
   },
+  userRemovedSuccess(data){
+    if (data.userid == -1){
+      Cookies.remove('room_id')
+      Cookies.remove('room_info')
+      room_id.value = null
+      room_info.value = null
+      ElMessage.success('房主离开，房间解散！')
+    }
+    else if (data.userid == Cookies.get('userid')){
+      
+      Cookies.remove('room_id')
+      Cookies.remove('room_info')
+      room_id.value = null
+      room_info.value = null
+      ElMessage.success('你已被请离房间')
+      avatars.value = {}
+    }
+    else{
+      if(room_info.value.holder.userid == Cookies.get('userid')) 
+        ElMessage.success('玩家'+data.username+'被你移除房间')
+      else
+        ElMessage.success('玩家'+data.username+'被房主移除房间')
+      room_info.value = data.room_info
+      avatars.value[data.userid] = null
+
+    }
+  },
   rejoinGameSuccess(data){
     removeSockets(sockets_methods, socket.value, proxy)
     Cookies.set('room_id',data.room_id)
@@ -425,6 +452,21 @@ const handleReportEnd = () => {
 const handleReport = (id) => {
   to_report_id.value = id;
   vis.value = true;
+}
+
+const canremove = (id) =>{
+  if (room_info.value && room_info.value.holder.userid == Cookies.get('userid') && id != Cookies.get('userid'))
+    return true
+  return false
+}
+
+const removeUser = (id) => {
+  if(Cookies.get('userid')!= room_info.value.holder.userid)
+  {
+    ElMessage.error('只有房主可以移除玩家')
+    return
+  }  
+  socket.value.io.emit('removeUserFromRoom', { 'room_id': room_id.value, 'userid': Cookies.get('userid'), 'target_userid': id })
 }
 
 function getAllRooms() {
@@ -635,8 +677,12 @@ function getAllRooms() {
               <template #avatar>
                 <img :src="main.url+avatars[user.userid]" alt="头像" />
               </template>
+              <template #custom>
+                <button v-if="canremove(user.userid)" class="remove-user-button" @click="removeUser(user.userid)">移除</button>
+              </template>
             </Avatar>
             <span :class="getUserReadyStatus(user.userid)?'ready-user-name':'user-name'" style="vertical-align: middle">{{ user.username }}</span>
+          
           </li>
         </div>
       </div>
@@ -797,6 +843,21 @@ function getAllRooms() {
   color: #ecb920;
   font-family:'Times New Roman', Times, serif
 }
+
+.remove-user-button {
+    justify-content: center;
+    background-color: #f6bb4e;
+    color: #fff;
+    border: none;
+    border-radius: 15px;
+    /* 增加垂直内边距 */
+    margin: auto;
+    cursor: pointer;
+    font-size: 15px;
+    margin: 5px;
+    width: 70px;
+}
+
 
 .button-create {
   background-color: #ecb920;
