@@ -527,7 +527,7 @@ function getAllRooms() {
       <div
       style="height: 10px;"
       ></div>
-      <input type="number" v-model="room_password" v-if="locked==1"
+      <input type="text" v-model="room_password" v-if="locked==1"
         class="info-text"
         placeholder="密码（6位数字）">
       </input>
@@ -997,8 +997,9 @@ function getAllRooms() {
   padding-top: 10px;
   padding-bottom: 10px;
   height: 60px;
-  display: inline-flex;
+  display:flex;
   color: #ecb920;
+  text-align: left;
 }
 
 .user .user-show{

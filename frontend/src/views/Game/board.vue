@@ -100,7 +100,9 @@ function moveSuccess(data) {
       }
       console.log('LeaderCamp是:'+LeaderCamp);
 
-      ElMessage.info('注意！'+toName + "将军"+LeaderCamp)
+      if(toName !== LeaderCamp){
+        ElMessage.info('注意！'+toName + "将军"+LeaderCamp)
+      }
     }
   });
   console.log('结束toChess.canMove');
