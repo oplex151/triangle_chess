@@ -143,8 +143,8 @@ const camp_0_style = computed(() => {
 });
 const action = (position) => {
   //console.log(props.game_status)
-  if (props.game_status != CONST.STATUS_ONING)
-    return
+  // if (props.game_status != CONST.STATUS_ONING)
+  //   return
   // 未选中
   if (!isPocus.value) {
     if (!hoverChess) return;

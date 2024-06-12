@@ -496,6 +496,8 @@ class RoomManager:
         Description: 获取房间信息
         Returns:
             dict: 房间信息
+        NOTES:
+            返回的users字段在游戏开始后不会改变，即使有人离开
         '''
         data = {
             'room_id': self.room_id,
