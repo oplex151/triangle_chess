@@ -1121,8 +1121,8 @@ def roomOver(game:GameTable, room:RoomManager, userid:int):
         logger.info(f"Game {game.game_id} end, winner is {sessions[userid] if userid in sessions else 'None'}")
         match_duration = (game.record.end_time - game.record.start_time)
         # 结束记录
-        state,recordId=game.record.recordEnd(None)
-        emit('gameEnd', {'status': GAME_END, 'recordId':recordId,'room_type':room_type,"step_count":game.step_count,"match_duration": match_duration.total_seconds(),'winner': -1, 'winner_name': None}, to=room.room_id,namespace='/')
+        state,record_id =game.record.recordEnd(None)
+        emit('gameEnd', {'status': GAME_END, 'record_id':record_id, 'room_info':room.getRoomInfo(),'room_type':room_type,"step_count":game.step_count,"match_duration": match_duration.total_seconds(),'winner': -1, 'winner_name': None}, to=room.room_id,namespace='/')
 
     room.removeGameTable()
     if room.room_type == RoomType.matched:
