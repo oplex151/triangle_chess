@@ -236,6 +236,7 @@ const sockets_methods = {
       if (data.room_info){
         room_info.value = data.room_info
         Cookies.set('room_info', JSON.stringify(data.room_info))
+        console.log(data.room_info)
       }
       ElMessage.success('玩家' + data.username + '离开房间')
     }
@@ -292,8 +293,8 @@ const sockets_methods = {
       Cookies.remove('game_id')
       Cookies.remove('camp')
       let have_holder = false
-      for (let i = 0; i < data.room_info.users.length; i++) {
-        if (data.room_info.holder.userid == data.room_info.users[i].userid)
+      for (let i = 0; i < data.room_info.all_users.length; i++) {
+        if (data.room_info.holder.userid == data.room_info.all_users[i].userid)
           have_holder = true
       }
       if (!have_holder){

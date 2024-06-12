@@ -504,6 +504,7 @@ class RoomManager:
             'users': self.game_table.users if self.game_table else self.users[:3],
             'viewers': self.game_table.viewers if self.game_table else self.users[3:] if len(self.users) > 3 else [],
             'readys': self.readys,
+            'all_users': self.users,
         }
         return data
 
