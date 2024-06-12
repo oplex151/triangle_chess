@@ -219,21 +219,22 @@ const sockets_methods = {
     }
   },
   userRemovedSuccess(data){
-    if (data.userid == -1){
-      Cookies.remove('room_id')
-      Cookies.remove('room_info')
-      room_id.value = null
-      room_info.value = null
-      ElMessage.success('房主离开，房间解散！')
-    }
-    else if (data.userid == Cookies.get('userid')){
-      
+    // if (data.userid == -1){
+    //   Cookies.remove('room_id')
+    //   Cookies.remove('room_info')
+    //   room_id.value = null
+    //   room_info.value = null
+    //   ElMessage.success('房主离开，房间解散！')
+    // }
+    // else 
+    if (data.userid == Cookies.get('userid')){
       Cookies.remove('room_id')
       Cookies.remove('room_info')
       room_id.value = null
       room_info.value = null
       ElMessage.success('你已被请离房间')
       avatars.value = {}
+      getAllRooms()
     }
     else{
       if(room_info.value.holder.userid == Cookies.get('userid')) 
@@ -242,7 +243,6 @@ const sockets_methods = {
         ElMessage.success('玩家'+data.username+'被房主移除房间')
       room_info.value = data.room_info
       avatars.value[data.userid] = null
-
     }
   },
   rejoinGameSuccess(data){
