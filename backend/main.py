@@ -614,7 +614,7 @@ def getAllRoomsApi():
                         'holder':{'username':room.holder['username'],'userid':room.holder['userid']},
                         'started': 1 if room.game_table is not None else 0,
                         'room_type': 1 if room.room_type == RoomType.matched else 2 if room.room_type == RoomType.ranked else 0
-                        } for room in rooms_copy]
+                        } for room in rooms_copy if room.room_type == RoomType.created]
     print(rooms_to_return)
     return jsonify({'rooms':rooms_to_return}),SUCCESS
 
@@ -793,15 +793,15 @@ def joinRoom(data):
     if room.addUser(UserDict(userid=userid,username=sessions[userid])) == False:
         emit('processWrong',{'status':ROOM_FULL},to=request.sid)
         return
+    
     join_room(room_id)
 
-
-    
     try:
         avatar = avatar[userid]
     except KeyError:
         avatar = None
         logger.error(f"User {userid} has no avatar")
+
     if is_rejoin:
         logger.info(f"User {userid} rejoin to game {room.game_table.game_id}"
                     +f"this room's users: {room.users}")

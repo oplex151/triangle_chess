@@ -318,6 +318,7 @@ onMounted(() => {
     })
   }
   else{
+    // 防止从其他页面进来之间进入房间
     Cookies.remove('room_id')
     Cookies.remove('room_info')
     getAllRooms()
