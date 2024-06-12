@@ -204,10 +204,12 @@ const sockets_methods = {
     if (data.userid == Cookies.get('userid')) {
       Cookies.set('room_id', data.room_id)
       room_info.value = data.room_info
+      Cookies.set('room_info', JSON.stringify(data.room_info))
       ElMessage.success('加入房间成功')
     }
     else {
       room_info.value = data.room_info
+      Cookies.set('room_info', JSON.stringify(data.room_info))
       ElMessage.success('玩家' + data.username + '加入房间')
     }
   },
@@ -233,6 +235,7 @@ const sockets_methods = {
     else {
       if (data.room_info){
         room_info.value = data.room_info
+        Cookies.set('room_info', JSON.stringify(data.room_info))
       }
       ElMessage.success('玩家' + data.username + '离开房间')
     }

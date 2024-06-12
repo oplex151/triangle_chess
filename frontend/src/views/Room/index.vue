@@ -247,13 +247,12 @@ const sockets_methods = {
   },
   rejoinGameSuccess(data){
     removeSockets(sockets_methods, socket.value, proxy)
-    // Cookies.set('room_id',data.room_id)
+    // Cookies.set('room_id',data.room_id) 在joinRoomSuccess中设置
   
     Cookies.set('room_info',JSON.stringify(data.room_info))
     sockets_methods.joinRoomSuccess(data)
 
     router.replace('/game')
-
   },
   createGameSuccess(data){
     
