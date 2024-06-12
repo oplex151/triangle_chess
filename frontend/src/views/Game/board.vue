@@ -55,6 +55,42 @@ function mapChessToPoint(row, col) {
   }
 }
 
+function checkMate() {
+  for (const [position, chess] of map.entries()) {
+    const possibleMoves = chess.canMove();
+    for (const posi of possibleMoves) {
+      const targetPiece = map.get(posi);
+      if (targetPiece && targetPiece.name === '将') {
+        let toName = '';
+        switch (chess.camp) {
+          case 0:
+            toName = '红方';
+            break;
+          case 1:
+            toName = '黑方';
+            break;
+          case 2:
+            toName = '金方';
+            break;
+        }
+
+        let LeaderCamp = '';
+        if (GEBI(`${posi}`).classList.contains('camp0')) {
+          LeaderCamp = '红方';
+        } else if (GEBI(`${posi}`).classList.contains('camp1')) {
+          LeaderCamp = '黑方';
+        } else {
+          LeaderCamp = '金方';
+        }
+
+        if (toName !== LeaderCamp) {
+          ElMessage.warning('注意！' + toName + "将军" + LeaderCamp);
+        }
+      }
+    }
+  }
+}
+
 // 定义父组件可以调用的函数（这里只有defineExpose）
 function moveSuccess(data) {
   let position_start = XYZToPosition(data.x1, data.y1, data.z1)
@@ -69,44 +105,7 @@ function moveSuccess(data) {
   while (lives[camp.value] == false) {
     camp.value = (camp.value + 1) % 3;
   }
-
-  let toChess = map.get(position_end);
-  //console.log('开始toChess.canMove');
-  toChess.canMove().forEach((posi) => {
-    //console.log('可走的位置是'+posi);
-    
-    if (hoverChess && !GEBI(`${posi}`).classList.contains(`camp${hoverChess.camp}`) && GEBI(`${posi}`).innerText == '将'){
-      let toName = '';
-      switch (toChess.camp){
-        case 0:
-          toName = '红方';
-          break;
-        case 1:
-          toName = '黑方';
-          break;
-        case 2:
-          toName = '金方';
-          break;
-      }
-      //console.log('toName是:'+toName);
-      let LeaderCamp = '';
-      if(GEBI(`${posi}`).classList.contains('camp0')){
-        LeaderCamp = '红方';
-      }
-      else if(GEBI(`${posi}`).classList.contains('camp1')){
-        LeaderCamp = '黑方';
-      }
-      else{
-        LeaderCamp = '金方';
-      }
-      //console.log('LeaderCamp是:'+LeaderCamp);
-
-      if(toName !== LeaderCamp){
-        ElMessage.warning('注意！'+toName + "将军"+LeaderCamp)
-      }
-    }
-  });
-  // console.log('结束toChess.canMove');
+  checkMate();
 }
 
 const camp_1_style = computed(() => {
@@ -158,14 +157,14 @@ const action = (position) => {
     isPocus.value = true;
     GEBI(`${hoverChess.position}`).classList.add('chess_on');
 
-    console.log('选中棋子1')
+    // console.log('选中棋子1')
     focusChess.value = hoverChess;
   }
   // 选中
   else {
     isPocus.value = false;
     GEBI(`${focusChess.value.position}`).classList.remove('chess_on');
-    console.log('选中棋子2')
+    // console.log('选中棋子2')
 
     if (
       focusChess.value.canMove().includes(position)
@@ -192,7 +191,7 @@ const action = (position) => {
       isPocus.value = true;
       focusChess.value = hoverChess;
       GEBI(`${hoverChess.position}`).classList.add('chess_on');
-      console.log('选中棋子3')
+      // console.log('选中棋子3')
 
     }
   }
