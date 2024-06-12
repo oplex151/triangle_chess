@@ -473,9 +473,9 @@ class RoomManager:
                 logger.info(f"User {userid} leave room {self.room_id}"+f"this room's users: {self.users}")
                 self.users.remove(leaved_user)
                 self.readys.pop(leaved_user['userid'])
-                if self.holder['userid'] == leaved_user['userid'] and len(self.users) > 0:
-                    # 房主退出房间，更换房主
-                    self.holder = self.users[0]
+                # if self.holder['userid'] == leaved_user['userid'] and len(self.users) > 0:
+                #     # 房主退出房间，更换房主
+                #     self.holder = self.users[0]
                 if self.game_table and leaved_user['userid'] in [u['userid'] for u in self.game_table.viewers]:
                     # 观战者离开直接送出游戏
                     self.game_table.viewers.remove(leaved_user)
