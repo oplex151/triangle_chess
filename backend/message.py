@@ -49,3 +49,4 @@ MOVE_OUT_OF_BOARD = 602 #"Move failed: Move out of board"
 MOVE_INVALID = 603 #"Move failed: Invalid way to move"
 
 GAME_END = 701 #"Game end"
+GAME_ONGOING = 702 #"Game ongoing"

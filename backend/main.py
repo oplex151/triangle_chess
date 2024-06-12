@@ -1072,16 +1072,20 @@ def movePiece(data):
         return
     try:
         status = game.movePiece(userid, x1, y1, z1, x2, y2, z2)
-        if status != SUCCESS and status != GAME_END:
+        if status != SUCCESS and status != GAME_END and status != GAME_ONGOING:
             emit('processSuccess',{'status':status},to=request.sid)
             return
         else:
-            # 建议前端根据userid来判断到底是自己走成功了，还是其他人走的，自己这边要更新状态
+            if status == GAME_ONGOING: # new
+                logger.info(f"Draw was rejected, so game continues")
+                emit('gameOngoing', {'status': SUCCESS,'userid': userid, 'username': sessions[userid]}, to=room_id)
+            
             emit('movePieceSuccess',{'userid':userid,'status':status, 'username':sessions[userid],
                                      'x1':x1, 'y1':y1, 'z1':z1, 
                                      'x2':x2, 'y2':y2, 'z2':z2,'next_time':game.next_time},
                                      to=room_id)
             if status == GAME_END:
+                # TODO
                 roomOver(game=game, room=room, userid=game.winner_id)
             return
     except Exception as e:
@@ -1207,6 +1211,11 @@ def requestSurrender(data):
         # 玩家投降
         status = game.surrender(userid)
 
+        if status == GAME_ONGOING: # 理论上不会触发
+            logger.info(f"Draw was rejected, so game continues")
+            emit('gameOngoing', {'status': SUCCESS,'userid': userid, 'username': sessions[userid]}, to=room_id)
+            
+
         # 通知所有玩家有玩家投降
         emit('surrenderSuccess',{'userid':userid,'username':sessions[userid],
                                 'game_info':game.getGameInfo(),'next_time':game.next_time},to=room_id)
@@ -1284,7 +1293,8 @@ def respondDraw(data):
     try:
         game.respondDraw(userid, agree)
         # 所有存活的玩家均已回应
-        if len(game.draw_respondents) == len(game.getAlivePlayers()):
+        # if game.draw_respondents == set(game.getAlivePlayers()):
+        if game.checkAllLivesRespondDraw():
             for res_agree in game.draw_agree:
                 if res_agree == False:
                     logger.info(f"Draw was rejected, so game continues")
@@ -1421,7 +1431,7 @@ def cycleTimeout(app):
                     next = heapq.heappop(timeout_heap)
                     if next[0] > time.time():
                         heapq.heappush(timeout_heap,next)
-                        logger.info(f"User {userid} left time {next[0] - time.time()}")
+                        # logger.info(f"User {userid} left time {next[0] - time.time()}")
                         break
                 except Exception as e:
                     break
@@ -1439,11 +1449,17 @@ def cycleTimeout(app):
                     logger.info(f"room id {room_id} has no game")
                     continue
                 if game_table.next_time > next[0]:
-                    logger.info(f"next time {next[0]} satisfied")
+                    # logger.info(f"next time {next[0]} satisfied")
                     continue
                 try:
                     # 玩家投降
                     status = game_table.surrender(userid)
+
+                    if status == GAME_ONGOING: # 理论上不会触发
+                        logger.info(f"Draw was rejected, so game continues")
+                        emit('gameOngoing', {'status': SUCCESS,'userid': userid, 'username': sessions[userid]}, to=room_id,
+                             namespace='/')
+            
                     logger.info(f"User {userid} timeout")
                     # 通知所有玩家有玩家超时
                     emit('surrenderTimeout',{'userid':userid,'username':sessions[userid],
@@ -1627,15 +1643,7 @@ def viewQueue():
         print(f"match_queue: {match_queue.queue}, rank_queue: {rank_queue.queue}")
         print(f'match_set: {match_queue.queue_set}, rank_set: {rank_queue.queue_set}')
 
-def surrenderGame(game:GameTable, userid:int):
-    """
-    投降游戏
-    Args:
-        game: 游戏对象
-        userid: 投降用户id
-    """
-    game.surrender(userid)
-    return SUCCESS
+
 
 threading.Thread(target=subtractSesion,daemon=True, name='subtractSesion').start()
 threading.Thread(target=cycleMatch,args=[app] ,daemon=True, name='cycleMatch').start()  #bug uwsgi不执行main函数

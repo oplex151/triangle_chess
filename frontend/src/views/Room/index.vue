@@ -159,6 +159,9 @@ const sockets_methods = {
       case CONST.GAME_CREATE_FAILED:
         ElMessage.error('游戏创建失败:未知错误')
         break
+      case CONST.NOT_JOIN_GAME:
+        ElMessage.error('你还未加入游戏')
+        break
       case CONST.ROOM_FULL:
         ElMessage.error('房间已满')
         getAllRooms()

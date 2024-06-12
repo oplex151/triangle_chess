@@ -428,6 +428,10 @@ const sockets_methods = {
       ElMessage.error('用户未登录')
       router.replace('/login')
     }
+    else if (status1 == CONST.NOT_JOIN_GAME){
+      ElMessage.error('你不在游戏中')
+      router.replace('/room')
+    }
     else if (status1 == CONST.REPEAT_DRAW_REQUEST) {
       ElMessage.error('重复的求和请求或者有求和决议在进行')
     }
@@ -492,12 +496,17 @@ function leaveRoom() {
 function requestDraw(){
   if(my_camp.value >= 0){
     if(lives[my_camp.value]){
-      socket.value.io.emit('requestDraw', {
-        'userid': Cookies.get('userid')
-      })
-      game_status.value = CONST.STATUS_DRAWING
-      if (draw_responser.value.length == 0) {  // 只有请求为空时才可以发起请求
-        draw_responser.value.push({ 'userid': userid, 'username': my_name ,'agree':true})
+      if (game_status.value != CONST.STATUS_DRAWING){
+        socket.value.io.emit('requestDraw', {
+          'userid': Cookies.get('userid')
+        })
+        game_status.value = CONST.STATUS_DRAWING
+        if (draw_responser.value.length == 0) {  // 只有请求为空时才可以发起请求
+          draw_responser.value.push({ 'userid': userid, 'username': my_name ,'agree':true})
+        }
+      }
+      else{
+        ElMessage.error('已经有求和请求，请等待所有人响应')
       }
     }
     else{
