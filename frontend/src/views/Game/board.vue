@@ -157,12 +157,16 @@ const action = (position) => {
     }
     isPocus.value = true;
     GEBI(`${hoverChess.position}`).classList.add('chess_on');
+
+    console.log('选中棋子1')
     focusChess.value = hoverChess;
   }
   // 选中
   else {
     isPocus.value = false;
     GEBI(`${focusChess.value.position}`).classList.remove('chess_on');
+    console.log('选中棋子2')
+
     if (
       focusChess.value.canMove().includes(position)
       // 暂时不启用, 阻止自己的棋子吃掉自己的棋子
@@ -188,6 +192,8 @@ const action = (position) => {
       isPocus.value = true;
       focusChess.value = hoverChess;
       GEBI(`${hoverChess.position}`).classList.add('chess_on');
+      console.log('选中棋子3')
+
     }
   }
 };
@@ -404,7 +410,6 @@ defineExpose({
 .chess {
   //color: wheat;
   color: transparent;
-  // background-image: url("@/assets/images/game/chess/realChess/车白.png");
   // 文本不可选中
   user-select: none;
   display: flex;
@@ -448,8 +453,11 @@ defineExpose({
 }
 
 .chess_on {
-  animation: vary 2s !important;
-  animation-iteration-count: infinite !important;
+  //animation: vary 2s !important;
+  //animation-iteration-count: infinite !important;
+  border: 3px solid yellow;
+  box-shadow: 0 0 15px yellow;
+  animation: glow 1.5s infinite alternate;
 }
 
 .invert {
