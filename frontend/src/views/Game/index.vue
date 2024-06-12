@@ -283,7 +283,12 @@ const sockets_methods = {
       // Cookies.set('room_info',data.room_info)
       Cookies.remove('game_id')
       Cookies.remove('camp')
-      if (!(data.room_info.holder in data.room_info.users)){
+      let have_holder = false
+      for (let i = 0; i < data.room_info.users.length; i++) {
+        if (data.room_info.holder.userid == data.room_info.users[i].userid)
+          have_holder = true
+      }
+      if (!have_holder){
         // socket.value.io.emit('leaveRoom', { 'room_id': Cookies.get('room_id'), 'userid': Cookies.get('userid') })
         Cookies.remove('room_id')
         Cookies.remove('room_info')
