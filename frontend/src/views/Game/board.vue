@@ -71,9 +71,9 @@ function moveSuccess(data) {
   }
 
   let toChess = map.get(position_end);
-  console.log('开始toChess.canMove');
+  //console.log('开始toChess.canMove');
   toChess.canMove().forEach((posi) => {
-    console.log('可走的位置是'+posi);
+    //console.log('可走的位置是'+posi);
     
     if (hoverChess && !GEBI(`${posi}`).classList.contains(`camp${hoverChess.camp}`) && GEBI(`${posi}`).innerText == '将'){
       let toName = '';
@@ -88,7 +88,7 @@ function moveSuccess(data) {
           toName = '金方';
           break;
       }
-      console.log('toName是:'+toName);
+      //console.log('toName是:'+toName);
       let LeaderCamp = '';
       if(GEBI(`${posi}`).classList.contains('camp0')){
         LeaderCamp = '红方';
@@ -99,15 +99,14 @@ function moveSuccess(data) {
       else{
         LeaderCamp = '金方';
       }
-      console.log('LeaderCamp是:'+LeaderCamp);
+      //console.log('LeaderCamp是:'+LeaderCamp);
 
       if(toName !== LeaderCamp){
-        ElMessage.info('注意！'+toName + "将军"+LeaderCamp)
+        ElMessage.warning('注意！'+toName + "将军"+LeaderCamp)
       }
     }
   });
-  console.log('结束toChess.canMove');
-
+  // console.log('结束toChess.canMove');
 }
 
 const camp_1_style = computed(() => {
