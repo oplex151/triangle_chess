@@ -17,7 +17,6 @@ from flask import request
 from backend.global_var import *
 from backend.tools import setupLogger, getParams
 from backend.user_manage import *
-from backend.user_manage.appeal import *
 from backend.tools.exception import *
 from backend.game.record import *
 from message import *
@@ -114,6 +113,41 @@ def registerApi():
     except:
         return "{message: 'parameter error'}",PARAM_ERROR
     return register(username, password, email, phone_num, gender)
+
+@app.route('/api/GetVerificationCode', methods=["GET"])
+def getVerificationCodeApi():
+    """
+    用户通过短信方式获取手机验证码
+    Args:
+        category:短信模板编码
+            authentication: 身份验证
+        phone_num:手机号
+    Returns:
+        发送短信验证码成功200
+    """
+    params = {'userid':int, 'image':str}
+    try:
+        category,phone_num = getParams(params,request.form)
+    except:
+        return "{message: 'parameter error'}",PARAM_ERROR
+    return getVerificationCode(category, phone_num)
+
+@app.route('/api/checkVerificationCode', methods=["POST"])
+def checkVerificationCodeApi():
+    """
+    用户验证码验证
+    Args:
+        phone_num:手机号
+        code:用户输入的验证码
+    Returns:
+        验证码验证成功200
+    """
+    params = {'userid':int, 'image':str}
+    try:
+        phone_num, code = getParams(params,request.form)
+    except:
+        return "{message: 'parameter error'}",PARAM_ERROR
+    return checkVerificationCode(phone_num, code)
 
 @app.route('/api/uploadImage', methods=['POST'])
 @gate
