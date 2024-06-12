@@ -597,7 +597,7 @@ def viewRecordCommentsApi():
     return jsonify(comments), status
 
 @app.route('/api/getAllRooms', methods=['POST'])
-@gate
+# @gate
 def getAllRoomsApi():
     '''
     Args:
@@ -751,13 +751,17 @@ def joinRoom(data):
         logger.error("Join room error", exc_info=True)
         emit('processWrong',{'status':PARAM_ERROR},to=request.sid)
         return
+    print("params: ",room_id,userid,password)
+    is_rejoin = False
     
     room = fetchRoomByRoomID(room_id,rooms)
     if room is None:
         emit('processWrong',{'status':ROOM_NOT_EXIST},to=request.sid)
         return
     # 查询该用户是否在某个房间中
-    tmp_id = inWhitchRoom(userid,rooms)
+    tmp_id = inWhitchRoom(userid,rooms)    
+    avatar,_ = getSomeUserAvatar([userid])
+
     # 已经在某个房间中, 先退出
     if tmp_id is not None and tmp_id != room_id: 
         logger.info(f"User {userid} leave room {tmp_id}"+
@@ -775,14 +779,14 @@ def joinRoom(data):
         return
     # 用户在游戏中
     elif room.game_table is not None and room.game_table.searchGameTable(userid): 
-        logger.info(f"User {userid} rejoin to game {room.game_table.game_id}")
-        emit('rejoinGameSuccess',{'room_id':room_id},to=request.sid,namespace='/')
+        is_rejoin = True
+
     
     if room.checkPassword(password) == False:
         emit('processWrong',{'status':ROOM_PASSWORD_ERROR},to=request.sid)
         return
     
-    if room.game_table:
+    if room.game_table and not is_rejoin:
         emit('processWrong',{'status':GAME_ALREADY_START},to=request.sid)
         return
 
@@ -790,16 +794,23 @@ def joinRoom(data):
         emit('processWrong',{'status':ROOM_FULL},to=request.sid)
         return
     join_room(room_id)
-    logger.info(f"User {userid} join room {room_id}, sid={request.sid}"
-                +f"this room's users: {room.users}")
+
+
     
-    avatar,_ = getSomeUserAvatar([userid])
     try:
         avatar = avatar[userid]
     except KeyError:
         avatar = None
         logger.error(f"User {userid} has no avatar")
-    emit('joinRoomSuccess',{'room_id':room_id,'userid':userid,'username':sessions[userid],
+    if is_rejoin:
+        logger.info(f"User {userid} rejoin to game {room.game_table.game_id}"
+                    +f"this room's users: {room.users}")
+        emit('rejoinGameSuccess',{'room_id':room_id,'userid':userid,'username':sessions[userid],
+                            'room_info':room.getRoomInfo(),'avatar':avatar},to=request.sid,namespace='/')
+    else:
+        logger.info(f"User {userid} join room {room_id}, sid={request.sid}"
+                +f"this room's users: {room.users}")
+        emit('joinRoomSuccess',{'room_id':room_id,'userid':userid,'username':sessions[userid],
                             'room_info':room.getRoomInfo(),'avatar':avatar},to=room_id)
     # 更新sid2uid
     if request.sid not in sid2uid: 
@@ -1410,29 +1421,30 @@ def cycleTimeout(app):
                     next = heapq.heappop(timeout_heap)
                     if next[0] > time.time():
                         heapq.heappush(timeout_heap,next)
-                        # logger.info(f"User {userid} left time {next[0] - time.time()}")
+                        logger.info(f"User {userid} left time {next[0] - time.time()}")
                         break
                 except Exception as e:
                     break
                 userid = next[1]
-                room_id = inWhitchRoom(userid,rooms)
+                room_id = inWhichGame(userid,rooms)
                 if room_id is None:
                     continue
                 room:RoomManager = fetchRoomByRoomID(room_id,rooms)
                 if room is None:
-                    # logger.info(f"room id {room_id} not exist")
+                    logger.info(f"room id {room_id} not exist")
                     continue
+                
                 game_table:GameTable = room.game_table
                 if game_table is None:
-                    #　logger.info(f"room id {room_id} has no game")
+                    logger.info(f"room id {room_id} has no game")
                     continue
                 if game_table.next_time > next[0]:
-                    # logger.info(f"next time {next[0]} satisfied")
+                    logger.info(f"next time {next[0]} satisfied")
                     continue
                 try:
                     # 玩家投降
                     status = game_table.surrender(userid)
-                    # logger.info(f"User {userid} timeout")
+                    logger.info(f"User {userid} timeout")
                     # 通知所有玩家有玩家超时
                     emit('surrenderTimeout',{'userid':userid,'username':sessions[userid],
                                             'game_info':game_table.getGameInfo(),'next_time':game_table.next_time},
