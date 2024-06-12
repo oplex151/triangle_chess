@@ -34,7 +34,7 @@ const match_duration = ref(null)
 const record_id = ref(null)
 const vis = ref(false)
 const to_report_id = ref(-1)
-const room_info = JSON.parse(Cookies.get('room_info'))
+const room_info = ref(null)
 
 const game_status = ref(CONST.STATUS_ONING)
 const draw_responser = ref([])
@@ -149,35 +149,39 @@ onMounted(() => {
     }
   })
   //console.log(socket.value)
-  let userids = room_info.users.map(user => {
-    return user.userid;
-  }) 
-  axios.post(main.url + '/api/getAvatars', {'userids': userids.join(',')},
-  {
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-  }
-  )
-  .then(res => {
-      //console.log(res.data)
-      avatars.value = res.data
-  })
-  .catch(err => {
-      //console.error(err)
-    if(err.response.status == 550){ //Session expired
-      Cookies.remove('room_id')
-      Cookies.remove('userid')
-      Cookies.remove('room_info')
-      Cookies.remove('username')
-      Cookies.remove('camp')
-      ElMessage({
-        message: '会话过期，请重新登录',
-        grouping: true,
-        type: 'error',
-        showClose: true
-      })
-      router.replace('/login')
+  if(Cookies.get('room_info')){
+    room_info.value = JSON.parse(Cookies.get('room_info'))
+    let userids = room_info.value.users.map(user => {
+      return user.userid;
+    }) 
+    axios.post(main.url + '/api/getAvatars', {'userids': userids.join(',')},
+    {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     }
-  })
+    )
+    .then(res => {
+        //console.log(res.data)
+        avatars.value = res.data
+    })
+    .catch(err => {
+        //console.error(err)
+      if(err.response.status == 550){ //Session expired
+        Cookies.remove('room_id')
+        Cookies.remove('userid')
+        Cookies.remove('room_info')
+        Cookies.remove('username')
+        Cookies.remove('camp')
+        ElMessage({
+          message: '会话过期，请重新登录',
+          grouping: true,
+          type: 'error',
+          showClose: true
+        })
+        router.replace('/login')
+      }
+    })
+  }
+
 
 });
 
@@ -279,9 +283,18 @@ const sockets_methods = {
       // Cookies.set('room_info',data.room_info)
       Cookies.remove('game_id')
       Cookies.remove('camp')
-      removeSockets(sockets_methods, socket.value, proxy);
-      sessionStorage.setItem('fromGame', 'true')
-      router.replace('/room')
+      if (!(data.room_info.holder in data.room_info.users)){
+        // socket.value.io.emit('leaveRoom', { 'room_id': Cookies.get('room_id'), 'userid': Cookies.get('userid') })
+        Cookies.remove('room_id')
+        Cookies.remove('room_info')
+        removeSockets(sockets_methods, socket.value, proxy);
+        router.replace('/')
+      }
+      else{
+        removeSockets(sockets_methods, socket.value, proxy);
+        sessionStorage.setItem('fromGame', 'true')
+        router.replace('/room')
+      }
       return
     }
 
@@ -557,6 +570,7 @@ const camp_0_style = computed(() => {
       </div>
     </div>
   </div>
+  <template v-if="room_info">
   <div  :class="camp_0_style">
     <Avatar :my_userid=userid :userid=room_info.users[0].userid @reportUser="handleReport">
       <template #name>
@@ -589,6 +603,7 @@ const camp_0_style = computed(() => {
       </template>
     </Avatar>
     </div>
+    </template>
     <Board ref="board" :my_camp ="my_camp" :game_status="game_status" @requireMove="Move" />
     <Report :toreportid=to_report_id :myuserid="userid" :dialogFormVisible=vis @reportEnd="handleReportEnd" />
 </template>

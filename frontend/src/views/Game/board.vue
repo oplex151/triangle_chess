@@ -74,7 +74,8 @@ function moveSuccess(data) {
   console.log('开始toChess.canMove');
   toChess.canMove().forEach((posi) => {
     console.log('可走的位置是'+posi);
-    if (!GEBI(`${posi}`).classList.contains(`camp${hoverChess.camp}`) && GEBI(`${posi}`).innerText == '将'){
+    
+    if (hoverChess && !GEBI(`${posi}`).classList.contains(`camp${hoverChess.camp}`) && GEBI(`${posi}`).innerText == '将'){
       let toName = '';
       switch (toChess.camp){
         case 0:

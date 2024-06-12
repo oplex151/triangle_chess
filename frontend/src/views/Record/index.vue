@@ -753,7 +753,7 @@ function changeVisible(record_id, visible) {
     border-radius: 10px;
     border: none;
     position: relative;
-    margin-right: 30px;
+    transform: translateX(-20px);
     top: 360px;
 }
 
