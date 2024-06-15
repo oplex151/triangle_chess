@@ -66,7 +66,6 @@ def adminLogin(password, config_password):
     else:
         return jsonify(res),OTHER_ERROR
 
-
 def login(username, password):
     global sessions, session_times
     db = pymysql.connect(host="127.0.0.1",user="root",password=db_password,database=DATA_BASE)
@@ -105,7 +104,43 @@ def login(username, password):
         cursor.close()
         db.close()
     return jsonify(res),status
-    
+
+def phoneLogin(phone_num):
+    global sessions, session_times
+    db = pymysql.connect(host="127.0.0.1",user="root",password=db_password,database=DATA_BASE)
+    cursor = db.cursor()
+    res,status = {},None
+    try:
+        db.begin()
+        select_query = "SELECT userName, userId, banned FROM {0} WHERE phoneNum = {1};".format(USER_TABLE,"'"+phone_num+"'")
+        cursor.execute(select_query)
+        result = cursor.fetchone()
+        if result is not None:
+            if result[2] == 1:
+                logger.error("User {0} whose phoneNum is {1} is banned".format(result[0], phone_num))
+                return "{}",BANNED_USER
+            if result[1] in sessions:
+                logger.error("User {0} whose phoneNum is {1} already logged in".format(result[0], phone_num))
+                session_times[result[1]] -= 60*30
+                return "{}",ALREADY_LOGIN
+            logger.info("User {0} whose phoneNum is {1} logged in successfully usring id {2}".format(result[0], phone_num,result[1]))
+            res = {"userid":result[1], "username":result[0]}
+
+            sessions[result[1]] = result[0]
+            session_times[result[1]] = time.time()
+            
+            status = SUCCESS
+        else:
+            logger.error("User whose phoneNum is {0} does not exist".format(phone_num))
+            status = LOGIN_UNEXIST_USER
+    except Exception as e:
+        logger.error("User whose phoneNum is {0} failed to login due to\n{1}".format(phone_num,str(e)))
+        status = OTHER_ERROR
+    finally:
+        cursor.close()
+        db.close()
+    logger.info("Response: %s, Status: %d", jsonify(res), status)
+    return jsonify(res),status  
 
 def register(username, password, email, phone_num, gender):
     db = pymysql.connect(host="127.0.0.1",user="root",password=db_password,database=DATA_BASE)
@@ -116,10 +151,16 @@ def register(username, password, email, phone_num, gender):
         db.begin()
         select_query = "SELECT * FROM {0} WHERE userName = {1};".format(USER_TABLE,"'"+username+"'")
         cursor.execute(select_query)
-        result = cursor.fetchone()
-        if result is not None:
+        user_result = cursor.fetchone()
+        select_query = "SELECT * FROM {0} WHERE phoneNum = {1};".format(USER_TABLE,"'"+phone_num+"'")
+        cursor.execute(select_query)
+        phone_result = cursor.fetchone()
+        if user_result is not None:
             logger.error("User {0} already exists".format(username))
             status = REGISTER_EXIST_USER
+        elif phone_result is not None:
+            logger.error("Phone {0} already exists".format(phone_num))
+            status = REGISTER_EXIST_PHONE_NUM
         else:
             insert_query =  "".join([f"INSERT INTO {USER_TABLE} (userName, ",
             f"{'gender, ' if gender else ''}",

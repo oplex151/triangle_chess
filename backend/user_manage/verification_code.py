@@ -239,6 +239,7 @@ def checkVerificationCode(phone, code):
         if code is None or not checkPhoneCode(phone, code):
             status = VERIFICATION_CODE_ERROR #验证码错误
             # return jsonify(res),status
+        status = SUCCESS
     except Exception as e:
         logger.error("User whose phone number is {0} failed to check verification code by code {1} due to\n{2}".format(phone, code, str(e)),exc_info=True)
         status = OTHER_ERROR

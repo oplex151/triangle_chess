@@ -48,6 +48,7 @@ PHONE_NUMBER_ERROR = 560 #"Phone number error"
 CATEGORY_NOT_EXIST = 561 #"Category not exist"
 FREQUENT_OPERATION = 562 #"Frequent operation"
 VERIFICATION_CODE_ERROR = 563 #"Verification code error"
+REGISTER_EXIST_PHONE_NUM = 564 #"Register exist phone num"
 
 MOVE_NO_PIECE = 601 #"Move failed: No piece to move"
 MOVE_OUT_OF_BOARD = 602 #"Move failed: Move out of board"

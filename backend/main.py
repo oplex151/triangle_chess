@@ -149,6 +149,26 @@ def checkVerificationCodeApi():
         return "{message: 'parameter error'}",PARAM_ERROR
     return checkVerificationCode(phone_num, code)
 
+@app.route('/api/phoneLogin', methods=["POST"])
+def phoneLoginApi():
+    """
+    用户手机号验证码登录
+    Args:
+        phone_num:手机号
+        code:用户输入的验证码
+    Returns:
+        验证码验证成功200
+    """
+    params = {'phone_num':str, 'code':str}
+    try:
+        phone_num, code = getParams(params,request.form)
+    except:
+        return "{message: 'parameter error'}",PARAM_ERROR
+    res, status = checkVerificationCode(phone_num, code)
+    if status is not SUCCESS:
+        return res, status
+    return phoneLogin(phone_num)
+
 @app.route('/api/uploadImage', methods=['POST'])
 @gate
 def uploadImageApi():

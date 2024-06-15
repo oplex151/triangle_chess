@@ -110,7 +110,12 @@ const getVerificationCode = () => {
     }
   }).catch(err => {
     console.log(err);
-    ElMessage.error('请求失败，请重试');
+    if (err.response.status === 562) {
+        ElMessage.error('请勿用同一手机号码频繁请求!');
+    } 
+    else{
+        ElMessage.error('请求失败，请重试');
+    }
     verificationButtonDisabled.value = false;
   });
 };
@@ -149,9 +154,7 @@ const validateAndSubmitForm = (formEl: FormInstance | undefined) => {
           }
         })
         .catch(error => {
-            if (error.response.status === 562) {
-                errorMessage.value = '请勿用同一手机号码频繁请求!'
-            } else {
+            if (error.response.status = 563) {
                 errorMessage.value = '验证码错误!';
             }
         });
@@ -182,6 +185,9 @@ const submitForm = (formEl: FormInstance | undefined) => {
           router.push('/login');
         } else if (res.status === 503) {
           errorMessage.value = '用户名已存在！';
+          disableForm.value = false;
+        } else if (res.status === 564) {
+          errorMessage.value = '手机号已存在！';
           disableForm.value = false;
         } else {
           disableForm.value = false;
