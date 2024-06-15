@@ -37,6 +37,12 @@ export const NO_APPEALS = 541;
 
 export const SESSION_EXPIRED = 550;
 
+export const PHONE_NUMBER_ERROR = 560 
+export const CATEGORY_NOT_EXIST = 561 
+export const FREQUENT_OPERATION = 562 
+export const VERIFICATION_CODE_ERROR = 563 
+
+
 export const MOVE_NO_PIECE = 601;
 export const MOVE_OUT_OF_BOARD = 602;
 export const MOVE_INVALID = 603;

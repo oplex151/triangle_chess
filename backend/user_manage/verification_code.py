@@ -203,8 +203,10 @@ def getVerificationCode(category, phone):
         code = "".join([str(random.randint(0, 9)) for _ in range(6)])
         template_param = {"code": code}
         # 发送验证码
+        logger.info(f"phone is {re_phone}, category is {category}, template param is {template_param}")
         sms = SendSms(phone=re_phone, category=category, template_param=template_param)
-        sms.sendSms()
+        sms_response = sms.sendSms()
+        logger.info(f"{sms_response}")
         # 将验证码存入redis，方便接下来的验证
         hset(re_phone, "code", code)
         # 设置重复操作屏障  
@@ -216,6 +218,7 @@ def getVerificationCode(category, phone):
         logger.error("User whose phone number is {0} failed to get verification code by category {1} due to\n{2}".format(phone, category, str(e)),exc_info=True)
         status = OTHER_ERROR
     finally:
+        logger.info(f"res is {res}, status is {status}")
         return jsonify(res),status
     
 def checkVerificationCode(phone, code):
