@@ -131,7 +131,7 @@ const Confirm = () => {
         }
         else if (error.response.status == 508){
             ElMessage({
-              message: '用户名不存在',
+              message: '用户名或手机号错误',
               grouping: true,
               type: 'error',
               showClose: true

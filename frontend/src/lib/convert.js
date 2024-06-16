@@ -25,6 +25,18 @@ export const ReportDecoder = (input) => {
     if(input == 'Other'){
         return '其他'
     }
+    if(input == 'Apeal_bad_report'){
+        return '恶意举报'
+    }
+    if(input == 'Bad_bug'){
+        return '遭遇bug'
+    }
+    if(input == 'Ask_help'){
+        return '请求帮助'
+    }
+    if(input == 'Other'){
+        return '其他'
+    }
 
     return input
 }

@@ -112,21 +112,21 @@ const sockets_methods = {
         router.push('/game')
     },
     processWrong(data) {
-        ElMessage.error('匹配失败，请重新匹配' + data.status)
+        ElMessage.error('匹配失败，请重新匹配')
         if(data.status == CONST.SESSION_EXPIRED){ //Session expired
-          Cookies.remove('room_id')
-          Cookies.remove('userid')
-          Cookies.remove('room_info')
-          Cookies.remove('username')
-          Cookies.remove('camp')
-          sessionStorage.removeItem('fromGame')
-          ElMessage({
-            message: '会话过期，请重新登录',
-            grouping: true,
-            type: 'error',
-            showClose: true
-          })
-          router.replace('/login')
+            Cookies.remove('room_id')
+            Cookies.remove('userid')
+            Cookies.remove('room_info')
+            Cookies.remove('username')
+            Cookies.remove('camp')
+            sessionStorage.removeItem('fromGame')
+            ElMessage({
+                message: '会话过期，请重新登录',
+                grouping: true,
+                type: 'error',
+                showClose: true
+            })
+            router.replace('/login')
         }
     },
 }
