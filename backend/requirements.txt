@@ -1,5 +1,4 @@
 aliyun_python_sdk_core==2.15.1
-Faker==25.8.0
 Flask==3.0.3
 Flask_Cors==4.0.1
 Flask_SocketIO==5.3.6

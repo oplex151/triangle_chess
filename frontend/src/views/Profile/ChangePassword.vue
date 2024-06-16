@@ -126,11 +126,11 @@ function vertifyCode () {
     })
     .catch(error => {
         if (error.response.status = 563) 
-            errorMessage.value = '验证码错误!';
+            ElMessage.error('验证码错误')
         else if (error.response.status = 562) 
-            errorMessage.value = '请勿用同一手机号码频繁请求!';
+            ElMessage.error('请勿用同一手机号码频繁请求')
         else 
-            errorMessage.value = '请求失败，请重试!';
+            ElMessage.error('请求失败，请重试')
     });
 }
 

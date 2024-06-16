@@ -209,31 +209,21 @@ function getVerificationCode() {
       //verificationButtonDisabled.value = false;
     }
   }).catch(error => {
-    if (error.response.status == 506) {
-      // 请求已发出，但服务器响应状态码不在 2xx 范围内
-      errorMessage.value = '请勿重复登录';
-      if (Cookies.get('userid') !== undefined) {
-        router.push('/');
-      }
-    }
-    else if(error.response.status == 501){
-      errorMessage.value = '用户不存在';
-    }
-    else if(error.response.status == 502){
-      errorMessage.value = '密码错误';
+    if(error.response.status == 501){
+      ElMessage.error('用户不存在')
     }
     else if (error.response.status == CONST.BANNED_USER) {
-      errorMessage.value = '账号被封禁，您可以申诉';
+        ElMessage.error('用户被封禁，您可以申诉');
       router.push('/appeal');
     }
     else if (error.response.status == 562) {
-        errorMessage.value = '请勿用同一手机号码频繁请求!'
+        ElMessage.error('请勿用同一手机号码频繁请求');
     } 
     else if (error.response.status == 563) {
-        errorMessage.value = '验证码错误!';
+        ElMessage.error('验证码错误');
     }
     else {
-      errorMessage.value = '请求错误';
+        ElMessage.error('请求失败，请重试');
     }
     //verificationButtonDisabled.value = false;
   });
@@ -258,11 +248,11 @@ function vertifyCode () {
     })
     .catch(error => {
         if (error.response.status = 563) 
-            errorMessage.value = '验证码错误!';
+            ElMessage.error('验证码错误')
         else if (error.response.status = 562) 
-            errorMessage.value = '请勿用同一手机号码频繁请求!';
+            ElMessage.error('请勿用同一手机号码频繁请求')
         else 
-            errorMessage.value = '请求失败，请重试!';
+            ElMessage.error('请求失败，请重试')
     });
 }
 
