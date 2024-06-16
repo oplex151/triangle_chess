@@ -2,13 +2,31 @@ from flask import jsonify
 from backend.tools import setupLogger
 from backend.message import *
 
+import os
 import redis
 import re
 import uuid
 import random
+from dotenv import load_dotenv
 from datetime import datetime, timedelta
 from aliyunsdkcore.client import AcsClient
 from aliyunsdkcore.request import CommonRequest
+
+load_dotenv()
+
+# 阿里云申请成功获取到的内容
+smss = {
+    "SMS_ACCESS_KEY_ID": "",  # key ID
+    "SMS_ACCESS_KEY_SECRET": "",  # 密钥
+    "SMS_SIGN_NAME": "",  # 签名
+    "AUTHENTICATION": "",  # 身份验证模板编码
+}
+
+smss['SMS_ACCESS_KEY_ID'] = os.getenv('SMS_ACCESS_KEY_ID')
+smss['SMS_ACCESS_KEY_SECRET'] = os.getenv('SMS_ACCESS_KEY_SECRET')
+smss['AUTHENTICATION'] = os.getenv('AUTHENTICATION')
+smss['SMS_SIGN_NAME'] = os.getenv('SMS_SIGN_NAME')
+
 
 logger = setupLogger()
 
@@ -38,13 +56,6 @@ def hget(name, key):
     return value.decode('utf-8') if value else value
 
 
-# 阿里云申请成功获取到的内容
-smss = {
-    "SMS_ACCESS_KEY_ID": "LTAI5tATCMM3GtfRmrayfn59",  # key ID
-    "SMS_ACCESS_KEY_SECRET": "94yNxCm687uPgFC8owqjvWEUwlm5nZ",  # 密钥
-    "SMS_SIGN_NAME": "三国象棋",  # 签名
-    "AUTHENTICATION": "SMS_468415195",  # 身份验证模板编码
-}
 
 
 class SendSms(object):
