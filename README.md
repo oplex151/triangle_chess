@@ -84,3 +84,14 @@ kill -9 xxxxx
 
 ```
 
+```
+验证码
+安装依赖 
+
+pip install redis
+
+pip install aliyunsdkcore
+
+pip install aliyun-python-sdk-core-v3
+```
+

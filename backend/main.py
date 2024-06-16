@@ -109,7 +109,7 @@ def registerApi():
     '''
     params = {'username':str, 'password':str, 'email':str, 'phone_num':str, 'gender':str}
     try:
-        username,password,email,phone_num,gender = getParams(params,request.form,['email','phone_num','gender'])
+        username,password,email,phone_num,gender = getParams(params,request.form,['email','gender'])
     except:
         return "{message: 'parameter error'}",PARAM_ERROR
     return register(username, password, email, phone_num, gender)
@@ -121,7 +121,7 @@ def getVerificationCodeApi():
     Args:
         phone_num:手机号
         category:短信模板编码
-            authentication: 身份验证
+        ??authentication: 身份验证
     Returns:
         发送短信验证码成功200
     """
@@ -216,17 +216,17 @@ def changePasswordApi():
     Description: 修改密码
     Args:
         userid: 用户id
-        old_password: 旧密码
+       
         new_password: 新密码
     Returns:
         修改成功200
     '''
-    params = {'userid':int, 'old_password':str, 'new_password':str}
+    params = {'userid':int, 'new_password':str}
     try:
-        userid,old_password,new_password = getParams(params,request.form)
+        userid,new_password = getParams(params,request.form)
     except:
         return "{message: 'parameter error'}",PARAM_ERROR
-    return changePassword(userid, old_password, new_password)
+    return changePassword(userid, new_password)
 
 @app.route('/api/adminLogin',methods=['POST'])
 def adminLoginApi():

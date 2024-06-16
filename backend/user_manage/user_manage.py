@@ -239,7 +239,7 @@ def changeUserInfo(userid:int, username:str=None, email:str=None, phone_num:str=
     return jsonify(res),status
 
 
-def changePassword(userid:int, old_password:str, new_password:str):
+def changePassword(userid:int, new_password:str):
     db = pymysql.connect(host="127.0.0.1",user="root",password=db_password,database=DATA_BASE)
     cursor = db.cursor()
     res,status = {},None
@@ -253,10 +253,10 @@ def changePassword(userid:int, old_password:str, new_password:str):
             logger.error("User {0} not exists".format(userid))
             status = USER_NOT_EXIST
             raise Exception("User not exists")
-        if data[0] != old_password:
-            logger.error("User {0} failed to change password due to wrong old password".format(userid))
-            status = WRONG_OLD_PASSWORD
-            raise Exception("Wrong old password")
+        # if data[0] != old_password:
+        #     logger.error("User {0} failed to change password due to wrong old password".format(userid))
+        #     status = WRONG_OLD_PASSWORD
+        #     raise Exception("Wrong old password")
         else:
             update_query = "UPDATE {0} SET userPassword = {1} WHERE userId = {2};".format(USER_TABLE,"'"+new_password+"'",userid)
             cursor.execute(update_query)

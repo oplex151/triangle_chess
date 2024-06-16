@@ -75,9 +75,33 @@ const getVerificationCode = () => {
       ElMessage.error('验证码发送失败');
       verificationButtonDisabled.value = false;
     }
-  }).catch(err => {
-    console.log(err);
-    ElMessage.error('请求失败，请重试');
+  }).catch(error => {
+    if (error.response.status == 506) {
+      // 请求已发出，但服务器响应状态码不在 2xx 范围内
+      errorMessage.value = '请勿重复登录';
+      if (Cookies.get('userid') !== undefined) {
+        router.push('/');
+      }
+    }
+    else if(error.response.status == 501){
+      errorMessage.value = '用户不存在';
+    }
+    else if(error.response.status == 502){
+      errorMessage.value = '密码错误';
+    }
+    else if (error.response.status == CONST.BANNED_USER) {
+      errorMessage.value = '账号被封禁，您可以申诉';
+      router.push('/appeal');
+    }
+    else if (error.response.status == 562) {
+        errorMessage.value = '请勿用同一手机号码频繁请求!'
+    } 
+    else if (error.response.status == 563) {
+        errorMessage.value = '验证码错误!';
+    }
+    else {
+      errorMessage.value = '请求错误';
+    }
     verificationButtonDisabled.value = false;
   });
 };
@@ -124,7 +148,6 @@ const phoneLogin = () => {
     }
   })
   .catch(error => {
-    // 捕获错误
     if (error.response.status == 506) {
       // 请求已发出，但服务器响应状态码不在 2xx 范围内
       errorMessage.value = '请勿重复登录';
@@ -142,10 +165,10 @@ const phoneLogin = () => {
       errorMessage.value = '账号被封禁，您可以申诉';
       router.push('/appeal');
     }
-    else if (error.response.status === 562) {
+    else if (error.response.status == 562) {
         errorMessage.value = '请勿用同一手机号码频繁请求!'
     } 
-    else if (error.response.status === 563) {
+    else if (error.response.status == 563) {
         errorMessage.value = '验证码错误!';
     }
     else {
@@ -168,8 +191,6 @@ const login = () => {
     }
   ).then(res => {
     if (res.status == 200) {
-
-      
       Cookies.set('userid',res.data.userid,{expires:expire_time});
       Cookies.set('username',res.data.username,{expires:expire_time});
       infoMessage.value = '登录成功';
@@ -211,16 +232,14 @@ const login = () => {
     <div class="background-image"></div>
     <div class="login-container">
       <div class="nav-container">
-        <el-button :type="loginMethod === 'username' ? 'primary' : 'default'"
-                   @click="loginMethod = 'username'"
-                   class="nav-button">
+        <button :class="loginMethod === 'username' ? 'nav-button' : 'normal-button'"
+                   @click="loginMethod = 'username'">      
           用户登录
-        </el-button>
-        <el-button :type="loginMethod === 'phone' ? 'primary' : 'default'"
-                   @click="loginMethod = 'phone'"
-                   class="nav-button">
+        </button>
+        <button :class="loginMethod === 'phone' ? 'nav-button' : 'normal-button'"
+                   @click="loginMethod = 'phone'">
           手机验证码登录
-        </el-button>
+        </button>
       </div>
 
       <div class="form-container">
@@ -415,6 +434,42 @@ const login = () => {
 .error-message {
   color: red;
   margin-top: 10px;
+}
+
+.nav-button{
+  cursor: pointer;
+  padding: 10px;
+  border-radius: 10px;
+  width: 150px;
+  font-size: 15px;
+  justify-content: center;
+  color: #fff;
+  border: none;
+  background-color:#f6bb4e;
+  margin: 10px;
+}
+
+.nav-button:hover{
+  background-color: #d59f39;
+}
+
+.normal-button{
+  cursor: pointer;
+  padding: 10px;
+  border-radius: 10px;
+  width: 150px;
+  font-size: 15px;
+  justify-content: center;
+  color: #000000;
+  border: none;
+  background-color:#ffffff;
+  margin: 10px;
+}
+
+
+
+.normal-button:hover{
+  background-color: #d7d7d7;
 }
 </style>
 

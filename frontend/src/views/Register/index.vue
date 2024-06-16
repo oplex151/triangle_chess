@@ -27,6 +27,17 @@ const checkUsername = (rule: any, value: any, callback: any) => {
         callback()
     }
 }
+
+const checkPhoneNum = (rule: any, value: any, callback: any) => {
+    if (value === '') {
+        callback(new Error('请输入手机号'))
+    } else if (!/^1[3-9]\d{9}$/.test(value)) {
+        callback(new Error('请输入有效的手机号'))
+    } else {
+        callback()
+    }
+}
+
 const checkPassword = (rule: any, value: any, callback: any) => {
     if (value === '') {
         callback(new Error('请输入密码'))
@@ -63,6 +74,12 @@ const Validator = reactive<FormRules<typeof RegisterForm>>(
             {
                 trigger: ['blur', 'change'],
                 validator: checkUsername
+            }
+        ],
+        phone_num: [
+            {
+                trigger: ['blur', 'change'],
+                validator: checkPhoneNum
             }
         ],
         password: [
@@ -139,6 +156,7 @@ const startCountdown = () => {
 
 // 提交注册表单
 const validateAndSubmitForm = (formEl: FormInstance | undefined) => {
+    console.log(formEl)
     if (!formEl) return;
     formEl.validate((valid) => {
         if (valid) {
@@ -147,20 +165,21 @@ const validateAndSubmitForm = (formEl: FormInstance | undefined) => {
                 'code': RegisterForm.verification_code
             }, {
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        }).then(response => {
-          if (response.status === 200) {
-            // 验证码正确，继续提交表单
-            submitForm(formEl);
-          }
-        })
-        .catch(error => {
-            if (error.response.status = 563) {
-                errorMessage.value = '验证码错误!';
-            }
-        });
-    } else {
-      ElMessage.error('请填写验证码');
-    }
+            }).then(response => {
+            if (response.status === 200) 
+                submitForm(formEl);
+            })
+            .catch(error => {
+                if (error.response.status = 563) 
+                    errorMessage.value = '验证码错误!';
+                else if (error.response.status = 562) 
+                    errorMessage.value = '请勿用同一手机号码频繁请求!';
+                else 
+                    errorMessage.value = '请求失败，请重试!';
+            });
+        } else {
+            ElMessage.error('请填写正确的信息');
+        }
   });
 };
 
@@ -301,10 +320,7 @@ watch(errorMessage, (oldValue, newValue) => {
                     <div class="form-label">邮&nbsp箱:&nbsp </div>
                     <el-input class="form-input" v-model="RegisterForm.email" type="text" autocomplete="on" />
                 </el-form-item>
-                <el-form-item prop="phone" class="form-group" :rules="[
-                    // { required: true, message: '请输入手机号' },
-                    { type: 'number', message: '请输入正确的手机号' },
-                ]">
+                <el-form-item prop="phone_num" class="form-group" >
                     <div class="form-label">手机号:&nbsp </div>
                     <el-input class="form-input" v-model="RegisterForm.phone_num" type="text" autocomplete="on">
                         <template #append>
@@ -411,7 +427,7 @@ watch(errorMessage, (oldValue, newValue) => {
 
 .login-container {
     width: 560px;
-    height: 660px;
+    min-height: 660px;
     padding: 20px;
     border: 1px solid #ccc;
     border-radius: 20px;
