@@ -166,8 +166,11 @@ const validateAndSubmitForm = (formEl: FormInstance | undefined) => {
             }, {
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             }).then(response => {
-            if (response.status === 200) 
-                submitForm(formEl);
+                if (response.status == 200) {
+                    console.log(response.data);
+                    console.log(RegisterForm.verification_code)
+                    submitForm(formEl);
+                }
             })
             .catch(error => {
                 if (error.response.status = 563) 
@@ -202,19 +205,21 @@ const submitForm = (formEl: FormInstance | undefined) => {
           ElMessage.success('注册成功！');
           disableForm.value = true;
           router.push('/login');
-        } else if (res.status === 503) {
-          errorMessage.value = '用户名已存在！';
-          disableForm.value = false;
-        } else if (res.status === 564) {
-          errorMessage.value = '手机号已存在！';
-          disableForm.value = false;
-        } else {
+        }else {
           disableForm.value = false;
           errorMessage.value = '注册失败！';
         }
       }).catch(err => {
-        ElMessage.error('注册失败！');
-        disableForm.value = false;
+        if (err.response.status === 503) {
+          errorMessage.value = '用户名已存在！';
+          disableForm.value = false;
+        } else if (err.response.status === 564) {
+          errorMessage.value = '手机号已存在！';
+          disableForm.value = false;
+        } else{
+            errorMessage.value = '注册失败！';
+            disableForm.value = false;
+        }
       });
     } else {
       ElMessage.error('请完整填写表单信息');
