@@ -17,7 +17,6 @@ from flask import request
 from backend.global_var import *
 from backend.tools import setupLogger, getParams
 from backend.user_manage import *
-from backend.user_manage.appeal import *
 from backend.tools.exception import *
 from backend.game.record import *
 from message import *
@@ -110,10 +109,65 @@ def registerApi():
     '''
     params = {'username':str, 'password':str, 'email':str, 'phone_num':str, 'gender':str}
     try:
-        username,password,email,phone_num,gender = getParams(params,request.form,['email','phone_num','gender'])
+        username,password,email,phone_num,gender = getParams(params,request.form,['email','gender'])
     except:
         return "{message: 'parameter error'}",PARAM_ERROR
     return register(username, password, email, phone_num, gender)
+
+@app.route('/api/getVerificationCode', methods=["POST"])
+def getVerificationCodeApi():
+    """
+    用户通过短信方式获取手机验证码
+    Args:
+        phone_num:手机号
+        category:短信模板编码
+        ??authentication: 身份验证
+    Returns:
+        发送短信验证码成功200
+    """
+    params = {'phone_num':str, 'category':str}
+    try:
+        phone_num,category = getParams(params,request.form)
+    except:
+        return "{message: 'parameter error'}",PARAM_ERROR
+    return getVerificationCode(category, phone_num)
+
+@app.route('/api/checkVerificationCode', methods=["POST"])
+def checkVerificationCodeApi():
+    """
+    用户验证码验证
+    Args:
+        phone_num:手机号
+        code:用户输入的验证码
+    Returns:
+        验证码验证成功200
+    """
+    params = {'phone_num':str, 'code':str}
+    try:
+        phone_num, code = getParams(params,request.form)
+    except:
+        return "{message: 'parameter error'}",PARAM_ERROR
+    return checkVerificationCode(phone_num, code)
+
+@app.route('/api/phoneLogin', methods=["POST"])
+def phoneLoginApi():
+    """
+    用户手机号验证码登录
+    Args:
+        phone_num:手机号
+        code:用户输入的验证码
+    Returns:
+        验证码验证成功200
+    """
+    params = {'phone_num':str, 'code':str}
+    try:
+        phone_num, code = getParams(params,request.form)
+    except:
+        return "{message: 'parameter error'}",PARAM_ERROR
+    res, status = checkVerificationCode(phone_num, code)
+    if status is not SUCCESS:
+        return res, status
+    return phoneLogin(phone_num)
 
 @app.route('/api/uploadImage', methods=['POST'])
 @gate
@@ -162,17 +216,17 @@ def changePasswordApi():
     Description: 修改密码
     Args:
         userid: 用户id
-        old_password: 旧密码
+       
         new_password: 新密码
     Returns:
         修改成功200
     '''
-    params = {'userid':int, 'old_password':str, 'new_password':str}
+    params = {'userid':int, 'new_password':str}
     try:
-        userid,old_password,new_password = getParams(params,request.form)
+        userid,new_password = getParams(params,request.form)
     except:
         return "{message: 'parameter error'}",PARAM_ERROR
-    return changePassword(userid, old_password, new_password)
+    return changePassword(userid, new_password)
 
 @app.route('/api/adminLogin',methods=['POST'])
 def adminLoginApi():
@@ -614,7 +668,7 @@ def getAllRoomsApi():
                         'holder':{'username':room.holder['username'],'userid':room.holder['userid']},
                         'started': 1 if room.game_table is not None else 0,
                         'room_type': 1 if room.room_type == RoomType.matched else 2 if room.room_type == RoomType.ranked else 0
-                        } for room in rooms_copy]
+                        } for room in rooms_copy if room.room_type == RoomType.created]
     print(rooms_to_return)
     return jsonify({'rooms':rooms_to_return}),SUCCESS
 
@@ -793,15 +847,15 @@ def joinRoom(data):
     if room.addUser(UserDict(userid=userid,username=sessions[userid])) == False:
         emit('processWrong',{'status':ROOM_FULL},to=request.sid)
         return
+    
     join_room(room_id)
 
-
-    
     try:
         avatar = avatar[userid]
     except KeyError:
         avatar = None
         logger.error(f"User {userid} has no avatar")
+
     if is_rejoin:
         logger.info(f"User {userid} rejoin to game {room.game_table.game_id}"
                     +f"this room's users: {room.users}")
@@ -1072,16 +1126,20 @@ def movePiece(data):
         return
     try:
         status = game.movePiece(userid, x1, y1, z1, x2, y2, z2)
-        if status != SUCCESS and status != GAME_END:
+        if status != SUCCESS and status != GAME_END and status != GAME_ONGOING:
             emit('processSuccess',{'status':status},to=request.sid)
             return
         else:
-            # 建议前端根据userid来判断到底是自己走成功了，还是其他人走的，自己这边要更新状态
+            if status == GAME_ONGOING: # new
+                logger.info(f"Draw was rejected, so game continues")
+                emit('gameOngoing', {'status': SUCCESS,'userid': userid, 'username': sessions[userid]}, to=room_id)
+            
             emit('movePieceSuccess',{'userid':userid,'status':status, 'username':sessions[userid],
                                      'x1':x1, 'y1':y1, 'z1':z1, 
                                      'x2':x2, 'y2':y2, 'z2':z2,'next_time':game.next_time},
                                      to=room_id)
             if status == GAME_END:
+                # TODO
                 roomOver(game=game, room=room, userid=game.winner_id)
             return
     except Exception as e:
@@ -1121,8 +1179,8 @@ def roomOver(game:GameTable, room:RoomManager, userid:int):
         logger.info(f"Game {game.game_id} end, winner is {sessions[userid] if userid in sessions else 'None'}")
         match_duration = (game.record.end_time - game.record.start_time)
         # 结束记录
-        state,recordId=game.record.recordEnd(None)
-        emit('gameEnd', {'status': GAME_END, 'recordId':recordId,'room_type':room_type,"step_count":game.step_count,"match_duration": match_duration.total_seconds(),'winner': -1, 'winner_name': None}, to=room.room_id,namespace='/')
+        state,record_id =game.record.recordEnd(None)
+        emit('gameEnd', {'status': GAME_END, 'record_id':record_id, 'room_info':room.getRoomInfo(),'room_type':room_type,"step_count":game.step_count,"match_duration": match_duration.total_seconds(),'winner': -1, 'winner_name': None}, to=room.room_id,namespace='/')
 
     room.removeGameTable()
     if room.room_type == RoomType.matched:
@@ -1207,6 +1265,11 @@ def requestSurrender(data):
         # 玩家投降
         status = game.surrender(userid)
 
+        if status == GAME_ONGOING: # 理论上不会触发
+            logger.info(f"Draw was rejected, so game continues")
+            emit('gameOngoing', {'status': SUCCESS,'userid': userid, 'username': sessions[userid]}, to=room_id)
+            
+
         # 通知所有玩家有玩家投降
         emit('surrenderSuccess',{'userid':userid,'username':sessions[userid],
                                 'game_info':game.getGameInfo(),'next_time':game.next_time},to=room_id)
@@ -1284,7 +1347,8 @@ def respondDraw(data):
     try:
         game.respondDraw(userid, agree)
         # 所有存活的玩家均已回应
-        if len(game.draw_respondents) == len(game.getAlivePlayers()):
+        # if game.draw_respondents == set(game.getAlivePlayers()):
+        if game.checkAllLivesRespondDraw():
             for res_agree in game.draw_agree:
                 if res_agree == False:
                     logger.info(f"Draw was rejected, so game continues")
@@ -1421,7 +1485,7 @@ def cycleTimeout(app):
                     next = heapq.heappop(timeout_heap)
                     if next[0] > time.time():
                         heapq.heappush(timeout_heap,next)
-                        logger.info(f"User {userid} left time {next[0] - time.time()}")
+                        # logger.info(f"User {userid} left time {next[0] - time.time()}")
                         break
                 except Exception as e:
                     break
@@ -1439,11 +1503,17 @@ def cycleTimeout(app):
                     logger.info(f"room id {room_id} has no game")
                     continue
                 if game_table.next_time > next[0]:
-                    logger.info(f"next time {next[0]} satisfied")
+                    # logger.info(f"next time {next[0]} satisfied")
                     continue
                 try:
                     # 玩家投降
                     status = game_table.surrender(userid)
+
+                    if status == GAME_ONGOING: # 理论上不会触发
+                        logger.info(f"Draw was rejected, so game continues")
+                        emit('gameOngoing', {'status': SUCCESS,'userid': userid, 'username': sessions[userid]}, to=room_id,
+                             namespace='/')
+            
                     logger.info(f"User {userid} timeout")
                     # 通知所有玩家有玩家超时
                     emit('surrenderTimeout',{'userid':userid,'username':sessions[userid],
@@ -1627,15 +1697,7 @@ def viewQueue():
         print(f"match_queue: {match_queue.queue}, rank_queue: {rank_queue.queue}")
         print(f'match_set: {match_queue.queue_set}, rank_set: {rank_queue.queue_set}')
 
-def surrenderGame(game:GameTable, userid:int):
-    """
-    投降游戏
-    Args:
-        game: 游戏对象
-        userid: 投降用户id
-    """
-    game.surrender(userid)
-    return SUCCESS
+
 
 threading.Thread(target=subtractSesion,daemon=True, name='subtractSesion').start()
 threading.Thread(target=cycleMatch,args=[app] ,daemon=True, name='cycleMatch').start()  #bug uwsgi不执行main函数

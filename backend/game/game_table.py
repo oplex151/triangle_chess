@@ -58,6 +58,7 @@ class GameTable:
         self.draw_requester = None  # 发起求和请求的玩家
         self.draw_respondents = set()  # 记录回应求和请求的玩家
         self.draw_agree = set()  # 记录对求和请求的回应
+        self.draw_failed = False  # 记录是否求和表决是否通过（仅在self.draw_respondents为空时有效）
 
         # 表现分相关
         self.captured_pieces = [[],[],[]] # 玩家捕获的对手棋子
@@ -181,10 +182,14 @@ class GameTable:
                         # 判断游戏是否结束
                         if self.checkGameEnd():
                             return GAME_END
-
+                        
                         self.turnChange() # 切换到下一个玩家
                         self.next_time = time.time()+self.time_interval # 这一个走棋开始的时间
                         heapq.heappush(timeout_heap, (self.next_time, self.users[self.turn]['userid'], self.game_id))
+
+                        if self.draw_failed:
+                            self.draw_failed = False # 清空之前的求和失败状态
+                            return GAME_ONGOING
 
                         return SUCCESS
             else:
@@ -275,6 +280,9 @@ class GameTable:
         if self.checkGameEnd():
             return GAME_END
         else:   
+            if self.draw_failed:
+                self.draw_failed = False # 清空之前的求和失败状态
+                return GAME_ONGOING
             return SUCCESS
 
     def requestDraw(self, userid:int):
@@ -345,8 +353,25 @@ class GameTable:
         return False
     
     def checkDraw(self):
-        # 实现判断平局条件的逻辑
-        pass
+        # 有求和请求而且存活的玩家都表决了
+        if self.draw_requester is not None and self.checkAllLivesRespondDraw():
+            self.setDraw(False)
+            for agree in self.draw_agree:
+                if agree == False:
+                    self.draw_failed = True
+                    return False
+            return True
+        return False
+    
+    def checkAllLivesRespondDraw(self):
+        # 所有存活玩家都回应了求和请求
+        if self.draw_requester is not None:
+            live_ids = self.getAlivePlayers()
+            for id in live_ids:
+                if id not in self.draw_respondents:
+                    return False
+            return True
+        return False
 
     def getUserResult(self, userid):
         '''
@@ -473,9 +498,9 @@ class RoomManager:
                 logger.info(f"User {userid} leave room {self.room_id}"+f"this room's users: {self.users}")
                 self.users.remove(leaved_user)
                 self.readys.pop(leaved_user['userid'])
-                if self.holder['userid'] == leaved_user['userid'] and len(self.users) > 0:
-                    # 房主退出房间，更换房主
-                    self.holder = self.users[0]
+                # if self.holder['userid'] == leaved_user['userid'] and len(self.users) > 0:
+                #     # 房主退出房间，更换房主
+                #     self.holder = self.users[0]
                 if self.game_table and leaved_user['userid'] in [u['userid'] for u in self.game_table.viewers]:
                     # 观战者离开直接送出游戏
                     self.game_table.viewers.remove(leaved_user)
@@ -496,6 +521,8 @@ class RoomManager:
         Description: 获取房间信息
         Returns:
             dict: 房间信息
+        NOTES:
+            返回的users字段在游戏开始后不会改变，即使有人离开
         '''
         data = {
             'room_id': self.room_id,
@@ -504,6 +531,7 @@ class RoomManager:
             'users': self.game_table.users if self.game_table else self.users[:3],
             'viewers': self.game_table.viewers if self.game_table else self.users[3:] if len(self.users) > 3 else [],
             'readys': self.readys,
+            'all_users': self.users,
         }
         return data
 

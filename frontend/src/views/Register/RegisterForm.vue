@@ -99,6 +99,16 @@ const checkRepassword = (rule: any, value: any, callback: any) => {
     }
 }
 
+const checkPhoneNum = (rule: any, value: any, callback: any) => {
+    if (value === '') {
+        callback()
+    } else if (!/^1[3-9]\d{9}$/.test(value)) {
+        callback(new Error('手机号格式不正确'))
+    } else {
+        callback()
+    }
+}
+
 const Validator = reactive<FormRules<typeof RegisterForm>>(
     {
         username: [

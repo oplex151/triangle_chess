@@ -159,6 +159,9 @@ const sockets_methods = {
       case CONST.GAME_CREATE_FAILED:
         ElMessage.error('游戏创建失败:未知错误')
         break
+      case CONST.NOT_JOIN_GAME:
+        ElMessage.error('你还未加入游戏')
+        break
       case CONST.ROOM_FULL:
         ElMessage.error('房间已满')
         getAllRooms()
@@ -247,13 +250,12 @@ const sockets_methods = {
   },
   rejoinGameSuccess(data){
     removeSockets(sockets_methods, socket.value, proxy)
-    // Cookies.set('room_id',data.room_id)
+    // Cookies.set('room_id',data.room_id) 在joinRoomSuccess中设置
   
     Cookies.set('room_info',JSON.stringify(data.room_info))
     sockets_methods.joinRoomSuccess(data)
 
     router.replace('/game')
-
   },
   createGameSuccess(data){
     
@@ -323,6 +325,7 @@ onMounted(() => {
     })
   }
   else{
+    // 防止从其他页面进来之间进入房间
     Cookies.remove('room_id')
     Cookies.remove('room_info')
     getAllRooms()
