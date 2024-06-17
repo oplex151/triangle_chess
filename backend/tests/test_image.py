@@ -2,10 +2,7 @@ import os
 import base64
 from io import BytesIO
 from PIL import Image
-from faker import Faker
 
-
-fak = Faker()
 
  # 输入为base64格式字符串，输出为PIL格式图片
 def base64_to_image(base64_str):  # 用 b.show()可以展示

@@ -8,12 +8,13 @@ import { useRouter } from 'vue-router';
 import { ElDivider, ElInput, ElMessage } from 'element-plus'
 //import * as CONST from '@/lib/const.js'
 import { User, HomeFilled } from '@element-plus/icons-vue'
-import { Menu as IconMenu, Message, Phone } from '@element-plus/icons-vue'
+import { Menu as IconMenu, Message, Phone,Lock } from '@element-plus/icons-vue'
 import UserInfo from './UserInfo.vue'
 import Record from '@/views/Record/index.vue'
 import Apeal from '@/views/Apeal/index.vue'
 import Feedback from './Feedback.vue'
 import FriendDrawer from '@/components/views/FriendDrawer.vue';
+import ChangePassword from './ChangePassword.vue'
 
 
 const router = useRouter()
@@ -43,6 +44,9 @@ function handleSelect(index: string) {
       break
     case '4':
       CurrentView.value = Feedback
+      break
+    case '5':
+      CurrentView.value = ChangePassword
       break
     default:
       break
@@ -94,6 +98,11 @@ function handleSelect(index: string) {
                 <template #title>
                   <el-icon><Message /></el-icon>回复
                 </template> 
+              </el-menu-item>
+              <el-menu-item index="5">
+                <template #title>
+                  <el-icon><Lock /></el-icon>修改密码
+                </template>
               </el-menu-item>
             </el-menu>
           </el-scrollbar>

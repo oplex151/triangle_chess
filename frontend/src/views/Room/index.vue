@@ -9,11 +9,13 @@ import Cookies from 'js-cookie'
 import { useRouter } from 'vue-router';
 import { ElDivider, ElInput, ElMessage } from 'element-plus'
 import * as CONST from '@/lib/const.js'
-import { resetLives } from '@/chesses/Live';
+import { resetLives } from '@/lib/live';
 import { User, HomeFilled } from '@element-plus/icons-vue'
 
 import Avatar from '@/components/views/Avatar.vue'
 import Report from '@/components/views/Report.vue'
+
+const TIME_INTERVAL = 40
 
 const { proxy } = getCurrentInstance()
 const router = useRouter()
@@ -27,22 +29,30 @@ const to_report_id= ref(0)
 const vis = ref(false)
 
 const avatars = ref({})
-// 格式提示：
-// room_info:{
-//   room_id:xxx,
-//   room_type:xxx,
-//   users:[
-//     {
-//       userid:1,
-//       username:'user1',
-//     },
-//     ...
-//   ],
-//   holder:{
-//     userid:1,
-//     username:'user1'
-//   }
-//}
+
+const creating = ref(false)
+const joining = ref(false)
+const rooms = ref([])
+const locked = ref(0)
+const room_password = ref('')
+const time_interval = ref(TIME_INTERVAL)
+
+const ready_status = computed(() => {
+  if (room_info.value) {
+    try{
+      let user_ready = room_info.value.readys[Cookies.get('userid')]
+      if (user_ready)
+        return true
+      else
+        return false
+    }
+    catch(e){
+      return false
+    }
+  }
+  return false
+})
+
 const my_name = computed(() => {
   if (room_info.value) {
     for (let user of room_info.value.users) {
@@ -53,6 +63,22 @@ const my_name = computed(() => {
   }
   return ''
 })
+
+const getUserReadyStatus = (userid) => {
+  if (room_info.value) {
+    try{
+      let user_ready = room_info.value.readys[userid]
+      if (user_ready)
+        return true
+      else
+        return false
+    }
+    catch(e){
+      return false
+    }
+  }
+  return false
+}
 
 const sockets_methods = {
   createRoomSuccess(data){
@@ -115,6 +141,7 @@ const sockets_methods = {
         Cookies.remove('room_info')
         room_id.value = null
         room_info.value = null
+        getAllRooms()
         break
       case CONST.NOT_IN_ROOM:
         ElMessage.error('不在房间中')
@@ -126,15 +153,29 @@ const sockets_methods = {
       case CONST.ROOM_NOT_ENOUGH:
         ElMessage.error('房间人数不足')
         break
+      case CONST.NOT_ALL_READY:
+        ElMessage.error('还有玩家未准备')
+        break
       case CONST.GAME_CREATE_FAILED:
         ElMessage.error('游戏创建失败:未知错误')
         break
+      case CONST.NOT_JOIN_GAME:
+        ElMessage.error('你还未加入游戏')
+        break
       case CONST.ROOM_FULL:
         ElMessage.error('房间已满')
+        getAllRooms()
         break
       case CONST.USER_NOT_LOGIN:
         ElMessage.error('用户未登录')
         router.push('/login')
+        break
+      case CONST.ROOM_PASSWORD_ERROR:
+        ElMessage.error('房间密码错误')
+        getAllRooms()
+        break
+      case CONST.GAME_ALREADY_START:
+        ElMessage.error('游戏已经开始，请前往观战入口进入观战')
         break
       case CONST.SESSION_EXPIRED: //Session expired
         Cookies.remove('room_id')
@@ -153,6 +194,7 @@ const sockets_methods = {
       default:
         //console.error(data.status)
         ElMessage.error('未知错误')
+        getAllRooms()
     }
   },
   leaveRoomSuccess(data){
@@ -179,9 +221,40 @@ const sockets_methods = {
       avatars.value[data.userid] = null
     }
   },
+  userRemovedSuccess(data){
+    // if (data.userid == -1){
+    //   Cookies.remove('room_id')
+    //   Cookies.remove('room_info')
+    //   room_id.value = null
+    //   room_info.value = null
+    //   ElMessage.success('房主离开，房间解散！')
+    // }
+    // else 
+    if (data.userid == Cookies.get('userid')){
+      Cookies.remove('room_id')
+      Cookies.remove('room_info')
+      room_id.value = null
+      room_info.value = null
+      ElMessage.success('你已被请离房间')
+      avatars.value = {}
+      getAllRooms()
+    }
+    else{
+      if(room_info.value.holder.userid == Cookies.get('userid')) 
+        ElMessage.success('玩家'+data.username+'被你移除房间')
+      else
+        ElMessage.success('玩家'+data.username+'被房主移除房间')
+      room_info.value = data.room_info
+      avatars.value[data.userid] = null
+    }
+  },
   rejoinGameSuccess(data){
     removeSockets(sockets_methods, socket.value, proxy)
-    Cookies.set('room_id',data.room_id)
+    // Cookies.set('room_id',data.room_id) 在joinRoomSuccess中设置
+  
+    Cookies.set('room_info',JSON.stringify(data.room_info))
+    sockets_methods.joinRoomSuccess(data)
+
     router.replace('/game')
   },
   createGameSuccess(data){
@@ -209,6 +282,9 @@ const sockets_methods = {
   receiveMessage(data){
     if(data.username!=my_name.value)
       o_message.value.push({ 'user': data.username, 'message': data.message })
+  },
+  changeReadyStatusSuccess(data){
+    room_info.value = data.room_info
   },
 }
 
@@ -249,8 +325,10 @@ onMounted(() => {
     })
   }
   else{
+    // 防止从其他页面进来之间进入房间
     Cookies.remove('room_id')
     Cookies.remove('room_info')
+    getAllRooms()
   }
   sessionStorage.removeItem('fromGame')
 })
@@ -266,14 +344,43 @@ function establishConnection() {
   //console.log(socket.value)
 }
 function createRoom() {
-  socket.value.io.emit('createRoom', { 'userid': Cookies.get('userid') })
-}
-function joinRoom() {
-  if (!new_room_id.value) {
-    ElMessage.error('请输入房间号')
+  if (locked.value=='1' && !room_password.value) {
+    ElMessage.error('请输入房间密码')
     return
   }
-  socket.value.io.emit('joinRoom', { 'room_id': new_room_id.value, 'userid': Cookies.get('userid') })
+  else if (locked.value=='1' &&
+  room_password.value && 
+  (room_password.value.length != 6
+  || !/^[0-9]{6}$/.test(room_password.value))){
+    ElMessage.error('房间密码为6位数字')
+    return
+  }
+  if (time_interval.value < 30 || time_interval.value > 120) {
+    ElMessage.error('最大思考时间为30-120秒')
+    return
+  }
+  creating.value = false
+  socket.value.io.emit('createRoom', { 'userid': Cookies.get('userid'),
+                                    'password': room_password.value , 
+                                    'locked': locked.value,
+                                    'time_interval': time_interval.value })
+}
+
+function joinRoomBefore(room_id) {
+  room_password.value = ''
+  new_room_id.value = room_id
+  joining.value = true
+}
+
+
+function joinRoomByPassword(room_id,password) {
+  socket.value.io.emit('joinRoom', { 'room_id': room_id, 'userid': Cookies.get('userid') ,'password': password })
+  joining.value = false
+  new_room_id.value = null
+}
+
+function joinRoom(room_id) {
+  socket.value.io.emit('joinRoom', { 'room_id': room_id, 'userid': Cookies.get('userid') })
   new_room_id.value = null
 }
 function leaveRoom() {
@@ -282,6 +389,13 @@ function leaveRoom() {
   o_message.value = []
 
 }
+
+function createRoomBefore(){
+  room_password.value = ''
+  locked.value = false
+  creating.value = true
+}
+
 function createGame() {
   axios.post(main.url + '/api/game/create',
     { 'room_id': room_id.value, 'userid': Cookies.get('userid') },
@@ -304,6 +418,12 @@ function createGame() {
       }
   })
 }
+
+function changeReadyStatus(){
+  socket.value.io.emit('changeReadyStatus', { 'room_id': room_id.value, 'userid': Cookies.get('userid') })
+}
+
+
 function goBackHome(){
   removeSockets(sockets_methods, socket.value, proxy)
   Cookies.remove('room_id')
@@ -342,49 +462,197 @@ const handleReport = (id) => {
   vis.value = true;
 }
 
+const canremove = (id) =>{
+  if (room_info.value && room_info.value.holder.userid == Cookies.get('userid') && id != Cookies.get('userid'))
+    return true
+  return false
+}
+
+const removeUser = (id) => {
+  if(Cookies.get('userid')!= room_info.value.holder.userid)
+  {
+    ElMessage.error('只有房主可以移除玩家')
+    return
+  }  
+  socket.value.io.emit('removeUserFromRoom', { 'room_id': room_id.value, 'userid': Cookies.get('userid'), 'target_userid': id })
+}
+
+function getAllRooms() {
+  axios.post(main.url + '/api/getAllRooms',{
+    'userid': Cookies.get('userid')  //后端确认用
+  },
+  {
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, 
+  }).then(res => {
+    if (res.status==200){
+      //console.log(res.data.rooms)
+      rooms.value = res.data.rooms
+    }
+    else{
+      rooms.value = []
+    }
+  }).catch(error => {
+    if (error.response.status == CONST.SESSION_EXPIRED){
+      Cookies.remove('room_id')
+      Cookies.remove('userid')
+      Cookies.remove('room_info')
+      Cookies.remove('username')
+      Cookies.remove('camp')
+      ElMessage({
+        message: '会话过期，请重新登录!!!',
+        grouping: true,
+        type: 'error',
+        showClose: true
+      })
+      router.replace('/login')
+    }
+    rooms.value = []
+  })
+}
+
 </script>
 
 <template>
   <div class="background-image">  </div>
+
+  <el-dialog v-model="creating"
+  title="房间设置"
+  width="400"
+  :before-close="()=>{locked=0;room_password='';time_interval=TIME_INTERVAL;creating=false}">
+    <div class="create-room-cfg">
+      <div style="padding-bottom: 10px; text-align: left;">
+      设置最大思考时间（30秒-120秒）
+      <input type="number" v-model="time_interval"
+        class="info-text"
+        placeholder="设置最大思考时间（秒）">
+      </input>
+      </div>
+      <el-radio-group v-model="locked"
+        class="info-text">
+          <el-radio value='1' size="large">上锁</el-radio>
+          <el-radio value='0' size="large">不上锁</el-radio>
+      </el-radio-group>
+      <div
+      style="height: 10px;"
+      ></div>
+      <input type="text" v-model="room_password" v-if="locked==1"
+        class="info-text"
+        placeholder="密码（6位数字）">
+      </input>
+      <div style="padding-top: 20px; text-align: right">
+      <button class="button-create" @click="createRoom()">创建</button>
+      </div>
+    </div>
+  </el-dialog>>
+
+  <el-dialog v-model="joining"
+  title="输入密码"
+  width="400"
+  :before-close="()=>{room_password='';joining=false}">
+    <input v-model="room_password"
+        class="info-text"
+        placeholder="密码（6位数字）">
+      </input>
+      <div style="padding-top: 20px; text-align: right">
+      <button class="button-create" @click="joinRoomByPassword(new_room_id,room_password)">加入</button>
+      </div>
+  </el-dialog>
+
   <div class="container">
     <button class="button-home" @click="goBackHome()">
       <el-icon style="vertical-align: middle" size="30px">
         <HomeFilled />
       </el-icon>
     </button>
-    <div class="room-title" v-if="room_id">
-      <span >用户 </span>
-      <span class="emphasis-text">
-        {{ room_info.holder.username }}  
-      </span>
-      <span> 的房间 </span>
-      <span class="emphasis-text">
-        {{ room_info.room_id }}
-        <button class = "copy-button" 
-        @click="copyRoomId">复制</button>
-      </span>
+    <div v-if="room_id">
+      <div class="room-title">
+        <span >用户 </span>
+        <span class="emphasis-text">
+          {{ room_info.holder.username }}  
+        </span>
+        <span> 的房间 </span>
+        <span class="emphasis-text">
+          {{ room_info.room_id }}
+          <button class = "copy-button" 
+          @click="copyRoomId">复制</button>
+        </span>
+      </div>
     </div>
 
+    <div v-if="!room_id">
+      <div class="create-room">
+        <button class="button-create"
+        @click="createRoomBefore()">
+        创建房间
+        </button>
+      </div>
 
-    <div class="create-room">
-      <button class="button-create"
-      v-if="!room_id"
-      @click="createRoom()">
-      创建房间
-      </button>
+      <div class="all-rooms-table"> 
+        <div>
+          <button class="refresh-button" @click="getAllRooms()">刷新</button>
+        </div>
+        <div class="room-table-title">房间列表</div>
+        <div class="room-item-container">
+            <div class="room-item"
+            style="width: 290px!important;">
+              {{"房间id"}}
+            </div>
+            <div class="room-item"
+            style="width: 100px!important;">
+              {{"房主"}}
+            </div>
+            <div class="room-item"
+            style="width: 100px!important;">
+              {{"房间人数"}}
+            </div>
+            <div class="room-item"
+            style="width: 150px!important;">
+              {{"房间状态"}}
+            </div>
+            <div class="room-item"
+            style="width: 100px!important;">
+              {{"房间按钮"}}
+            </div>
+          </div>
+        <template v-for="room in rooms">
+          <div class="room-item-container">
+            <div class="room-item"
+            style="width: 290px!important;">
+              {{room.room_id}}
+            </div>
+            <div class="room-item"
+            style="width: 100px!important;">
+              {{room.holder.username}}
+            </div>
+            <div class="room-item"
+            style="width: 100px!important;">
+              {{room.user_num+'/3'}}
+            </div>
+            <div class="room-item"
+            style="width: 150px!important;">
+              {{(room.locked!=1?'开放':'加密')+'| '+(room.started?'已开始':'未开始')}}
+            </div>
+            <div class='button-join'
+            @click="room.locked!=1? joinRoom(room.room_id):
+            joinRoomBefore(room.room_id)">
+              加入房间
+            </div>
+          </div>
+        </template>
+      </div>
+
+      <!-- <div class="join-room">
+        <input 
+        class = "input-join"
+        v-model="new_room_id" 
+        placeholder="输入房间号"
+        />
+        <button class="button-join"  @click="joinRoom()">
+          加入房间
+        </button>
+      </div> -->
     </div>
 
-    <div class="join-room">
-      <input 
-      class = "input-join"
-      v-if="!room_id" 
-      v-model="new_room_id" 
-      placeholder="输入房间号"
-      />
-      <button class="button-join" v-if="!room_id"  @click="joinRoom()">
-        加入房间
-      </button>
-    </div>
     <div>
       <button
       class="button-leave" 
@@ -396,6 +664,10 @@ const handleReport = (id) => {
       v-if="room_id && room_info.holder.userid == Cookies.get('userid')" 
       @click="createGame()">
         开始游戏
+      </button>
+      <button v-else-if="room_id" @click="changeReadyStatus()"
+      :class="ready_status?'button-cancel':'button-create-game'">
+        {{ready_status?'取消准备':'准备'}}
       </button>
     </div>
     <ElDivider/>
@@ -413,8 +685,12 @@ const handleReport = (id) => {
               <template #avatar>
                 <img :src="main.url+avatars[user.userid]" alt="头像" />
               </template>
+              <template #custom>
+                <button v-if="canremove(user.userid)" class="remove-user-button" @click="removeUser(user.userid)">移除</button>
+              </template>
             </Avatar>
-            <span class="user-name" style="vertical-align: middle">{{ user.username }}</span>
+            <span :class="getUserReadyStatus(user.userid)?'ready-user-name':'user-name'" style="vertical-align: middle">{{ user.username }}</span>
+          
           </li>
         </div>
       </div>
@@ -427,7 +703,7 @@ const handleReport = (id) => {
           </li>
         </div>
         <el-input class="custom-input" v-model="i_message" maxlength=80 show-word-limit placeholder="Please input" />
-        <el-button @click="sendMessage" style="width:60px" type="primary">发送消息</el-button>
+        <el-button @click="sendMessage" style="width:60px;border-radius:5px; margin-top: 10px;" type="primary">发送消息</el-button>
       </div>
       <div class="room-info">
         <div v-if="room_info" class="room-tag" >
@@ -576,6 +852,21 @@ const handleReport = (id) => {
   font-family:'Times New Roman', Times, serif
 }
 
+.remove-user-button {
+    justify-content: center;
+    background-color: #f6bb4e;
+    color: #fff;
+    border: none;
+    border-radius: 15px;
+    /* 增加垂直内边距 */
+    margin: auto;
+    cursor: pointer;
+    font-size: 15px;
+    margin: 5px;
+    width: 70px;
+}
+
+
 .button-create {
   background-color: #ecb920;
   color: white;
@@ -608,13 +899,12 @@ const handleReport = (id) => {
 }
 
 .button-join {
-  margin-top: 10px;
   background-color: #ecb920;
   color: white;
   border: none;
-  padding: 10px 20px;
+  padding: 10px;
   border-radius: 5px;
-  font-size: 18px;
+  font-size: 16px;
   cursor: pointer;
 }
 
@@ -639,6 +929,7 @@ const handleReport = (id) => {
   font-size: 18px;
   cursor: pointer;
   margin-right: 20px;
+  width:112px;
 }
 
 .button-leave:hover {
@@ -655,10 +946,28 @@ const handleReport = (id) => {
   font-size: 18px;
   cursor: pointer;
   margin-left: 20px;
+  width:112px;
 }
 
 .button-create-game:hover {
   background-color: #bbe62d;
+}
+
+.button-cancel {
+  margin-top: 10px;
+  background-color: #f47710;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  font-size: 18px;
+  cursor: pointer;
+  margin-left: 20px;
+  width:112px;
+}
+
+.button-cancel:hover {
+  background-color:#f8903b
 }
 
 .room-info {
@@ -696,8 +1005,9 @@ const handleReport = (id) => {
   padding-top: 10px;
   padding-bottom: 10px;
   height: 60px;
-  display: inline-flex;
+  display:flex;
   color: #ecb920;
+  text-align: left;
 }
 
 .user .user-show{
@@ -723,6 +1033,93 @@ const handleReport = (id) => {
   overflow: hidden;
 }
 
+.ready-user-name{
+  color: #a7d413;
+  margin-left: 20px;
+  font-size: 18px;
+  font-weight: bold;
+  max-width: 40%;
+  overflow: hidden;
+}
 
 /* 添加其他样式以美化页面 */
+
+.all-rooms-table{
+  margin-top: 20px;
+  max-width: 900px;
+  position: relative;
+  left: 50%; 
+  transform: translateX(-50%);
+  background-color: bisque;
+  border-radius: 10px;
+  padding: 10px 10px;
+  height: 500px;
+  overflow-y: auto;
+}
+
+.refresh-button{
+  background-color: #ecb920;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  font-size: 18px;
+  cursor: pointer;
+  position: absolute;
+  right: 10px;
+}
+
+.refresh-button:hover{
+  transform: scale(1.05);
+  background-color: #e0a61b;
+}
+
+.create-room-cfg{
+  margin-top: 20px;
+  max-width: 300px;
+  padding: 20px;
+  text-align: center;
+  display: block;
+}
+
+.info-text {
+  text-align: left;
+  width: 300px;
+  display: inline-block;
+  height: 50px;
+  padding: 10px;
+  font-size: 16px;
+  border-color: #333;
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 5px;
+}
+
+.room-table-title{
+  font-size: 24px;
+  font-weight: bold;
+  color: #ecb920;
+  font-family:'Times New Roman', Times, serif;  
+  margin-bottom: 20px;
+
+}
+
+.room-item-container{
+  display: inline-flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  padding: 10px;
+}
+
+.room-item{
+  margin-top: 10px;
+  font-size: 18px;
+  font-weight: bold;
+  color: #101010;
+  font-family:'Times New Roman', Times, serif;
+  background-color: rgb(253, 242, 229);
+  padding: 10px;
+  border-radius: 5px;
+}
 </style>

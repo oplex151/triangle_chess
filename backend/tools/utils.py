@@ -1,5 +1,28 @@
 from flask import request
 from .logger import  setupLogger
+
+'''
+this is a tool to validate and extract parameters from a request object,
+you just need to provide a dictionary with the required parameters and their types, all data will be transformed to that specified type.
+this will help your partners who work on the frontend to know what parameters they need to send to your API.
+
+example usage:
+
+```
+from flask import request
+from .utils import getParams
+
+@app.route('/test', methods=['POST'])
+def test():
+    required_args = {'a': int, 'b': str}
+    can_be_none = ['b']
+    data = request.get_json()
+    a,b = getParams(required_args, data, can_be_none)
+    return jsonify({'a': a, 'b': b})
+
+the paramster "can_be_none" is optional and can be used to specify which parameters can be None.
+'''
+
 logger = setupLogger()
 
 testdict = {'a': 1, 'b': 'dsa'}

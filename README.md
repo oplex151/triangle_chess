@@ -1,6 +1,6 @@
 # No Bug Action
 
-### 操作说明
+### 团队操作说明（公开的操作说明见PDF版）
 
 ```
 #### 前端依赖
@@ -28,8 +28,8 @@ pip install -r requirements.txt
 pip install uswgi （本地运行不需要）
 
 在fontend/src/main.js更换地址为
- url: "http://124.70.208.148"
- self_url: "http://124.70.208.148"
+ url: 服务器地址
+ self_url: 服务器地址
 
 
 ### 数据库
@@ -78,9 +78,36 @@ kill -9 xxxxx
 #### `nginx`配置文件位置
 ..../backend/uwsgi.ini
 
+```
 
+```
+安装redis
+sudo apt install lsb-release curl gpg
 
+curl -fsSL https://packages.redis.io/gpg | sudo gpg --dearmor -o /usr/share/keyrings/redis-archive-keyring.gpg
 
+echo "deb [signed-by=/usr/share/keyrings/redis-archive-keyring.gpg] https://packages.redis.io/deb $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/redis.list
 
+sudo apt-get update
+
+sudo apt-get install redis
+
+pip install redis
+
+pip install aliyunsdkcore
+
+pip install aliyun-python-sdk-core-v3
+
+启动redis
+
+systemctl start redis-server
+
+重启redis
+
+service redis-server restart
+
+查看redis状态
+
+service redis-server status
 ```
 

@@ -18,11 +18,15 @@ export const GAME_CREATE_FAILED = 511;
 export const NOT_YOUR_TURN = 512;
 export const BANNED_USER = 514;
 export const ROOM_FULL = 516;
+export const REPEAT_DRAW_REQUEST = 517;
+export const ROOM_PASSWORD_ERROR = 518;
+export const GAME_ALREADY_START = 519;
 
 export const ROOM_NOT_EXIST = 520 ;
 export const ALREADY_IN_ROOM = 521;
 export const NOT_IN_ROOM = 522;
 export const ROOM_NOT_ENOUGH = 523;
+export const NOT_ALL_READY = 526;
 
 
 export const ALREADY_FRIEND = 530; // already friend,拼写不一样
@@ -32,6 +36,12 @@ export const NOT_FRIEND = 532;
 export const NO_APPEALS = 541;
 
 export const SESSION_EXPIRED = 550;
+
+export const PHONE_NUMBER_ERROR = 560 
+export const CATEGORY_NOT_EXIST = 561 
+export const FREQUENT_OPERATION = 562 
+export const VERIFICATION_CODE_ERROR = 563 
+
 
 export const MOVE_NO_PIECE = 601;
 export const MOVE_OUT_OF_BOARD = 602;

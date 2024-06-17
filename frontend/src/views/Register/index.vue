@@ -14,6 +14,7 @@ const RegisterForm = reactive({
     username: '',
     email: '',
     phone_num: '',
+    verification_code: '',
     password: '',
     repassword: '',
     gender: ''
@@ -26,6 +27,17 @@ const checkUsername = (rule: any, value: any, callback: any) => {
         callback()
     }
 }
+
+const checkPhoneNum = (rule: any, value: any, callback: any) => {
+    if (value === '') {
+        callback(new Error('请输入手机号'))
+    } else if (!/^1[3-9]\d{9}$/.test(value)) {
+        callback(new Error('请输入有效的手机号'))
+    } else {
+        callback()
+    }
+}
+
 const checkPassword = (rule: any, value: any, callback: any) => {
     if (value === '') {
         callback(new Error('请输入密码'))
@@ -64,6 +76,12 @@ const Validator = reactive<FormRules<typeof RegisterForm>>(
                 validator: checkUsername
             }
         ],
+        phone_num: [
+            {
+                trigger: ['blur', 'change'],
+                validator: checkPhoneNum
+            }
+        ],
         password: [
             {
                 trigger: ['blur', 'change'],
@@ -79,55 +97,192 @@ const Validator = reactive<FormRules<typeof RegisterForm>>(
     }
 )
 
-const submitForm = (formEl: FormInstance | undefined) => {
-    if (!formEl) return
+// 新增的响应式变量
+const verificationButtonDisabled = ref(false); // 控制验证码按钮的状态
+const verificationButtonText = ref('获取验证码');
+const countdown = ref(60); // 验证码倒计时
+
+// 获取验证码的逻辑
+const getVerificationCode = () => {
+  if (!RegisterForm.phone_num || !/^1[3-9]\d{9}$/.test(RegisterForm.phone_num)) {
+    ElMessage.error('请输入有效的手机号');
+    return;
+  }
+
+  verificationButtonDisabled.value = true;
+  console.log('phone_num is' + RegisterForm.phone_num);
+
+  axios.post(main.url + '/api/getVerificationCode', {
+    'phone_num': RegisterForm.phone_num,
+    'category': "authentication"
+  },{
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    }).then(res => {
+    if (res.status === 200) {
+      ElMessage.success('验证码已发送');
+      startCountdown();
+    } else {
+      ElMessage.error('验证码发送失败');
+      verificationButtonDisabled.value = false;
+    }
+  }).catch(err => {
+    console.log(err);
+    if (err.response.status === 562) {
+        ElMessage.error('请勿用同一手机号码频繁请求!');
+    } 
+    else{
+        ElMessage.error('请求失败，请重试');
+    }
+    verificationButtonDisabled.value = false;
+  });
+};
+
+// 倒计时逻辑
+const startCountdown = () => {
+    let countdown = 60; // 倒计时秒数
+    verificationButtonText.value = `${countdown}秒后重新获取`;
+    
+    const timer = setInterval(() => {
+        countdown--;
+        if (countdown <= 0) {
+        clearInterval(timer);
+        verificationButtonText.value = '获取验证码';
+        verificationButtonDisabled.value = false;
+        } else {
+        verificationButtonText.value = `${countdown}秒后重新获取`;
+        }
+    }, 1000);
+};
+
+// 提交注册表单
+const validateAndSubmitForm = (formEl: FormInstance | undefined) => {
+    console.log(formEl)
+    if (!formEl) return;
     formEl.validate((valid) => {
         if (valid) {
-            //console.log('submit!')
-            disableForm.value = true
-            axios.post(main.url + '/api/register', {
-                'username': RegisterForm.username,
-                'password': RegisterForm.password,
-                'email': RegisterForm.email,
+            axios.post(main.url + '/api/checkVerificationCode', {
                 'phone_num': RegisterForm.phone_num,
-                'gender': RegisterForm.gender
-                /* Hash! */
-            },
-            {
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            }
-            ).then(res => {
-                if (res.status === 200) {
-                    ElMessage.success("注册成功！")
-                    disableForm.value = true
-                    router.push('/login');
+                'code': RegisterForm.verification_code
+            }, {
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            }).then(response => {
+                if (response.status == 200) {
+                    console.log(response.data);
+                    console.log(RegisterForm.verification_code)
+                    submitForm(formEl);
                 }
-                else if (res.status === 503) {
-                    errorMessage.value = '用户名已存在！'
-                    disableForm.value = false
-                }
-                else {
-                    disableForm.value = false
-                    errorMessage.value = '未知错误'
-                }
-            }).catch(err => {
-                //console.log(err);
-                errorMessage.value = err;
-                disableForm.value = false
-
+            })
+            .catch(error => {
+                if (error.response.status = 563) 
+                    errorMessage.value = '验证码错误!';
+                else if (error.response.status = 562) 
+                    errorMessage.value = '请勿用同一手机号码频繁请求!';
+                else 
+                    errorMessage.value = '请求失败，请重试!';
             });
-            disableForm.value = false
         } else {
-            //console.log('error submit!');
-            errorMessage.value = '注册表单出错!'
-            disableForm.value = false
-            return false
+            ElMessage.error('请填写正确的信息');
         }
-    })
-}
+  });
+};
+
+// 提交表单函数
+const submitForm = (formEl: FormInstance | undefined) => {
+  if (!formEl) return;
+  formEl.validate((valid) => {
+    if (valid) {
+      disableForm.value = true;
+      axios.post(main.url + '/api/register', {
+        'username': RegisterForm.username,
+        'password': RegisterForm.password,
+        'email': RegisterForm.email,
+        'phone_num': RegisterForm.phone_num,
+        'gender': RegisterForm.gender
+      }, {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      }).then(res => {
+        if (res.status === 200) {
+          ElMessage.success('注册成功！');
+          disableForm.value = true;
+          router.push('/login');
+        }else {
+          disableForm.value = false;
+          errorMessage.value = '注册失败！';
+        }
+      }).catch(err => {
+        if (err.response.status === 503) {
+          errorMessage.value = '用户名已存在！';
+          disableForm.value = false;
+        } else if (err.response.status === 564) {
+          errorMessage.value = '手机号已存在！';
+          disableForm.value = false;
+        } else{
+            errorMessage.value = '注册失败！';
+            disableForm.value = false;
+        }
+      });
+    } else {
+      ElMessage.error('请完整填写表单信息');
+    }
+  });
+};
+
+// const submitForm = (formEl: FormInstance | undefined) => {
+//     if (!formEl) return
+//     formEl.validate((valid) => {
+//         if (valid) {
+//             //console.log('submit!')
+//             disableForm.value = true
+//             axios.post(main.url + '/api/register', {
+//                 'username': RegisterForm.username,
+//                 'password': RegisterForm.password,
+//                 'email': RegisterForm.email,
+//                 'phone_num': RegisterForm.phone_num,
+//                 'gender': RegisterForm.gender
+//                 /* Hash! */
+//             },
+//             {
+//                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+//             }
+//             ).then(res => {
+//                 if (res.status === 200) {
+//                     ElMessage.success("注册成功！")
+//                     disableForm.value = true
+//                     router.push('/login');
+//                 }
+//                 else if (res.status === 503) {
+//                     errorMessage.value = '用户名已存在！'
+//                     disableForm.value = false
+//                 }
+//                 else {
+//                     disableForm.value = false
+//                     errorMessage.value = '未知错误'
+//                 }
+//             }).catch(err => {
+//                 if (err.response.status === 503) {
+//                     errorMessage.value = '用户名已存在！'
+//                     disableForm.value = false
+//                 }
+//                 else {
+//                     disableForm.value = false
+//                     errorMessage.value = '未知错误'
+//                 }
+//             });
+//             disableForm.value = false
+//         } else {
+//             //console.log('error submit!');
+//             errorMessage.value = '注册表单出错!'
+//             disableForm.value = false
+//             return false
+//         }
+//     })
+// }
 const resetForm = (formEl: FormInstance | undefined) => {
     if (!formEl) return
-    formEl.resetFields()
+    formEl.resetFields();
+    disableForm.value = false;
+    verificationButtonDisabled.value = false;
+    verificationButtonText.value = '获取验证码';
 }
 
 watch(errorMessage, (oldValue, newValue) => {
@@ -170,12 +325,19 @@ watch(errorMessage, (oldValue, newValue) => {
                     <div class="form-label">邮&nbsp箱:&nbsp </div>
                     <el-input class="form-input" v-model="RegisterForm.email" type="text" autocomplete="on" />
                 </el-form-item>
-                <el-form-item prop="phone" class="form-group" :rules="[
-                    // { required: true, message: '请输入手机号' },
-                    { type: 'number', message: '请输入正确的手机号' },
-                ]">
+                <el-form-item prop="phone_num" class="form-group" >
                     <div class="form-label">手机号:&nbsp </div>
-                    <el-input class="form-input" v-model="RegisterForm.phone_num" type="text" autocomplete="on" />
+                    <el-input class="form-input" v-model="RegisterForm.phone_num" type="text" autocomplete="on">
+                        <template #append>
+                            <el-button @click="getVerificationCode" :disabled="verificationButtonDisabled">
+                                {{ verificationButtonText }}
+                            </el-button>
+                        </template>
+                    </el-input>
+                </el-form-item>
+                <el-form-item class="form-group">
+                    <div class="form-label">验证码:&nbsp </div>
+                    <el-input class="form-input" v-model="RegisterForm.verification_code" type="text" autocomplete="off" />
                 </el-form-item>
                 <el-form-item prop="gender" class="form-group">
                     <div class="form-label">性&nbsp别:&nbsp</div>
@@ -196,7 +358,7 @@ watch(errorMessage, (oldValue, newValue) => {
                         show-password />
                 </el-form-item>
                 <el-form-item>
-                    <el-button type="primary" class="login-button" @click="submitForm(formRef)">注册</el-button>
+                    <el-button type="primary" class="login-button" @click="validateAndSubmitForm(formRef)">注册</el-button>
                 </el-form-item>
                 <el-form-item>
                     <el-button class="clear-button" @click="resetForm(formRef)">清空</el-button>
@@ -270,7 +432,7 @@ watch(errorMessage, (oldValue, newValue) => {
 
 .login-container {
     width: 560px;
-    height: 660px;
+    min-height: 660px;
     padding: 20px;
     border: 1px solid #ccc;
     border-radius: 20px;
@@ -344,11 +506,11 @@ watch(errorMessage, (oldValue, newValue) => {
     /* 让 form-label 和 form-input 上下对齐 */
     display: flex;
     flex-direction: row;
-    width: 400px;
+    width: 500px;
 }
 
 .form-label {
-    width: 100px;
+    width: 70px;
     font-weight: bold;
     font-size: 15px;
     /* 增加字体大小 */
@@ -364,7 +526,7 @@ watch(errorMessage, (oldValue, newValue) => {
 
     align-items: flex-start;
     height: 30px;
-    width: 220px;
+    width: 300px;
     font-size: 18px;
     /* 增加输入框字体大小 */
 
@@ -373,5 +535,12 @@ watch(errorMessage, (oldValue, newValue) => {
 .form-button {
     display: flex;
     justify-content: center;
+}
+
+/* 倒计时样式 */
+.countdown {
+    font-size: 14px;
+    color: red;
+    margin-left: 10px;
 }
 </style>
