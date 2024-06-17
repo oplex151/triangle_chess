@@ -1,6 +1,5 @@
 import queue
 from backend.game import RoomManager
-
 # 全局变量
 global rooms
 global sessions
@@ -8,6 +7,7 @@ global session_times
 global sid2uid
 global match_queue
 global rank_queue
+global rank_table
 
 def uid2sid(uid:int)->str:
     global sid2uid
@@ -44,8 +44,9 @@ class UniqueQueue(queue.Queue):
             self.queue_set.remove(item)
         
     def qsize(self) -> int:
-        return self.queue_set.__len__()
-  
+        return len(self.queue_set)
+
+
 
 rooms:list[RoomManager] = []
 sessions:dict[int, str] = {}
@@ -53,6 +54,7 @@ session_times:dict[int, float] = {}
 match_queue:UniqueQueue = UniqueQueue()
 sid2uid:dict[str, int] = {}
 rank_queue:UniqueQueue = UniqueQueue()
+rank_table:dict[int, (int, int)] = {}
 
 if __name__ == '__main__':
     q = UniqueQueue()

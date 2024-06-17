@@ -6,7 +6,7 @@ import axios from 'axios'
 import { ElMessage } from 'element-plus';
 import * as CONST from '@/lib/const.js'
 import router from '@/router';
-
+import {ReportDecoder} from '@/lib/convert.js'
 
 const user_apeals = ref([])
 const visable = ref(false)
@@ -128,7 +128,7 @@ function closeDetail() {
         <el-table-column prop="content" label="举报内容">
             <template #default="scope">
                 <div>
-                {{scope.row.content.split(':')[0]}}
+                {{ReportDecoder(scope.row.content.split(':')[0])}}
                 </div>
                 <el-button type="text" @click="viewDetail(scope.row.content)">
                     查看详情

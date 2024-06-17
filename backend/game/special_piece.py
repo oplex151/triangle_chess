@@ -1,6 +1,27 @@
 from typing import Literal
 from .piece import *
-from .exception import *
+from backend.tools.exception import *
+
+'''
+(1)
+you may be confused about the meaning of "user_z" and "nz" in the code below.
+
+"user_z" is the user's piece's logic role, which is 0 for red, 1 for black, and 2 for gold.
+
+"nz" is the piece's actual positon on the whole board, which is 0 for red, 1 for black, and 2 for gold.
+
+(2)
+and you may want to know why these class are all seemed to be empty.
+
+these classes are just the name class for all pieces, and they don't have any specific rule.
+
+the rule of each piece is defined in the frontend, and the backend only need to broadcast the move to all players.
+
+of course, if you want to implement the rule of each piece, you can create a new class for each piece, and implement the rule in the class.
+
+this can avoid players from cheating.
+'''
+
 
 class Soilder(Piece):
     '''

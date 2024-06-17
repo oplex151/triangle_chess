@@ -1,19 +1,38 @@
 from enum import Enum
 from typing import Dict, Optional, Union
 from dotenv import load_dotenv
-
-load_dotenv()
 import hashlib
 import random
+import time
 from .piece import Piece
 from .special_piece import *
 from .record import GameRecord
 from backend.message import *
 from backend.tools import setupLogger
+import heapq
 
+'''
+this file is used to define the game table and the game logic, manage the room and the game process.
+
+game table is a class that contains the game information, including the game id, the players, the pieces, 
+the game state, the winner, the turn, the time interval, the captured pieces, the opponent captured pieces, 
+the next time, the record, and the viewers.
+
+it control the game process.
+
+roommanager is a class that manage the room, including the room id, the room type, the players, the viewers, 
+the game table.
+'''
+
+
+load_dotenv()
 logger = setupLogger()
 
+global timeout_heap
+timeout_heap:heapq = []
+
 MAX_WATCHERS = 3
+NEXT_TIME_INTERVAL = 40
 
 class UserDict(Dict):
     userid:int
@@ -32,10 +51,11 @@ class RoomType(Enum):
 class GameTable:
     max_row = 9
     max_col = 5
-    def __init__(self,users:list[UserDict], viewers:Optional[list[UserDict]] = None):
+    def __init__(self,users:list[UserDict], viewers:Optional[list[UserDict]] = None, time_interval:int = 40):
         self.game_id = hashlib.md5(str(sum([user['userid'] for user in users])).encode('utf-8')).hexdigest()
         self.users = users.copy()
         self.lives = [True,True,True]
+        self.time_interval = time_interval
         if not viewers:
             self.viewers = []
         else :
@@ -52,11 +72,13 @@ class GameTable:
         self.draw_requester = None  # 发起求和请求的玩家
         self.draw_respondents = set()  # 记录回应求和请求的玩家
         self.draw_agree = set()  # 记录对求和请求的回应
+        self.draw_failed = False  # 记录是否求和表决是否通过（仅在self.draw_respondents为空时有效）
 
         # 表现分相关
         self.captured_pieces = [[],[],[]] # 玩家捕获的对手棋子
         self.opponent_captured_pieces = [[],[],[]] # 对手捕获的玩家棋子
-
+        self.next_time = time.time()+self.time_interval # 这一个走棋开始的时间
+        heapq.heappush(timeout_heap, (self.next_time, self.users[self.turn]['userid'], self.game_id))
         self.record = GameRecord(
                 p1=self.users[0]['userid'],
                 p2=self.users[1]['userid'],
@@ -97,6 +119,11 @@ class GameTable:
                 return index
         else:
             raise ValueError("该用户不是玩家")
+        
+    # def timeOut(self):
+        
+    # def _nextTime(self):
+    #     self
         
     def searchGameTable(self, userid:int) -> bool:
         '''
@@ -169,8 +196,14 @@ class GameTable:
                         # 判断游戏是否结束
                         if self.checkGameEnd():
                             return GAME_END
-
+                        
                         self.turnChange() # 切换到下一个玩家
+                        self.next_time = time.time()+self.time_interval # 这一个走棋开始的时间
+                        heapq.heappush(timeout_heap, (self.next_time, self.users[self.turn]['userid'], self.game_id))
+
+                        if self.draw_failed:
+                            self.draw_failed = False # 清空之前的求和失败状态
+                            return GAME_ONGOING
 
                         return SUCCESS
             else:
@@ -255,10 +288,15 @@ class GameTable:
                 self.lives[index] = False
                 if self.turn == self._getUserIndex(userid):
                     # 投降玩家，切换到下一个玩家
-                    self.turnChange()
+                    self.turnChange()                    
+                    self.next_time = time.time()+self.time_interval # 这一个走棋开始的时间
+                    heapq.heappush(timeout_heap, (self.next_time, self.users[self.turn]['userid'], self.game_id))
         if self.checkGameEnd():
             return GAME_END
         else:   
+            if self.draw_failed:
+                self.draw_failed = False # 清空之前的求和失败状态
+                return GAME_ONGOING
             return SUCCESS
 
     def requestDraw(self, userid:int):
@@ -267,7 +305,7 @@ class GameTable:
         '''
         # 如果已经有一个求和请求，则忽略新请求
         if self.draw_requester is not None:
-            return
+            return False
         
         # 记录发起求和请求的玩家
         self.draw_requester = userid
@@ -277,6 +315,8 @@ class GameTable:
         self.draw_agree = set()
         self.draw_respondents.add(userid)
         self.draw_agree.add(True)
+
+        return True
 
     def respondDraw(self, userid:int, agree:bool):
         '''
@@ -327,8 +367,25 @@ class GameTable:
         return False
     
     def checkDraw(self):
-        # 实现判断平局条件的逻辑
-        pass
+        # 有求和请求而且存活的玩家都表决了
+        if self.draw_requester is not None and self.checkAllLivesRespondDraw():
+            self.setDraw(False)
+            for agree in self.draw_agree:
+                if agree == False:
+                    self.draw_failed = True
+                    return False
+            return True
+        return False
+    
+    def checkAllLivesRespondDraw(self):
+        # 所有存活玩家都回应了求和请求
+        if self.draw_requester is not None:
+            live_ids = self.getAlivePlayers()
+            for id in live_ids:
+                if id not in self.draw_respondents:
+                    return False
+            return True
+        return False
 
     def getUserResult(self, userid):
         '''
@@ -387,11 +444,21 @@ class GameTable:
         print(board)
 
 class RoomManager:
-    def __init__(self, users: Union[list[UserDict], UserDict], room_type: RoomType=RoomType.created):
+    def __init__(self, users: Union[list[UserDict], UserDict], 
+                 locked=0 ,
+                 room_type: RoomType=RoomType.created, 
+                 password:str=None,
+                 time_interval:int=NEXT_TIME_INTERVAL):
         # 随机生成一串字符串
         self.room_id:str = hashlib.md5(str(random.randint(0,1000000000)).encode('utf-8')).hexdigest()
         self.users:list[UserDict] | UserDict = None
         self.game_table = None
+        self.locked = locked # 是否锁定房间
+        self.password = password # 房间密码
+        if time_interval is None:
+            self.time_interval = NEXT_TIME_INTERVAL # 房间内的游戏时间间隔
+        else:
+            self.time_interval = time_interval # 房间内的游戏时间间隔
 
         if isinstance(users, list):
             self.users = users.copy()
@@ -400,6 +467,7 @@ class RoomManager:
 
         self.holder = self.users[0]# 房主
         self.room_type = room_type # 房间类型
+        self.readys = {self.holder['userid']:True} # 房间内的准备状态
     
     def getRoomId(self) -> str:
         return self.room_id
@@ -410,16 +478,30 @@ class RoomManager:
     def removeGameTable(self):
         self.game_table = None
 
-    def addUser(self, user: Union[UserDict, list[UserDict]]):
+    def checkPassword(self, password:str) -> bool:
+        return self.locked == 0 or self.password == password
+
+    def changeReadyStatus(self, userid:int):
+        self.readys[userid] = not self.readys[userid]
+
+    def isAllReady(self) -> bool:
+        for u in self.users[:3]: # 只看前三个玩家
+            if not self.readys[u['userid']]:
+                return False
+        return True
+
+    def addUser(self, user: Union[UserDict, list[UserDict]], password:str=None):
         if len(self.users) >= 3+MAX_WATCHERS:
             return False
         if isinstance(user, list):
             for u in user:
                 if u not in self.users:
                     self.addUser(u)
+                    self.readys[u['userid']] = False
         else:
             if user not in self.users:
                 self.users.append(user)
+                self.readys[user['userid']] = False
         return True
         
     
@@ -429,9 +511,10 @@ class RoomManager:
                 leaved_user = user
                 logger.info(f"User {userid} leave room {self.room_id}"+f"this room's users: {self.users}")
                 self.users.remove(leaved_user)
-                if self.holder['userid'] == leaved_user['userid'] and len(self.users) > 0:
-                    # 房主退出房间，更换房主
-                    self.holder = self.users[0]
+                self.readys.pop(leaved_user['userid'])
+                # if self.holder['userid'] == leaved_user['userid'] and len(self.users) > 0:
+                #     # 房主退出房间，更换房主
+                #     self.holder = self.users[0]
                 if self.game_table and leaved_user['userid'] in [u['userid'] for u in self.game_table.viewers]:
                     # 观战者离开直接送出游戏
                     self.game_table.viewers.remove(leaved_user)
@@ -452,6 +535,8 @@ class RoomManager:
         Description: 获取房间信息
         Returns:
             dict: 房间信息
+        NOTES:
+            返回的users字段在游戏开始后不会改变，即使有人离开
         '''
         data = {
             'room_id': self.room_id,
@@ -459,6 +544,8 @@ class RoomManager:
             'holder': self.holder,
             'users': self.game_table.users if self.game_table else self.users[:3],
             'viewers': self.game_table.viewers if self.game_table else self.users[3:] if len(self.users) > 3 else [],
+            'readys': self.readys,
+            'all_users': self.users,
         }
         return data
 
@@ -489,6 +576,21 @@ def inWhitchRoom(userid:int, room_managers:list[RoomManager]) -> str:
     '''
     for room in room_managers:
         if userid in [user['userid'] for user in room.users]:
+            return room.getRoomId()
+    else:
+        return None
+
+def inWhichGame(userid:int, room_managers:list[RoomManager]) -> str:
+    '''
+    Description: 判断用户是否在某个游戏中
+    Args:
+        userid: 用户ID
+        room_managers: 房间列表
+    Returns:
+        str: 房间ID
+    '''
+    for room in room_managers:
+        if room.game_table and userid in [user['userid'] for user in room.game_table.users]:
             return room.getRoomId()
     else:
         return None

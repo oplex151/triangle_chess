@@ -3,13 +3,16 @@ import { camps, initChess } from '@/lib/game';
 import { GEBI } from '@/utils/utils';
 import { XYZToPosition, PositionToXYZ } from '@/lib/convert'
 import * as CONST from '@/lib/const.js'
-import { lives, changeLives } from '@/chesses/Live';
+import { lives, changeLives } from '@/lib/live';
 import { onMounted, ref, onUnmounted, computed, getCurrentInstance } from 'vue';
 import { COL, ROWTOP, ROWMID, AREABOT, ROWBOT } from '@/config/config';
 import main from "@/main"
+import {ElMessage} from "element-plus";
 
 
 const map = new Map();
+const moveStack = ref([]);
+const moveNum = ref(1);
 const getid = (row, col) => (ROWTOP - row - 1) * COL + col + 1;
 const camp = ref(0);
 
@@ -52,6 +55,42 @@ function mapChessToPoint(row, col) {
   }
 }
 
+function checkMate() {
+  for (const [position, chess] of map.entries()) {
+    const possibleMoves = chess.canMove();
+    for (const posi of possibleMoves) {
+      const targetPiece = map.get(posi);
+      if (targetPiece && targetPiece.name === '将') {
+        let toName = '';
+        switch (chess.camp) {
+          case 0:
+            toName = '红方';
+            break;
+          case 1:
+            toName = '黑方';
+            break;
+          case 2:
+            toName = '金方';
+            break;
+        }
+
+        let LeaderCamp = '';
+        if (GEBI(`${posi}`).classList.contains('camp0')) {
+          LeaderCamp = '红方';
+        } else if (GEBI(`${posi}`).classList.contains('camp1')) {
+          LeaderCamp = '黑方';
+        } else {
+          LeaderCamp = '金方';
+        }
+
+        if (toName !== LeaderCamp) {
+          ElMessage.warning('注意！' + toName + "将军" + LeaderCamp);
+        }
+      }
+    }
+  }
+}
+
 // 定义父组件可以调用的函数（这里只有defineExpose）
 function moveSuccess(data) {
   let position_start = XYZToPosition(data.x1, data.y1, data.z1)
@@ -66,6 +105,7 @@ function moveSuccess(data) {
   while (lives[camp.value] == false) {
     camp.value = (camp.value + 1) % 3;
   }
+  checkMate();
 }
 
 const camp_1_style = computed(() => {
@@ -103,8 +143,8 @@ const camp_0_style = computed(() => {
 });
 const action = (position) => {
   //console.log(props.game_status)
-  if (props.game_status != CONST.STATUS_ONING)
-    return
+  // if (props.game_status != CONST.STATUS_ONING)
+  //   return
   // 未选中
   if (!isPocus.value) {
     if (!hoverChess) return;
@@ -116,12 +156,16 @@ const action = (position) => {
     }
     isPocus.value = true;
     GEBI(`${hoverChess.position}`).classList.add('chess_on');
+
+    // console.log('选中棋子1')
     focusChess.value = hoverChess;
   }
   // 选中
   else {
     isPocus.value = false;
     GEBI(`${focusChess.value.position}`).classList.remove('chess_on');
+    // console.log('选中棋子2')
+
     if (
       focusChess.value.canMove().includes(position)
       // 暂时不启用, 阻止自己的棋子吃掉自己的棋子
@@ -147,14 +191,23 @@ const action = (position) => {
       isPocus.value = true;
       focusChess.value = hoverChess;
       GEBI(`${hoverChess.position}`).classList.add('chess_on');
+      // console.log('选中棋子3')
+
     }
   }
 };
 const moveChess = (chess, to) => {
   if (map.get(to)?.camp === camp.value) return false;
+  const liveDeepCopy = lives.map((value) => value);
+  moveStack.value.push({ 'moveNum': moveNum.value, 
+                          'from': chess.position, 'to': to 
+                          ,'kill':map.get(to),'lives':liveDeepCopy});
+  moveNum.value++;
+
   map.delete(chess.position);
   chess.move(to);
   map.set(to, chess);
+
   return true;
 };
 const initMap = (game_info) => {
@@ -163,11 +216,17 @@ const initMap = (game_info) => {
   camp.value = game_info.turn
   // 设置活着的玩家
   changeLives(game_info.lives)
-  // //console.log("111111111111")
   initChess(game_info)
   for (const [k, camp] of Object.entries(camps)) {
     camp.get().forEach((chess) => {
-      GEBI(`${chess.position}`).innerText = chess.name;
+      AddChess(chess);
+    });
+  }
+  //console.log("initMap执行结束")
+
+};
+const AddChess = (chess) =>{
+  GEBI(`${chess.position}`).innerText = chess.name;
       switch (chess.camp) {
         case 0:
           GEBI(`${chess.position}`).classList.add('camp0');
@@ -192,11 +251,34 @@ const initMap = (game_info) => {
       // element.style.backgroundImage = `url(${chess.image})`;  // 设置背景图片
       //console.log(chess.image);
       map.set(chess.position, chess);
-    });
-  }
-  //console.log("initMap执行结束")
+}
+const WithDraw = () => {
+  moveNum.value--;
+  // focusChess.value = map.get(position_start);
+  // // 移动棋子
+  // moveChess(focusChess.value, position_end);  
 
+  
+  const move = moveStack.value.pop();
+  // console.log("撤销",move)
+  const from = move.from;
+  const to = move.to;
+  const kill = move.kill;
+  const chess = map.get(to);
+  chess.move(from);
+  map.delete(to);
+  map.set(from, chess);
+  if(kill!=undefined){
+    AddChess(kill)
+    // console.log("撤销棋子",kill)
+  }
+  // 切换阵营
+  camp.value = chess.camp;
+  // 复活术
+  changeLives(move.lives)
 };
+
+
 
 const hover = (position) => {
   hoverposition.value = position;
@@ -212,7 +294,9 @@ const hover = (position) => {
 
   GEBI(`${hoverChess.position}`).classList.add('chess_hover');
   hoverChess.canMove().forEach((posi) => {
-    GEBI(`${posi}`).classList.add('moviable');
+    if (!GEBI(`${posi}`).classList.contains(`camp${hoverChess.camp}`)){
+      GEBI(`${posi}`).classList.add('moviable');
+    }
   });
 };
 
@@ -235,6 +319,7 @@ onUnmounted(Destory);
 defineExpose({
   moveSuccess,
   initMap,
+  WithDraw,
   camp,
 })
 </script>
@@ -324,7 +409,6 @@ defineExpose({
 .chess {
   //color: wheat;
   color: transparent;
-  // background-image: url("@/assets/images/game/chess/realChess/车白.png");
   // 文本不可选中
   user-select: none;
   display: flex;
@@ -368,8 +452,11 @@ defineExpose({
 }
 
 .chess_on {
-  animation: vary 2s !important;
-  animation-iteration-count: infinite !important;
+  //animation: vary 2s !important;
+  //animation-iteration-count: infinite !important;
+  border: 3px solid yellow;
+  box-shadow: 0 0 15px yellow;
+  animation: glow 1.5s infinite alternate;
 }
 
 .invert {

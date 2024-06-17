@@ -6,11 +6,10 @@ import Cookies from 'js-cookie'
 import VueSocketIO from 'vue-socket.io'
 import SocketIO from 'socket.io-client'
 import main from '@/main'
-import { User, HomeFilled, Share } from '@element-plus/icons-vue'
+import { HomeFilled, Share } from '@element-plus/icons-vue'
 import { registerSockets, socket, removeSockets } from '@/sockets'
 import Board from '@/views/Game/board.vue'
 import game_info from '@/assets/jsons/game_info.json'
-import Report from '@/components/views/Report.vue'
 import Avatar from '@/components/views/Avatar.vue'
 import useClipboard from 'vue-clipboard3';
 import * as CONST from "@/lib/const.js";
@@ -190,6 +189,15 @@ const share = () => {
 const camp_c = computed(() => {
     return [camp_0_style.value, camp_1_style.value, camp_2_style.value]
 })
+const Previous = () =>{
+    step.value -= 1
+    if(step.value < 0){
+        ElMessage.info('已经到第一步')
+        step.value = 0
+        return
+    }
+    board.value.WithDraw()
+}
 </script>
 <template>
     <div class="background-image-publicShare"></div>
@@ -209,6 +217,7 @@ const camp_c = computed(() => {
         <div class="brd">
             <div class="chessboard-overlay"></div>
             <Board :my_camp="my_camp" ref="board" @requireMove="Move" />
+            <button @click="Previous" class="next_button">上一步</button>
             <button @click="Next" class="next_button">下一步</button>
             <div class="avatar">
             <!---------0号位---------->
@@ -295,14 +304,16 @@ const camp_c = computed(() => {
 .next_button {
     font-size: 18px;
     font-weight: bold;
-    padding: 10px 10px;
-    top: 400px;
-    left: 100px;
     color: #fff;
     background-color: #ecb920;
     border-radius: 10px;
     border: none;
-    position: absolute;
+    position: relative;
+    margin-right: 30px;
+    height: 40px;
+    top: 360px;
+    left:120px
+
 }
 
 .select_btn {

@@ -3,7 +3,7 @@ import main from '@/main';
 import axios from 'axios';
 import Cookies from 'js-cookie';
 import { onMounted, ref } from 'vue';
-import { getRankLevel } from '@/config/rank';
+import { getRankLevel } from '@/lib/rank';
 import { ElMessage } from 'element-plus';
 import FaceGenerator from '../FaceGen/FaceGenerator.vue';
 import router from '@/router';
@@ -11,17 +11,17 @@ import * as CONST from "@/lib/const.js";
  
 
 const userinfo= ref({
-    username: 'John Doe',
-    email: 'johndoe@example.com',
-    phone_num: '123-456-7890',
-    gender :'male',
+    username: '',
+    email: '',
+    phone_num: '',
+    gender :'',
     rank: '无',
     score: 0,
 })
 
 const image_path = ref()
 const base64 = ref()
-const editMode = ref(false)
+
 
 onMounted(() => {
     getUserInfo();
@@ -164,15 +164,103 @@ function justIt (data) {
     haven_upload.value = false
 }
 
-const email = ref('')
-const phone_num = ref('')
-const gender = ref('')
+const email = ref(userinfo.value.email)
+const phone_num = ref(userinfo.value.phone_num)
+const gender = ref(userinfo.value.gender)
+const vertify_code = ref('')
+const vertify_ok = ref(false)
+const vertify_have_send = ref(false)
+const editMode = ref(false)
 
 function cancelEdit () {
     editMode.value = false
-    email.value = ''
-    phone_num.value = ''
-    gender.value = ''
+    email.value = userinfo.value.email
+    phone_num.value = userinfo.value.phone_num
+    gender.value = userinfo.value.gender
+    vertify_code.value = ''
+    vertify_ok.value = false
+    vertify_have_send.value = false
+}
+
+function senOorGetVertifyCode () {
+    if(vertify_have_send.value){
+        vertifyCode()
+    }
+    else{
+        getVerificationCode()
+    }
+}
+
+function getVerificationCode() {
+    console.log('getVerificationCode')
+  //verificationButtonDisabled.value = true;
+  axios.post(main.url + '/api/getVerificationCode', {
+    'phone_num': userinfo.value.phone_num,
+    'category': "authentication"
+  },{
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    }).then(res => {
+    if (res.status === 200) {
+      ElMessage.success('验证码已发送');
+      vertify_have_send.value = true
+      //startCountdown();
+    } else {
+      ElMessage.error('验证码发送失败');
+      //verificationButtonDisabled.value = false;
+    }
+  }).catch(error => {
+    if(error.response.status == 501){
+      ElMessage.error('用户不存在')
+    }
+    else if (error.response.status == CONST.BANNED_USER) {
+        ElMessage.error('用户被封禁，您可以申诉');
+      router.push('/appeal');
+    }
+    else if (error.response.status == 562) {
+        ElMessage.error('请勿用同一手机号码频繁请求');
+    } 
+    else if (error.response.status == 563) {
+        ElMessage.error('验证码错误');
+    }
+    else {
+        ElMessage.error('请求失败，请重试');
+    }
+    //verificationButtonDisabled.value = false;
+  });
+};
+
+function vertifyCode () {
+    console.log('vertifyCode')
+    if (vertify_code.value.length !== 6) {
+        ElMessage.error('验证码格式错误')
+        return
+    }
+    axios.post(main.url + '/api/checkVerificationCode', {
+        'phone_num': userinfo.value.phone_num,
+        'code': vertify_code.value,
+    }, {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    }).then(response => {
+        if (response.status === 200) {
+            vertify_ok.value = true
+            ElMessage.success('验证码正确')
+        }
+    })
+    .catch(error => {
+        if (error.response.status = 563) 
+            ElMessage.error('验证码错误')
+        else if (error.response.status = 562) 
+            ElMessage.error('请勿用同一手机号码频繁请求')
+        else 
+            ElMessage.error('请求失败，请重试')
+    });
+}
+
+function startEdit(){
+    editMode.value = true
+    email.value = userinfo.value.email
+    phone_num.value = userinfo.value.phone_num
+    gender.value = userinfo.value.gender
 }
 
 function saveEdit () {
@@ -265,14 +353,14 @@ function saveEdit () {
             <div class="info-item">
                 <span class="info-title">性别</span>
                 <span class="info-text" v-if="!editMode">
-                    {{userinfo.gender}}
+                    {{userinfo.gender== 'female' ? '女' : userinfo.gender== 'male' ? '男' : '不愿透露'}}
                 </span>
                 <el-radio-group v-if="editMode" v-model="gender"
                 class="info-text">
                     <el-radio value="male" size="large">男</el-radio>
                     <el-radio value="female" size="large">女</el-radio>
                     <el-radio value="" size="large">不愿透露</el-radio>
-                Q</el-radio-group>
+                </el-radio-group>
             </div>
             <div class="info-item">
                 <span class="info-title">邮箱</span>
@@ -285,11 +373,24 @@ function saveEdit () {
             </div>
             <div class="info-item">
                 <span class="info-title">手机号</span>
-                <span class="info-text" v-if="!editMode">{{userinfo.phone_num}}</span>
+                <span class="info-text" v-if="!editMode || !vertify_ok"
+                >{{userinfo.phone_num ? userinfo.phone_num : '(未绑定，您将无法申诉)'}}</span>
                 <input type="text" v-model="phone_num"
-                v-if="editMode"
+                v-if="editMode && vertify_ok"
                 class="info-text"
                 placeholder="请输入手机号">
+                <button v-if="editMode" class='vertify-code'
+                :disabled="vertify_ok"
+                @click="senOorGetVertifyCode">
+                    {{vertify_have_send?'提交验证码':'获取验证码'}}
+                </button>
+                </input>
+            </div>
+            <div class="info-item" v-if="editMode">
+                <span class="info-title">验证码</span>
+                <input type="text" v-model="vertify_code"
+                class="info-text"
+                placeholder="请输入验证码">
                 </input>
             </div>
             <div class="info-item">
@@ -301,7 +402,7 @@ function saveEdit () {
                 <span class="info-text">{{userinfo.score}}</span>
             </div>
         </div> 
-        <button class="edit-button" @click="editMode = true"
+        <button class="edit-button" @click="startEdit"
         v-if="!editMode"
         >修改</button>
         <button class="edit-button" @click="cancelEdit"
@@ -501,5 +602,20 @@ function saveEdit () {
 
 .save-button:hover {
     background-color: #70c110;
+}
+
+.vertify-code {
+    background-color: #333;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    padding: 10px;
+    cursor: pointer;
+    position:absolute;
+    z-index: 100;
+}
+
+.vertify-code:hover {
+    background-color: #555;
 }
 </style>

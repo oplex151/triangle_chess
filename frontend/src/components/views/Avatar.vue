@@ -6,7 +6,7 @@ import main from '@/main';
 import * as CONST from '@/lib/const.js'
 
 import { ElMessage } from 'element-plus';
-import { getRankLevel } from '@/config/rank';
+import { getRankLevel } from '@/lib/rank';
 
 const emits = defineEmits(['reportUser','deleteFriend'])
 const props = defineProps(['userid', 'my_userid', 'is_friend'])
@@ -175,7 +175,9 @@ const deleteFriend = () => {
                             </el-button>
                         </div>
                     </div>
+                    <slot name="custom"></slot>
                 </p>
+                    
             </div>
         </template>
     </el-popover>
@@ -188,12 +190,12 @@ const deleteFriend = () => {
     color: #fff;
     border: none;
     border-radius: 15px;
-    padding: 15px 0;
     /* 增加垂直内边距 */
     margin: auto;
     cursor: pointer;
     font-size: 15px;
     margin: 5px;
+    width: 70px;
 }
 
 .el-popover {

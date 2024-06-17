@@ -7,11 +7,11 @@ import Cookies from 'js-cookie';
 import { registerSockets, socket, registerSocketsForce, removeSockets } from '@/sockets'
 import { ElMessage ,ElMessageBox} from "element-plus";
 import { useRouter } from 'vue-router';
-import { resetLives } from '@/chesses/Live';
+import { resetLives } from '@/lib/live';
 import { onMounted, ref, onUnmounted, computed, getCurrentInstance } from 'vue';
 import { HomeFilled } from '@element-plus/icons-vue'
 import axios from 'axios';
-import {getRankLevel} from '@/config/rank.js'
+import {getRankLevel} from '@/lib/rank.js'
 import * as CONST from "@/lib/const.js";
 const { proxy } = getCurrentInstance()
 const router = useRouter()
@@ -112,21 +112,21 @@ const sockets_methods = {
         router.push('/game')
     },
     processWrong(data) {
-        ElMessage.error('匹配失败，请重新匹配' + data.status)
+        ElMessage.error('匹配失败，请重新匹配')
         if(data.status == CONST.SESSION_EXPIRED){ //Session expired
-          Cookies.remove('room_id')
-          Cookies.remove('userid')
-          Cookies.remove('room_info')
-          Cookies.remove('username')
-          Cookies.remove('camp')
-          sessionStorage.removeItem('fromGame')
-          ElMessage({
-            message: '会话过期，请重新登录',
-            grouping: true,
-            type: 'error',
-            showClose: true
-          })
-          router.replace('/login')
+            Cookies.remove('room_id')
+            Cookies.remove('userid')
+            Cookies.remove('room_info')
+            Cookies.remove('username')
+            Cookies.remove('camp')
+            sessionStorage.removeItem('fromGame')
+            ElMessage({
+                message: '会话过期，请重新登录',
+                grouping: true,
+                type: 'error',
+                showClose: true
+            })
+            router.replace('/login')
         }
     },
 }

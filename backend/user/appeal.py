@@ -21,11 +21,22 @@ class AppealType(Enum):
     report = 0
     normal = 1
 
-def addAppeals(userid, appeal_type, content, fromid):
+def addAppeals(userid, appeal_type, content, fromid, username, phone_number):
     db = pymysql.connect(host="127.0.0.1",user="root",password=password,database=DATA_BASE)
     cursor = db.cursor()
     # 插入申诉信息到数据库
     try:
+        if userid == -1:
+            select_query = f"SELECT userId FROM {USER_TABLE} WHERE userName = '{username}' and phoneNum = '{phone_number}';"
+
+            cursor.execute(select_query)
+            result = cursor.fetchone()
+
+            if result:
+                userid = result[0]
+                fromid = result[0]
+            else:
+                return "{}",USER_NOT_EXIST
         insert_query = "INSERT INTO {0} (userId, type, content, fromId) VALUES (%s, %s, %s, %s);".format(APPEAL_TABLE)
         cursor.execute(insert_query, (userid, appeal_type, content, fromid))
     except Exception as e:
@@ -91,7 +102,7 @@ def getAppealsInfo(userid):
                             "fromid":fromid,
                             "dealed":dealed,
                             "feedback":feedback if dealed else ""})
-        logger.debug(res)
+        # logger.debug(res)
         status = SUCCESS
     except Exception as e:
         logger.error(e)

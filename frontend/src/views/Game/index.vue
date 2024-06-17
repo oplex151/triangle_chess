@@ -11,7 +11,7 @@ import { ElMessage, ElMessageBox } from "element-plus";
 import { onMounted, ref, onUnmounted, computed, getCurrentInstance, onBeforeMount, watch } from 'vue';
 import Board from '@/views/Game/board.vue'
 import axios from "axios";
-import { lives } from '@/chesses/Live';
+import { lives } from '@/lib/live';
 import * as CONST from '@/lib/const.js'
 import Report from '@/components/views/Report.vue'
 import Avatar from '@/components/views/Avatar.vue'
@@ -33,7 +33,7 @@ const match_duration = ref(null)
 const record_id = ref(null)
 const vis = ref(false)
 const to_report_id = ref(-1)
-const room_info = JSON.parse(Cookies.get('room_info'))
+const room_info = ref(null)
 
 const game_status = ref(CONST.STATUS_ONING)
 const draw_responser = ref([])
@@ -43,6 +43,41 @@ const i_message = ref('')
 
 const my_name = Cookies.get('username')
 const avatars = ref({})
+const timer = ref(0);
+const interval = ref(null);
+
+
+const startTimer = (time) => {
+  //console.log(time)
+  //console.log(Date.now())
+  clearTimer()
+  if(time == undefined){
+    timer.value = 30;   //unuse
+  }
+  else{
+    timer.value = Math.floor(time - Date.now()/1000);
+  }
+  //GEBI('timer-info').classList.add('timer-info-on')
+  //GEBI('timer-info').style.animation = "colorChange" + timeout+'s infinite'
+  interval.value = setInterval(() => {
+    timer.value--;    
+    if (timer.value <= 0) {
+      clearTimer();
+      if(board.value.camp == my_camp.value)
+        ElMessage.error('时间到!')
+      // socket.value.io.emit('requestSurrender', {
+      //     'userid': Cookies.get('userid')
+      // })
+    }
+  }, 1000);
+};
+
+const clearTimer = () =>{
+  clearInterval(interval.value);
+  timer.value = 0;
+  //GEBI('timer-info').style.animation = 'none'
+  //GEBI('timer-info').classList.remove('timer-info-on')
+}
 
 const copy = async (anything) => {
   try {
@@ -87,6 +122,9 @@ onMounted(() => {
     if (res.status == 200) {
       //console.log(res.data)
       board.value.initMap(res.data.game_info)
+      // if(board.value.camp == my_camp.value){
+        startTimer(res.data.next_time);
+      // }
     }
     else {
       ElMessage.error('获取房间信息失败')
@@ -110,54 +148,67 @@ onMounted(() => {
     }
   })
   //console.log(socket.value)
-  let userids = room_info.users.map(user => {
-    return user.userid;
-  }) 
-  axios.post(main.url + '/api/getAvatars', {'userids': userids.join(',')},
-  {
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-  }
-  )
-  .then(res => {
-      //console.log(res.data)
-      avatars.value = res.data
-  })
-  .catch(err => {
-      //console.error(err)
-    if(err.response.status == 550){ //Session expired
-      Cookies.remove('room_id')
-      Cookies.remove('userid')
-      Cookies.remove('room_info')
-      Cookies.remove('username')
-      Cookies.remove('camp')
-      ElMessage({
-        message: '会话过期，请重新登录',
-        grouping: true,
-        type: 'error',
-        showClose: true
-      })
-      router.replace('/login')
+  if(Cookies.get('room_info')){
+    room_info.value = JSON.parse(Cookies.get('room_info'))
+    let userids = room_info.value.users.map(user => {
+      return user.userid;
+    }) 
+    axios.post(main.url + '/api/getAvatars', {'userids': userids.join(',')},
+    {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     }
-  })
+    )
+    .then(res => {
+        //console.log(res.data)
+        avatars.value = res.data
+    })
+    .catch(err => {
+        //console.error(err)
+      if(err.response.status == 550){ //Session expired
+        Cookies.remove('room_id')
+        Cookies.remove('userid')
+        Cookies.remove('room_info')
+        Cookies.remove('username')
+        Cookies.remove('camp')
+        ElMessage({
+          message: '会话过期，请重新登录',
+          grouping: true,
+          type: 'error',
+          showClose: true
+        })
+        router.replace('/login')
+      }
+    })
+  }
+
+
 });
 
 const sockets_methods = {
   movePieceSuccess(data) {
     if (userid == data.userid) {
       ElMessage.info('移动成功')
+      clearTimer()
     }
     else {
       ElMessage.info('玩家' + data.username + '移动成功')
     }
     // 移动棋子_切换阵营
     board.value.moveSuccess(data);
+    // if(board.value.camp == my_camp.value){
+      startTimer(data.next_time);
+    // }
   },
   joinRoomSuccess(data) {
     if (data.userid == Cookies.get('userid')) {
       Cookies.set('room_id', data.room_id)
+      room_info.value = data.room_info
+      Cookies.set('room_info', JSON.stringify(data.room_info))
       ElMessage.success('加入房间成功')
     }
     else {
+      room_info.value = data.room_info
+      Cookies.set('room_info', JSON.stringify(data.room_info))
       ElMessage.success('玩家' + data.username + '加入房间')
     }
   },
@@ -180,7 +231,12 @@ const sockets_methods = {
         return
       }
     }
-      else {
+    else {
+      if (data.room_info){
+        room_info.value = data.room_info
+        Cookies.set('room_info', JSON.stringify(data.room_info))
+        console.log(data.room_info)
+      }
       ElMessage.success('玩家' + data.username + '离开房间')
     }
   },
@@ -229,17 +285,32 @@ const sockets_methods = {
     })
     .catch((action) => {})
     //console.log(data.room_info)
-    // 匹配模式退回主页面
-    //console.log(data.room_type)
-    if (data.room_type == 1) {
+    
+    // 创房间模式
+    if(data.room_type == 0){
+      // Cookies.set('room_info',data.room_info)
       Cookies.remove('game_id')
       Cookies.remove('camp')
-      removeSockets(sockets_methods, socket.value, proxy);
-      socket.value.io.disconnect()
-      socket.value = null
-      router.replace('/')
+      let have_holder = false
+      for (let i = 0; i < data.room_info.all_users.length; i++) {
+        if (data.room_info.holder.userid == data.room_info.all_users[i].userid)
+          have_holder = true
+      }
+      if (!have_holder){
+        // socket.value.io.emit('leaveRoom', { 'room_id': Cookies.get('room_id'), 'userid': Cookies.get('userid') })
+        Cookies.remove('room_id')
+        Cookies.remove('room_info')
+        removeSockets(sockets_methods, socket.value, proxy);
+        router.replace('/')
+      }
+      else{
+        removeSockets(sockets_methods, socket.value, proxy);
+        sessionStorage.setItem('fromGame', 'true')
+        router.replace('/room')
+      }
       return
     }
+
     // 天梯模式
     else if (data.room_type == 2) {
       Cookies.remove('game_id')
@@ -250,16 +321,18 @@ const sockets_methods = {
       router.replace('/rank')
       return
     }
-    // 创房间模式
+    // 匹配模式退回主页面
+    //console.log(data.room_type)
     else {
-      // Cookies.set('room_info',data.room_info)
       Cookies.remove('game_id')
       Cookies.remove('camp')
       removeSockets(sockets_methods, socket.value, proxy);
-      sessionStorage.setItem('fromGame', 'true')
-      router.replace('/room')
+      socket.value.io.disconnect()
+      socket.value = null
+      router.replace('/')
       return
     }
+
   },
   surrenderSuccess(data) {
     for (let i = 0; i < 3; i++) {
@@ -269,10 +342,31 @@ const sockets_methods = {
     }
     if (data.userid == Cookies.get('userid')) {
       ElMessage.info('你投降了')
+      clearTimer()
     }
     else {
       ElMessage.info('用户' + data.username + '投降')
     }
+    // if (board.value.camp == my_camp.value){
+      startTimer(data.next_time);
+    // }
+  },
+  surrenderTimeout(data) {
+    for (let i = 0; i < 3; i++) {
+      if (data.userid == Cookies.get('user' + i))
+        lives[i] = false
+      board.value.camp = data.game_info.turn
+    }
+    if (data.userid == Cookies.get('userid')) {
+      ElMessage.info('你超时了')
+      clearTimer()
+    }
+    else {
+      ElMessage.info('用户' + data.username + '超时')
+    }
+    // if (board.value.camp == my_camp.value){
+      startTimer(data.next_time);
+    //}
   },
   waitForOthers(data){
     draw_responser.value.push({ 'userid': data.userid, 'username': data.username ,'agree':data.agree})
@@ -320,8 +414,9 @@ const sockets_methods = {
   },
   processWrong(data) {
     let status1 = data.status
-    ElMessage.error("Error due to " + status1)
+    //ElMessage.error("Error due to " + status1)
     if (status1 == CONST.ROOM_NOT_EXIST) {
+      ElMessage.error('房间不存在')
       router.replace('/room')
     }
     else if (status1 == CONST.NOT_IN_ROOM) {
@@ -331,6 +426,13 @@ const sockets_methods = {
     else if (status1 == CONST.USER_NOT_LOGIN) {
       ElMessage.error('用户未登录')
       router.replace('/login')
+    }
+    else if (status1 == CONST.NOT_JOIN_GAME){
+      ElMessage.error('你不在游戏中')
+      router.replace('/room')
+    }
+    else if (status1 == CONST.REPEAT_DRAW_REQUEST) {
+      ElMessage.error('重复的求和请求或者有求和决议在进行')
     }
     else if(status1 == CONST.SESSION_EXPIRED){
       Cookies.remove('room_id')
@@ -350,19 +452,38 @@ const sockets_methods = {
   }
 }
 
+onUnmounted(() => {
+  clearTimer()
+})
+
 function requestSurrender() {
   if(my_camp.value >= 0)
-    if(lives[my_camp.value])
-      socket.value.io.emit('requestSurrender', {
-        'userid': Cookies.get('userid')
-      })
-    else{
+    if ((!lives[my_camp.value])){
       ElMessage.error('你已经输了，不能投降')
+      return
     }
+    else if(my_camp.value!=board.value.camp){
+      ElMessage.error('现在不是你的回合，不能投降')
+      return
+    }
+    else
+      ElMessageBox.confirm('确定要投降吗？', '投降', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        socket.value.io.emit('requestSurrender', {
+          'userid': Cookies.get('userid')
+        })
+      }).catch(() => {
+        ElMessage.info('已取消')
+      })
   else{
     ElMessage.error('你不是本游戏的玩家，不能投降')
   }
 }
+
+
 
 function leaveRoom() {
   socket.value.io.emit('leaveRoom', { 'room_id': Cookies.get('room_id'), 'userid': Cookies.get('userid') })
@@ -374,11 +495,18 @@ function leaveRoom() {
 function requestDraw(){
   if(my_camp.value >= 0){
     if(lives[my_camp.value]){
-      socket.value.io.emit('requestDraw', {
-        'userid': Cookies.get('userid')
-      })
-      game_status.value = CONST.STATUS_DRAWING
-      draw_responser.value.push({ 'userid': userid, 'username': my_name ,'agree':true})
+      if (game_status.value != CONST.STATUS_DRAWING){
+        socket.value.io.emit('requestDraw', {
+          'userid': Cookies.get('userid')
+        })
+        game_status.value = CONST.STATUS_DRAWING
+        if (draw_responser.value.length == 0) {  // 只有请求为空时才可以发起请求
+          draw_responser.value.push({ 'userid': userid, 'username': my_name ,'agree':true})
+        }
+      }
+      else{
+        ElMessage.error('已经有求和请求，请等待所有人响应')
+      }
     }
     else{
       ElMessage.error('你已经输了，不能求和')
@@ -397,8 +525,7 @@ const handleReportEnd = (id) => {
 
   vis.value = false;
 }
-const handleReport = () => {
-  //console.log(id);
+const handleReport = (id) => {
   to_report_id.value = id;
   //console.log(to_report_id.value);
   vis.value = true;
@@ -440,9 +567,11 @@ const camp_0_style = computed(() => {
 
 <template>
   <Messager :o_message="o_message" v-model:i_message="i_message" @sendMessage="sendMessage" class="messager" v-if="my_camp >= 0"/>
-
+  
   <div class="background-image"></div>
   <div class="chessboard-overlay"></div>
+  <div class="timer-info" id="timer-info">剩余时间：{{timer}}
+  </div>
   <div v-if="my_camp >= 0">
     <button class="surrender-button" @click="requestSurrender">投降</button>
   </div>
@@ -463,6 +592,7 @@ const camp_0_style = computed(() => {
       </div>
     </div>
   </div>
+  <template v-if="room_info">
   <div  :class="camp_0_style">
     <Avatar :my_userid=userid :userid=room_info.users[0].userid @reportUser="handleReport">
       <template #name>
@@ -495,6 +625,7 @@ const camp_0_style = computed(() => {
       </template>
     </Avatar>
     </div>
+    </template>
     <Board ref="board" :my_camp ="my_camp" :game_status="game_status" @requireMove="Move" />
     <Report :toreportid=to_report_id :myuserid="userid" :dialogFormVisible=vis @reportEnd="handleReportEnd" />
 </template>
@@ -635,6 +766,28 @@ const camp_0_style = computed(() => {
   --message-height:500px;
   --message-width:10px;
   --message-margin-bottom: 10px;
-  // 卧槽原来是这么实现的吗，太逆天了
 }
+.timer-info{
+  position:absolute;
+  top:600px;
+  left:50px;
+  background-color: #f5d769;
+  padding: 10px;
+  border-radius: 10px;
+  z-index: 99;
+}
+.timer-info-on{
+  animation: colorChange 30s infinite;
+}
+@keyframes colorChange {
+    0% {
+      background-color: #c4ffa0;
+    }
+    75% {
+      background-color: #f68585;
+    }
+    100% {
+      background-color: #d73b3b;
+    }
+  }
 </style>
