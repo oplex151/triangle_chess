@@ -1,5 +1,11 @@
 from typing import Literal
 
+'''
+this is a piece abstract class
+
+don't use this class directly, use its child classes instead
+'''
+
 class Piece:
     max_row = 9
     max_col = 5

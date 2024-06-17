@@ -1,8 +1,6 @@
 from enum import Enum
 from typing import Dict, Optional, Union
 from dotenv import load_dotenv
-
-load_dotenv()
 import hashlib
 import random
 import time
@@ -11,15 +9,31 @@ from .special_piece import *
 from .record import GameRecord
 from backend.message import *
 from backend.tools import setupLogger
+import heapq
 
+'''
+this file is used to define the game table and the game logic, manage the room and the game process.
+
+game table is a class that contains the game information, including the game id, the players, the pieces, 
+the game state, the winner, the turn, the time interval, the captured pieces, the opponent captured pieces, 
+the next time, the record, and the viewers.
+
+it control the game process.
+
+roommanager is a class that manage the room, including the room id, the room type, the players, the viewers, 
+the game table.
+'''
+
+
+load_dotenv()
 logger = setupLogger()
 
-import heapq
 global timeout_heap
 timeout_heap:heapq = []
 
 MAX_WATCHERS = 3
 NEXT_TIME_INTERVAL = 40
+
 class UserDict(Dict):
     userid:int
     username:str

@@ -1,6 +1,6 @@
 import { COL, ROWMID, ROWTOP, ROWBOT } from "@/config/config";
 import { GEBI, getCol, getRow } from "@/utils/utils";
-import { lives } from "./Live";
+import { lives } from "../lib/live";
 import { ElMessage } from "element-plus";
 import main from "@/main";
 

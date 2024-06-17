@@ -6,6 +6,35 @@ from dotenv import load_dotenv
 from backend.tools import setupLogger
 from backend.message import *
 
+'''
+this is a module for handling game records in the database.
+
+The database has two tables: game_record and game_move.
+
+game_record table:
+- recordId: unique id for each game record
+- p1: player 1's id
+- p2: player 2's id
+- p3: player 3's id
+- startTime: start time of the game
+- endTime: end time of the game
+- winner: winner's id
+- likeNum: number of likes for this game
+- commentNum: number of comments for this game
+
+
+game_move table:
+- recordId: foreign key to game_record table
+- playerId: player who made the move
+- chessType: type of chess piece moved
+- startPos: start position of the chess piece
+- endPos: end position of the chess piece
+
+The module provides functions for inserting new game records, recording moves, and ending games.
+
+but it will save all the game records in the database, no matter if the users want to keep them or not.
+'''
+
 
 DATA_BASE = "trianglechess"
 GAME_RECORD_TABLE = "game_record"

@@ -7,11 +7,11 @@ import Cookies from 'js-cookie';
 import { registerSockets, socket, registerSocketsForce, removeSockets } from '@/sockets'
 import { ElMessage ,ElMessageBox} from "element-plus";
 import { useRouter } from 'vue-router';
-import { resetLives } from '@/chesses/Live';
+import { resetLives } from '@/lib/live';
 import { onMounted, ref, onUnmounted, computed, getCurrentInstance } from 'vue';
 import { HomeFilled } from '@element-plus/icons-vue'
 import axios from 'axios';
-import {getRankLevel} from '@/config/rank.js'
+import {getRankLevel} from '@/lib/rank.js'
 import * as CONST from "@/lib/const.js";
 const { proxy } = getCurrentInstance()
 const router = useRouter()

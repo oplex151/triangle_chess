@@ -6,11 +6,10 @@ import Cookies from 'js-cookie'
 import VueSocketIO from 'vue-socket.io'
 import SocketIO from 'socket.io-client'
 import main from '@/main'
-import { User, HomeFilled, Share } from '@element-plus/icons-vue'
+import { HomeFilled, Share } from '@element-plus/icons-vue'
 import { registerSockets, socket, removeSockets } from '@/sockets'
 import Board from '@/views/Game/board.vue'
 import game_info from '@/assets/jsons/game_info.json'
-import Report from '@/components/views/Report.vue'
 import Avatar from '@/components/views/Avatar.vue'
 import useClipboard from 'vue-clipboard3';
 import * as CONST from "@/lib/const.js";

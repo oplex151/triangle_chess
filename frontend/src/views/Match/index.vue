@@ -7,10 +7,9 @@ import Cookies from 'js-cookie';
 import { registerSockets, socket, registerSocketsForce,removeSockets} from '@/sockets'
 import {ElMessage} from "element-plus";
 import { useRouter } from 'vue-router';
-import { lives, resetLives } from '@/chesses/Live';
+import { lives, resetLives } from '@/lib/live';
 import { onMounted, ref ,onUnmounted,computed,getCurrentInstance,onBeforeUnmount} from 'vue';
-import Board from '@/views/Game/board.vue'
-import { User, HomeFilled } from '@element-plus/icons-vue'
+import { HomeFilled } from '@element-plus/icons-vue'
 import * as CONST from "@/lib/const.js";
 
 const {proxy} = getCurrentInstance()

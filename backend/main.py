@@ -16,7 +16,7 @@ from flask_cors import CORS
 from flask import request
 from backend.global_var import *
 from backend.tools import setupLogger, getParams
-from backend.user_manage import *
+from backend.user import *
 from backend.tools.exception import *
 from backend.game.record import *
 from message import *
@@ -730,7 +730,7 @@ def disconnect():
             logger.info(f"User {userid} leave rank queue")
             rank_queue.remove(userid)
         
-    logger.info("User {0} disconnect".format(request.sid) + ", userid=" + f"{userid}" if userid else "None")
+    logger.info("User {0} disconnect".format(request.sid) + ", userid=" + (f"{userid}" if userid else "None"))
 
 @socketio.event
 @gate

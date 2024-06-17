@@ -9,7 +9,7 @@ import Cookies from 'js-cookie'
 import { useRouter } from 'vue-router';
 import { ElDivider, ElInput, ElMessage } from 'element-plus'
 import * as CONST from '@/lib/const.js'
-import { resetLives } from '@/chesses/Live';
+import { resetLives } from '@/lib/live';
 import { User, HomeFilled } from '@element-plus/icons-vue'
 
 import Avatar from '@/components/views/Avatar.vue'

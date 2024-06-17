@@ -11,14 +11,13 @@ import { ElMessage, ElMessageBox } from "element-plus";
 import { onMounted, ref, onUnmounted, computed, getCurrentInstance, onBeforeMount, watch } from 'vue';
 import Board from '@/views/Game/board.vue'
 import axios from "axios";
-import { lives } from '@/chesses/Live';
+import { lives } from '@/lib/live';
 import * as CONST from '@/lib/const.js'
 import Report from '@/components/views/Report.vue'
 import Avatar from '@/components/views/Avatar.vue'
 import Messager from '@/components/views/Messager.vue';
 
 import useClipboard from 'vue-clipboard3';
-import { GEBI } from '@/utils/utils';
 
 const my_camp = ref(Cookies.get('camp'))
 const { toClipboard } = useClipboard()

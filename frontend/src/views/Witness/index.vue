@@ -6,7 +6,7 @@ import { onMounted, ref, getCurrentInstance} from 'vue'
 import { registerSockets, socket, registerSocketsForce, removeSockets } from '@/sockets'
 import Cookies from 'js-cookie'
 import { useRouter } from 'vue-router';
-import { ElDivider, ElMessage } from 'element-plus'
+import {  ElMessage } from 'element-plus'
 import * as CONST from '@/lib/const.js'
 import { HomeFilled } from '@element-plus/icons-vue'
 import axios from 'axios'

@@ -7,8 +7,6 @@ from backend.tools import setupLogger
 from backend.message import *
 from backend.global_var import rooms,sessions
 from backend.game import *
-import math 
-import message
 DATA_BASE = "trianglechess" # 数据库名称
 USER_TABLE = "user"
 

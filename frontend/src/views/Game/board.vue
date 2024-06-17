@@ -3,7 +3,7 @@ import { camps, initChess } from '@/lib/game';
 import { GEBI } from '@/utils/utils';
 import { XYZToPosition, PositionToXYZ } from '@/lib/convert'
 import * as CONST from '@/lib/const.js'
-import { lives, changeLives } from '@/chesses/Live';
+import { lives, changeLives } from '@/lib/live';
 import { onMounted, ref, onUnmounted, computed, getCurrentInstance } from 'vue';
 import { COL, ROWTOP, ROWMID, AREABOT, ROWBOT } from '@/config/config';
 import main from "@/main"

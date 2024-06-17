@@ -6,7 +6,7 @@ import main from '@/main';
 import * as CONST from '@/lib/const.js'
 
 import { ElMessage } from 'element-plus';
-import { getRankLevel } from '@/config/rank';
+import { getRankLevel } from '@/lib/rank';
 
 const emits = defineEmits(['reportUser','deleteFriend'])
 const props = defineProps(['userid', 'my_userid', 'is_friend'])

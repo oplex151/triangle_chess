@@ -1,6 +1,6 @@
 # No Bug Action
 
-### 操作说明
+### 团队操作说明（公开的操作说明见PDF版）
 
 ```
 #### 前端依赖
@@ -28,8 +28,8 @@ pip install -r requirements.txt
 pip install uswgi （本地运行不需要）
 
 在fontend/src/main.js更换地址为
- url: "http://124.70.208.148"
- self_url: "http://124.70.208.148"
+ url: 服务器地址
+ self_url: 服务器地址
 
 
 ### 数据库

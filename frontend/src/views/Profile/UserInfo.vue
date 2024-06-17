@@ -3,7 +3,7 @@ import main from '@/main';
 import axios from 'axios';
 import Cookies from 'js-cookie';
 import { onMounted, ref } from 'vue';
-import { getRankLevel } from '@/config/rank';
+import { getRankLevel } from '@/lib/rank';
 import { ElMessage } from 'element-plus';
 import FaceGenerator from '../FaceGen/FaceGenerator.vue';
 import router from '@/router';

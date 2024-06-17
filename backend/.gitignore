@@ -1,5 +1,3 @@
-
-# Ignore Python cache files
 .idea/
 *.xml
 __pycache__/
